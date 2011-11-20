@@ -211,6 +211,11 @@ public:
  */
   void RemoveRoute (uint32_t i);
 
+ // store all available routes that bring packets to their destination
+  typedef std::vector<Ipv4RoutingTableEntry*> RouteVec_t;
+
+  RouteVec_t FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif = 0); 
+
 protected:
   void DoDispose (void);
 

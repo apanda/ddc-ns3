@@ -26,56 +26,6 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("DataDrivenConnectivity1");
 
-Ipv4InterfaceContainer
-AssignToSameAddress ( const NetDeviceContainer &c, Ipv4AddressHelper& helper) {
-  NS_LOG_FUNCTION_NOARGS ();
-  Ipv4InterfaceContainer retval;
-  Ipv4Address address = helper.NewAddress ();
-  for (uint32_t i = 0; i < c.GetN (); ++i) {
-      Ptr<NetDevice> device = c.Get (i);
-
-      Ptr<Node> node = device->GetNode ();
-      NS_ASSERT_MSG (node, "Ipv4AddressHelper::Assign(): NetDevice is not not associated "
-                     "with any node -> fail");
-
-      Ptr<Ipv4> ipv4 = node->GetObject<Ipv4> ();
-      NS_ASSERT_MSG (ipv4, "Ipv4AddressHelper::Assign(): NetDevice is associated"
-                     " with a node without IPv4 stack installed -> fail "
-                     "(maybe need to use InternetStackHelper?)");
-
-      int32_t interface = ipv4->GetInterfaceForDevice (device);
-      if (interface == -1)
-        {
-          interface = ipv4->AddInterface (device);
-        }
-      NS_ASSERT_MSG (interface >= 0, "Ipv4AddressHelper::Assign(): "
-                     "Interface index not found");
-
-      Ipv4InterfaceAddress ipv4Addr = Ipv4InterfaceAddress (address, ((Ipv4Mask)"255.255.255.0").Get());
-      ipv4->AddAddress (interface, ipv4Addr);
-      ipv4->SetMetric (interface, 1);
-      ipv4->SetUp (interface);
-      retval.Add (ipv4, interface);
-  }
-  helper.NewNetwork();
-  return retval;
-}
-
-void PrintRoutingTable(Ptr<Node> node) {
-  Ipv4StaticRoutingHelper helper;
-  Ptr<Ipv4> stack = node -> GetObject<Ipv4>();
-  Ptr<Ipv4StaticRouting> staticrouting = helper.GetStaticRouting(stack);
-  uint32_t numroutes=staticrouting->GetNRoutes();
-  Ipv4RoutingTableEntry entry;
-  NS_LOG_INFO("Routing table for device: " << Names::FindName(node) <<"\n");
-  NS_LOG_INFO("Destination\tMask\t\tGateway\t\tIface\n");
-  for (uint32_t i =0 ; i<numroutes;i++) {
-      entry =staticrouting->GetRoute(i);
-      NS_LOG_INFO(entry.GetDestNetwork()  << "\t" << entry.GetDestNetworkMask() << "\t" << entry.GetGateway() << "\t\t" << entry.GetInterface() << "\n");
-   }
-  return;
-}
-
 int
 main (int argc, char *argv[])
 {
@@ -160,7 +110,7 @@ main (int argc, char *argv[])
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
 
-  UdpEchoClientHelper echoClient (interfacesPerNode[4].GetAddress (0), 9);
+  UdpEchoClientHelper echoClient (interfacesPerNode[3].GetAddress (0), 9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (packets));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));

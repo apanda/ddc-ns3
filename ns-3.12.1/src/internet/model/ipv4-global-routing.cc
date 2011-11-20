@@ -131,15 +131,11 @@ Ipv4GlobalRouting::AddASExternalRouteTo (Ipv4Address network,
   m_ASexternalRoutes.push_back (route);
 }
 
-
-Ptr<Ipv4Route>
-Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
+Ipv4GlobalRouting::RouteVec_t 
+Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
 {
   NS_LOG_FUNCTION_NOARGS ();
   NS_LOG_LOGIC ("Looking for route for destination " << dest);
-  Ptr<Ipv4Route> rtentry = 0;
-  // store all available routes that bring packets to their destination
-  typedef std::vector<Ipv4RoutingTableEntry*> RouteVec_t;
   RouteVec_t allRoutes;
 
   NS_LOG_LOGIC ("Number of m_hostRoutes = " << m_hostRoutes.size ());
@@ -159,12 +155,12 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
                 }
             }
           allRoutes.push_back (*i);
-          NS_LOG_LOGIC (allRoutes.size () << "Found global host route" << *i); 
+          NS_LOG_LOGIC (allRoutes.size () << " Found global host route " << *i); 
         }
     }
   if (allRoutes.size () == 0) // if no host route is found
     {
-      NS_LOG_LOGIC ("Number of m_networkRoutes" << m_networkRoutes.size ());
+      NS_LOG_LOGIC (" Number of m_networkRoutes" << m_networkRoutes.size ());
       for (NetworkRoutesI j = m_networkRoutes.begin (); 
            j != m_networkRoutes.end (); 
            j++) 
@@ -210,6 +206,14 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
             }
         }
     }
+  return allRoutes;
+}
+
+Ptr<Ipv4Route>
+Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
+{
+  Ptr<Ipv4Route> rtentry = 0;
+  Ipv4GlobalRouting::RouteVec_t allRoutes = FindEqualCostPaths(dest, oif);
   if (allRoutes.size () > 0 ) // if route(s) is found
     {
       // pick up one of the routes uniformly at random if random
