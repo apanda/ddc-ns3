@@ -906,7 +906,7 @@ Ipv4L3Protocol::LocalDeliver (Ptr<const Packet> packet, Ipv4Header const&ip, uin
 bool
 Ipv4L3Protocol::AddAddress (uint32_t i, Ipv4InterfaceAddress address)
 {
-  NS_LOG_FUNCTION (this << i << address);
+  NS_LOG_FUNCTION (this << i << address << " for node: " << m_node->GetId());
   Ptr<Ipv4Interface> interface = GetInterface (i);
   bool retVal = interface->AddAddress (address);
   if (m_routingProtocol != 0)

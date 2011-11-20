@@ -82,7 +82,7 @@ public:
    * This method controls the attributes of ns3::olsr::RoutingProtocol
    */
   void Set (std::string name, const AttributeValue &value);
-
+  
 private:
   /**
    * \internal
