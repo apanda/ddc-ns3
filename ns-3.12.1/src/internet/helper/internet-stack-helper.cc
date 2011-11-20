@@ -237,12 +237,12 @@ void
 InternetStackHelper::Initialize ()
 {
   SetTcp ("ns3::TcpL4Protocol");
-  Ipv4StaticRoutingHelper staticRouting;
+  //Ipv4StaticRoutingHelper staticRouting;
   Ipv4GlobalRoutingHelper globalRouting;
   Ipv4ListRoutingHelper listRouting;
   Ipv6ListRoutingHelper listRoutingv6;
   Ipv6StaticRoutingHelper staticRoutingv6;
-  listRouting.Add (staticRouting, 0);
+  //listRouting.Add (staticRouting, 0);
   listRouting.Add (globalRouting, -10);
   listRoutingv6.Add (staticRoutingv6, 0);
   SetRoutingHelper (listRouting);
