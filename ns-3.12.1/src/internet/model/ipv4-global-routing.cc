@@ -76,6 +76,14 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, nextHop, interface);
   m_hostRoutes.push_back (route);
+  m_outgoingInterfaces[dest].push_back(interface);
+  if (m_stateMachines.find(dest) == m_stateMachines.end()) {
+    m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
+      m_stateMachines[dest][i] = Input;
+    }
+  }
+  m_stateMachines[dest][interface] = Output;
 }
 
 void 
@@ -86,6 +94,14 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, interface);
   m_hostRoutes.push_back (route);
+  m_outgoingInterfaces[dest].push_back(interface);
+  if (m_stateMachines.find(dest) == m_stateMachines.end()) {
+    m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
+      m_stateMachines[dest][i] = Input;
+    }
+  }
+  m_stateMachines[dest][interface] = Output;
 }
 
 void 
@@ -101,6 +117,14 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                                         nextHop,
                                                         interface);
   m_networkRoutes.push_back (route);
+  m_outgoingInterfaces[network].push_back(interface);
+  if (m_stateMachines.find(network) == m_stateMachines.end()) {
+    m_stateMachines[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
+      m_stateMachines[network][i] = Input;
+    }
+  }
+  m_stateMachines[network][interface] = Output;
 }
 
 void 
@@ -114,6 +138,14 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                                         networkMask,
                                                         interface);
   m_networkRoutes.push_back (route);
+  m_outgoingInterfaces[network].push_back(interface);
+  if (m_stateMachines.find(network) == m_stateMachines.end()) {
+    m_stateMachines[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
+      m_stateMachines[network][i] = Input;
+    }
+  }
+  m_stateMachines[network][interface] = Output;
 }
 
 void 
@@ -129,6 +161,7 @@ Ipv4GlobalRouting::AddASExternalRouteTo (Ipv4Address network,
                                                         nextHop,
                                                         interface);
   m_ASexternalRoutes.push_back (route);
+  m_outgoingInterfaces[network].push_back(interface);
 }
 
 Ipv4GlobalRouting::RouteVec_t 
@@ -156,6 +189,7 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
             }
           allRoutes.push_back (*i);
           NS_LOG_LOGIC (allRoutes.size () << " Found global host route " << *i); 
+          NS_LOG_LOGIC(dest << " can use " << m_outgoingInterfaces[dest].size() << " interfaces "); 
         }
     }
   if (allRoutes.size () == 0) // if no host route is found
@@ -179,6 +213,7 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
                 }
               allRoutes.push_back (*j);
               NS_LOG_LOGIC (allRoutes.size () << "Found global network route" << *j);
+              NS_LOG_LOGIC(dest << " can use " << m_outgoingInterfaces[entry].size() << " interfaces "); 
             }
         }
     }
@@ -339,6 +374,7 @@ Ipv4GlobalRouting::RemoveRoute (uint32_t index)
           delete *j;
           m_networkRoutes.erase (j);
           NS_LOG_LOGIC ("Done removing network route " << index << "; network route remaining size = " << m_networkRoutes.size ());
+
           return;
         }
       tmp++;
@@ -495,6 +531,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
   // (to remove the outer loop immediately below and just check iif).
   for (uint32_t j = 0; j < m_ipv4->GetNInterfaces (); j++)
     {
+      
       for (uint32_t i = 0; i < m_ipv4->GetNAddresses (j); i++)
         {
           Ipv4InterfaceAddress iaddr = m_ipv4->GetAddress (j, i);
@@ -528,6 +565,12 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
       ecb (p, header, Socket::ERROR_NOROUTETOHOST);
       return false;
     }
+
+  NS_LOG_LOGIC("state machine = " << 
+               m_stateMachines[header.GetDestination()][idev->GetIfIndex()] << 
+               " dev = " << idev->GetIfIndex() <<
+               " dest = " << header.GetDestination());
+
   // Next, try to find a route
   NS_LOG_LOGIC ("Unicast destination- looking up global route");
   Ptr<Ipv4Route> rtentry = LookupGlobal (header.GetDestination ());

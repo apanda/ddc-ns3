@@ -20,6 +20,8 @@
 #ifndef IPV4_GLOBAL_ROUTING_H
 #define IPV4_GLOBAL_ROUTING_H
 
+#include "ns3/sgi-hashmap.h"
+#include <vector>
 #include <list>
 #include <stdint.h>
 #include "ns3/ipv4-address.h"
@@ -227,6 +229,14 @@ private:
   /// A uniform random number generator for randomly routing packets among ECMP 
   UniformVariable m_rand;
 
+  enum DdcState
+  {
+    Input,
+    ReverseInput,
+    Output,
+    ReverseOutput
+  };
+
   typedef std::list<Ipv4RoutingTableEntry *> HostRoutes;
   typedef std::list<Ipv4RoutingTableEntry *>::const_iterator HostRoutesCI;
   typedef std::list<Ipv4RoutingTableEntry *>::iterator HostRoutesI;
@@ -236,6 +246,11 @@ private:
   typedef std::list<Ipv4RoutingTableEntry *> ASExternalRoutes;
   typedef std::list<Ipv4RoutingTableEntry *>::const_iterator ASExternalRoutesCI;
   typedef std::list<Ipv4RoutingTableEntry *>::iterator ASExternalRoutesI;
+  typedef sgi::hash_map<Ipv4Address, std::vector<int>, Ipv4AddressHash> Intefaces;
+  typedef sgi::hash_map<Ipv4Address, std::vector<DdcState>, Ipv4AddressHash> StateMachines;
+  
+  Intefaces m_outgoingInterfaces;
+  StateMachines m_stateMachines;
 
   Ptr<Ipv4Route> LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif = 0);
 
