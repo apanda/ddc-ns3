@@ -394,7 +394,7 @@ PointToPointNetDevice::Attach (Ptr<PointToPointChannel> ch)
   // would be to have the link come up when both devices are attached, but this
   // is not done for now.
   //
-  NotifyLinkUp ();
+  //NotifyLinkUp ();
   return true;
 }
 
@@ -467,6 +467,20 @@ void
 PointToPointNetDevice::NotifyLinkUp (void)
 {
   m_linkUp = true;
+  m_linkChangeCallbacks ();
+}
+
+void
+PointToPointNetDevice::SetLinkUp (void)
+{
+  m_linkUp = true;
+  m_linkChangeCallbacks ();
+}
+
+void
+PointToPointNetDevice::SetLinkDown (void)
+{
+  m_linkUp = false;
   m_linkChangeCallbacks ();
 }
 

@@ -76,7 +76,22 @@ PointToPointChannel::Attach (Ptr<PointToPointNetDevice> device)
       m_link[1].m_dst = m_link[0].m_src;
       m_link[0].m_state = IDLE;
       m_link[1].m_state = IDLE;
+      SetLinkUp();
     }
+}
+
+void PointToPointChannel::SetLinkDown()
+{
+  for (int i = 0 ; i < m_nDevices; i++) {
+    m_link[i].m_src->SetLinkDown();
+  }
+}
+
+void PointToPointChannel::SetLinkUp()
+{
+  for (int i = 0 ; i < m_nDevices; i++) {
+    m_link[i].m_src->SetLinkUp();
+  }
 }
 
 bool

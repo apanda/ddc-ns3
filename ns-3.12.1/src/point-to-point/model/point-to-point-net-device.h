@@ -193,6 +193,10 @@ public:
   virtual void SetPromiscReceiveCallback (PromiscReceiveCallback cb);
   virtual bool SupportsSendFrom (void) const;
 
+  void SetLinkDown();
+
+  void SetLinkUp();
+
 protected:
   void DoMpiReceive (Ptr<Packet> p);
 

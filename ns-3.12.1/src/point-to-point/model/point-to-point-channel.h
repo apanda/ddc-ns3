@@ -92,6 +92,10 @@ public:
    */
   virtual Ptr<NetDevice> GetDevice (uint32_t i) const;
 
+  void SetLinkDown();
+
+  void SetLinkUp();
+
 protected:
   /*
    * \brief Get the delay associated with this channel

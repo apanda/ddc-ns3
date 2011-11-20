@@ -120,7 +120,6 @@ main (int argc, char *argv[])
   NS_LOG_INFO("Creating point to point connections");
   PointToPointHelper pointToPoint;
 
-  NetDeviceContainer devices;
   std::vector<NetDeviceContainer> nodeDevices(NODES);
   for (int i = 0; i < NODES; i++) {
     for ( std::vector<uint32_t>::iterator iterator = connectivityGraph[i]->begin(); 
@@ -128,7 +127,6 @@ main (int argc, char *argv[])
     iterator++) {
       NetDeviceContainer p2pDevices = 
         pointToPoint.Install (nodes.Get(i), nodes.Get(*iterator));
-      devices.Add(p2pDevices);
       nodeDevices[i].Add(p2pDevices.Get(0));
       nodeDevices[*iterator].Add(p2pDevices.Get(1));
     }
@@ -152,7 +150,8 @@ main (int argc, char *argv[])
 
   // Simulate error
   if (simulateError) {
-    interfacesPerNode[2].Get(0).first->SetDown(1);
+    //interfacesPerNode[2].Get(0).first->SetDown(1);
+    ((PointToPointChannel*)(PeekPointer(nodeDevices[2].Get(0)->GetChannel())))->SetLinkDown();
   }
 
   UdpEchoServerHelper echoServer (9);
