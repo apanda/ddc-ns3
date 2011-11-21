@@ -119,9 +119,13 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
   AsciiTraceHelper asciiHelper;
-  pointToPoint.EnableAsciiAll(asciiHelper.CreateFileStream("ddc.tr"));
-  pointToPoint.EnablePcapAll("ddc1");
-
+  //pointToPoint.EnableAsciiAll(asciiHelper.CreateFileStream("ddc.tr"));
+  //pointToPoint.EnablePcapAll("ddc1");
+  Ptr<OutputStreamWrapper> out = asciiHelper.CreateFileStream("route.table");
+  for (int i = 0; i < NODES; i++) {
+    nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
+  }
+  //nodes.Get(2)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
   Simulator::Run ();
   Simulator::Destroy ();
 

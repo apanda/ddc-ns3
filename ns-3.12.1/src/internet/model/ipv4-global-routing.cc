@@ -76,14 +76,14 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, nextHop, interface);
   m_hostRoutes.push_back (route);
-  m_outgoingInterfaces[dest].push_back(interface);
+  m_outgoingInterfaces[dest].push_back(interface - 1);
   if (m_stateMachines.find(dest) == m_stateMachines.end()) {
     m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[dest][i] = Input;
     }
   }
-  m_stateMachines[dest][interface] = Output;
+  m_stateMachines[dest][interface - 1] = Output;
 }
 
 void 
@@ -94,14 +94,14 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, interface);
   m_hostRoutes.push_back (route);
-  m_outgoingInterfaces[dest].push_back(interface);
+  m_outgoingInterfaces[dest].push_back(interface - 1);
   if (m_stateMachines.find(dest) == m_stateMachines.end()) {
     m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[dest][i] = Input;
     }
   }
-  m_stateMachines[dest][interface] = Output;
+  m_stateMachines[dest][interface - 1] = Output;
 }
 
 void 
@@ -117,14 +117,12 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                                         nextHop,
                                                         interface);
   m_networkRoutes.push_back (route);
-  m_outgoingInterfaces[network].push_back(interface);
   if (m_stateMachines.find(network) == m_stateMachines.end()) {
     m_stateMachines[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[network][i] = Input;
     }
   }
-  m_stateMachines[network][interface] = Output;
 }
 
 void 
@@ -138,14 +136,12 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                                         networkMask,
                                                         interface);
   m_networkRoutes.push_back (route);
-  m_outgoingInterfaces[network].push_back(interface);
   if (m_stateMachines.find(network) == m_stateMachines.end()) {
     m_stateMachines[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[network][i] = Input;
     }
   }
-  m_stateMachines[network][interface] = Output;
 }
 
 void 
@@ -570,6 +566,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
                m_stateMachines[header.GetDestination()][idev->GetIfIndex()] << 
                " dev = " << idev->GetIfIndex() <<
                " dest = " << header.GetDestination());
+  NS_ASSERT(m_stateMachines[header.GetDestination()][idev->GetIfIndex()] == Input); 
 
   // Next, try to find a route
   NS_LOG_LOGIC ("Unicast destination- looking up global route");
