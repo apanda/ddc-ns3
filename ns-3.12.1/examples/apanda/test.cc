@@ -101,7 +101,7 @@ main (int argc, char *argv[])
 
   // Simulate error
   if (simulateError) {
-    ((PointToPointChannel*)(PeekPointer(nodeDevices[2].Get(0)->GetChannel())))->SetLinkDown();
+    ((PointToPointChannel*)(PeekPointer(nodeDevices[0].Get(0)->GetChannel())))->SetLinkDown();
   }
 
   UdpEchoServerHelper echoServer (9);

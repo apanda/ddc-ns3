@@ -251,14 +251,27 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
       // ECMP routing is enabled, or always select the first route
       // consistently if random ECMP routing is disabled
       uint32_t selectIndex;
-      if (m_randomEcmpRouting)
-        {
-          selectIndex = m_rand.GetInteger (0, allRoutes.size ()-1);
+      while (!allRoutes.empty()) {
+        if (m_randomEcmpRouting)
+          {
+            selectIndex = m_rand.GetInteger (0, allRoutes.size ()-1);
+          }
+        else 
+          {
+            selectIndex = 0;
+          }
+        uint32_t interface = allRoutes.at (selectIndex)->GetInterface();
+        Ptr<NetDevice> device = m_ipv4->GetNetDevice (interface);
+        if (device->IsLinkUp()) {
+            break;
         }
-      else 
-        {
-          selectIndex = 0;
+        else {
+            allRoutes.erase(allRoutes.begin() + selectIndex);
         }
+      }
+      if (allRoutes.empty()) {
+          return 0;
+      }
       Ipv4RoutingTableEntry* route = allRoutes.at (selectIndex); 
       // create a Ipv4Route object from the selected routing table entry
       rtentry = Create<Ipv4Route> ();
