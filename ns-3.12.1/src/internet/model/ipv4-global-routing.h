@@ -233,6 +233,7 @@ private:
   {
     Input,
     ReverseInput,
+    ReverseInputPrimed,
     Output,
     ReverseOutput
   };
@@ -252,7 +253,7 @@ private:
   Intefaces m_outgoingInterfaces;
   StateMachines m_stateMachines;
 
-  Ptr<Ipv4Route> LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif = 0);
+  Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);
 
   HostRoutes m_hostRoutes;
   NetworkRoutes m_networkRoutes;

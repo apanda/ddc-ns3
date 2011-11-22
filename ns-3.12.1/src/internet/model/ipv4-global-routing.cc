@@ -83,7 +83,8 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
       m_stateMachines[dest][i] = Input;
     }
   }
-  m_stateMachines[dest][interface - 1] = Output;
+  m_stateMachines[dest][interface] = Output;
+  NS_LOG_INFO ("Setting state for " << dest << " interface " << interface << " to output");
 }
 
 void 
@@ -101,7 +102,8 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
       m_stateMachines[dest][i] = Input;
     }
   }
-  m_stateMachines[dest][interface - 1] = Output;
+  m_stateMachines[dest][interface] = Output;
+  NS_LOG_INFO ("Setting state for " << dest << " interface " << interface << " to output");
 }
 
 void 
@@ -117,12 +119,6 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                                         nextHop,
                                                         interface);
   m_networkRoutes.push_back (route);
-  if (m_stateMachines.find(network) == m_stateMachines.end()) {
-    m_stateMachines[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
-    for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
-      m_stateMachines[network][i] = Input;
-    }
-  }
 }
 
 void 
@@ -136,12 +132,6 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                                         networkMask,
                                                         interface);
   m_networkRoutes.push_back (route);
-  if (m_stateMachines.find(network) == m_stateMachines.end()) {
-    m_stateMachines[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
-    for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
-      m_stateMachines[network][i] = Input;
-    }
-  }
 }
 
 void 
@@ -168,6 +158,7 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
   RouteVec_t allRoutes;
 
   NS_LOG_LOGIC ("Number of m_hostRoutes = " << m_hostRoutes.size ());
+  bool foundHostRoute = false;
   for (HostRoutesCI i = m_hostRoutes.begin (); 
        i != m_hostRoutes.end (); 
        i++) 
@@ -183,12 +174,20 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
                   continue;
                 }
             }
+          if (m_stateMachines[dest][(*i)->GetInterface()] != Output) {
+            foundHostRoute = true;
+            continue;
+          }
           allRoutes.push_back (*i);
+          foundHostRoute = true;
           NS_LOG_LOGIC (allRoutes.size () << " Found global host route " << *i); 
           NS_LOG_LOGIC(dest << " can use " << m_outgoingInterfaces[dest].size() << " interfaces "); 
         }
     }
-  if (allRoutes.size () == 0) // if no host route is found
+  // @apanda Technically if we found a route, even if the route now involved an RO thing, we should still let
+  // things be. Not doing this would mean leaving OSPF entirely at times, and we really don't want to
+  // do that
+  if (!foundHostRoute) // if no host route is found
     {
       NS_LOG_LOGIC (" Number of m_networkRoutes" << m_networkRoutes.size ());
       for (NetworkRoutesI j = m_networkRoutes.begin (); 
@@ -213,7 +212,7 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
             }
         }
     }
-  if (allRoutes.size () == 0)  // consider external if no host/network found
+  if (!foundHostRoute && allRoutes.size () == 0)  // consider external if no host/network found
     {
       for (ASExternalRoutesI k = m_ASexternalRoutes.begin ();
            k != m_ASexternalRoutes.end ();
@@ -241,8 +240,9 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
 }
 
 Ptr<Ipv4Route>
-Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
+Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev)
 {
+  Ipv4Address dest = header.GetDestination();
   Ptr<Ipv4Route> rtentry = 0;
   Ipv4GlobalRouting::RouteVec_t allRoutes = FindEqualCostPaths(dest, oif);
   if (allRoutes.size () > 0 ) // if route(s) is found
@@ -269,19 +269,34 @@ Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
             allRoutes.erase(allRoutes.begin() + selectIndex);
         }
       }
+      Ipv4RoutingTableEntry* route;
       if (allRoutes.empty()) {
-          return 0;
+        if (idev != 0) {
+          uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
+          m_stateMachines[dest][iif] = ReverseInput;
+          NS_LOG_LOGIC("Setting interface " << iif << " to RI");
+          rtentry = Create<Ipv4Route> ();
+          rtentry->SetDestination (dest);
+          rtentry->SetGateway(header.GetSource());
+          rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+          NS_LOG_LOGIC("Bouncing packet");
+          return rtentry;
+        }
+        // Couldn't find an output port,
+        return 0;
       }
-      Ipv4RoutingTableEntry* route = allRoutes.at (selectIndex); 
-      // create a Ipv4Route object from the selected routing table entry
-      rtentry = Create<Ipv4Route> ();
-      rtentry->SetDestination (route->GetDest ());
-      // XXX handle multi-address case
-      rtentry->SetSource (m_ipv4->GetAddress (route->GetInterface (), 0).GetLocal ());
-      rtentry->SetGateway (route->GetGateway ());
-      uint32_t interfaceIdx = route->GetInterface ();
-      rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
-      return rtentry;
+      else {
+        route = allRoutes.at (selectIndex);
+        // create a Ipv4Route object from the selected routing table entry
+        rtentry = Create<Ipv4Route> ();
+        rtentry->SetDestination (route->GetDest ());
+        // XXX handle multi-address case
+        rtentry->SetSource (m_ipv4->GetAddress (route->GetInterface (), 0).GetLocal ());
+        rtentry->SetGateway (route->GetGateway ());
+        uint32_t interfaceIdx = route->GetInterface ();
+        rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
+        return rtentry;
+      }
     }
   else 
     {
@@ -497,7 +512,7 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Net
 // See if this is a unicast packet we have a route for.
 //
   NS_LOG_LOGIC ("Unicast destination- looking up");
-  Ptr<Ipv4Route> rtentry = LookupGlobal (header.GetDestination (), oif);
+  Ptr<Ipv4Route> rtentry = LookupGlobal (header, oif);
   if (rtentry)
     {
       sockerr = Socket::ERROR_NOTERROR;
@@ -575,15 +590,30 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
       return false;
     }
 
-  NS_LOG_LOGIC("state machine = " << 
-               m_stateMachines[header.GetDestination()][idev->GetIfIndex()] << 
-               " dev = " << idev->GetIfIndex() <<
+  NS_LOG_LOGIC("node = " << m_ipv4->GetAddress(iif, 0).GetLocal() <<
+               "state machine = " << 
+               m_stateMachines[header.GetDestination()][iif] << 
+               " dev = " << iif <<
                " dest = " << header.GetDestination());
-  NS_ASSERT(m_stateMachines[header.GetDestination()][idev->GetIfIndex()] == Input); 
+  if (m_stateMachines[header.GetDestination()][iif] == Output) {
+    m_stateMachines[header.GetDestination()][iif] = ReverseOutput;
+    NS_LOG_LOGIC("Setting dest = " << header.GetDestination() << " interface " << iif << " to RO");
+  }
+  else if (m_stateMachines[header.GetDestination()][iif] == ReverseInput) {
+    m_stateMachines[header.GetDestination()][iif] = ReverseInputPrimed;
+    NS_LOG_LOGIC("Setting dest = " << header.GetDestination() << " interface " << iif << " to RI'");
+  }
+  else if (m_stateMachines[header.GetDestination()][iif] == ReverseInputPrimed) {
+    m_stateMachines[header.GetDestination()][iif] = Input;
+    NS_LOG_LOGIC("Setting dest = " << header.GetDestination() << " interface " << iif << " to I'");
+  }
+  else if (m_stateMachines[header.GetDestination()][iif] == ReverseOutput) {
+  }
+  
 
   // Next, try to find a route
   NS_LOG_LOGIC ("Unicast destination- looking up global route");
-  Ptr<Ipv4Route> rtentry = LookupGlobal (header.GetDestination ());
+  Ptr<Ipv4Route> rtentry = LookupGlobal (header, 0, idev);
   if (rtentry != 0)
     {
       NS_LOG_LOGIC ("Found unicast destination- calling unicast callback");
