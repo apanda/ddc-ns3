@@ -76,16 +76,19 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, nextHop, interface);
   m_hostRoutes.push_back (route);
-  m_outgoingInterfaces[dest].push_back(interface - 1);
   if (m_stateMachines.find(dest) == m_stateMachines.end()) {
     m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[dest][i] = Input;
+      m_inputInterfaces[dest].push_back(i);
     }
   }
+  m_inputInterfaces[dest].remove(interface);
+  m_outputInterfaces[dest].push_back(interface);
   m_stateMachines[dest][interface] = Output;
   NS_LOG_INFO ("Setting state for " << dest << " interface " << interface << " to output");
 }
+
 
 void 
 Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest, 
@@ -95,13 +98,15 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, interface);
   m_hostRoutes.push_back (route);
-  m_outgoingInterfaces[dest].push_back(interface - 1);
   if (m_stateMachines.find(dest) == m_stateMachines.end()) {
     m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[dest][i] = Input;
+      m_inputInterfaces[dest].push_back(i);
     }
   }
+  m_inputInterfaces[dest].remove(interface);
+  m_outputInterfaces[dest].push_back(interface);
   m_stateMachines[dest][interface] = Output;
   NS_LOG_INFO ("Setting state for " << dest << " interface " << interface << " to output");
 }
@@ -147,7 +152,6 @@ Ipv4GlobalRouting::AddASExternalRouteTo (Ipv4Address network,
                                                         nextHop,
                                                         interface);
   m_ASexternalRoutes.push_back (route);
-  m_outgoingInterfaces[network].push_back(interface);
 }
 
 Ipv4GlobalRouting::RouteVec_t 
@@ -174,6 +178,7 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
                   continue;
                 }
             }
+          // Don't send packets on ports which are RO
           if (m_stateMachines[dest][(*i)->GetInterface()] != Output) {
             foundHostRoute = true;
             continue;
@@ -181,7 +186,7 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
           allRoutes.push_back (*i);
           foundHostRoute = true;
           NS_LOG_LOGIC (allRoutes.size () << " Found global host route " << *i); 
-          NS_LOG_LOGIC(dest << " can use " << m_outgoingInterfaces[dest].size() << " interfaces "); 
+          NS_LOG_LOGIC(dest << " can use " << m_outputInterfaces[dest].size() << " interfaces " << " and an additional " << m_reverseInputInterfaces[dest].size() << " RI interfaces"); 
         }
     }
   // @apanda Technically if we found a route, even if the route now involved an RO thing, we should still let
@@ -208,7 +213,6 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
                 }
               allRoutes.push_back (*j);
               NS_LOG_LOGIC (allRoutes.size () << "Found global network route" << *j);
-              NS_LOG_LOGIC(dest << " can use " << m_outgoingInterfaces[entry].size() << " interfaces "); 
             }
         }
     }
@@ -237,6 +241,67 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
         }
     }
   return allRoutes;
+}
+
+void
+Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcAction action) {
+  NS_LOG_FUNCTION_NOARGS();
+  switch (m_stateMachines[address][iface]) {
+    case Input: {
+      switch (action) {
+        case NoPath:
+          m_stateMachines[address][iface] = ReverseInput;
+          m_inputInterfaces[address].remove(iface);
+          m_reverseInputInterfaces[address].push_back(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI");
+          break;
+        case Receive:
+          break;
+        default:
+          NS_ASSERT(false);
+      }
+      break;
+    }
+    case Output: {
+      switch (action) {
+        case Receive:
+          m_stateMachines[address][iface] = ReverseOutput;
+          m_outputInterfaces[address].remove(iface);
+          m_reverseOutputInterfaces[address].push_back(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RO");
+          break;
+        case NoPath:
+          NS_ASSERT(false);
+      }
+      break;
+    }
+    case ReverseInput: {
+      switch (action) {
+        case Receive:
+          m_stateMachines[address][iface] = ReverseInputPrimed;
+          m_reverseInputInterfaces[address].remove(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI'");
+          break;
+        case NoPath: 
+          NS_ASSERT(false);
+      }
+      break;
+    }
+    case ReverseInputPrimed: {
+      switch (action) {
+        case Receive:
+          m_stateMachines[address][iface] = ReverseInput;
+          m_inputInterfaces[address].push_back(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to I from RI'");
+          break;
+        case NoPath:
+          NS_ASSERT(false);
+      }
+      break;
+    }
+    default:
+      NS_ASSERT(false);
+  }
 }
 
 Ptr<Ipv4Route>
@@ -273,8 +338,7 @@ Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, P
       if (allRoutes.empty()) {
         if (idev != 0) {
           uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
-          m_stateMachines[dest][iif] = ReverseInput;
-          NS_LOG_LOGIC("Setting interface " << iif << " to RI");
+          AdvanceStateMachine(dest, iif, NoPath);
           rtentry = Create<Ipv4Route> ();
           rtentry->SetDestination (dest);
           rtentry->SetGateway(header.GetSource());
@@ -528,7 +592,6 @@ bool
 Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const NetDevice> idev,                             UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                                 LocalDeliverCallback lcb, ErrorCallback ecb)
 { 
-
   NS_LOG_FUNCTION (this << p << header << header.GetSource () << header.GetDestination () << idev);
   // Check if input device supports IP
   NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
@@ -595,22 +658,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
                m_stateMachines[header.GetDestination()][iif] << 
                " dev = " << iif <<
                " dest = " << header.GetDestination());
-  if (m_stateMachines[header.GetDestination()][iif] == Output) {
-    m_stateMachines[header.GetDestination()][iif] = ReverseOutput;
-    NS_LOG_LOGIC("Setting dest = " << header.GetDestination() << " interface " << iif << " to RO");
-  }
-  else if (m_stateMachines[header.GetDestination()][iif] == ReverseInput) {
-    m_stateMachines[header.GetDestination()][iif] = ReverseInputPrimed;
-    NS_LOG_LOGIC("Setting dest = " << header.GetDestination() << " interface " << iif << " to RI'");
-  }
-  else if (m_stateMachines[header.GetDestination()][iif] == ReverseInputPrimed) {
-    m_stateMachines[header.GetDestination()][iif] = Input;
-    NS_LOG_LOGIC("Setting dest = " << header.GetDestination() << " interface " << iif << " to I'");
-  }
-  else if (m_stateMachines[header.GetDestination()][iif] == ReverseOutput) {
-  }
-  
-
+   AdvanceStateMachine(header.GetDestination(), iif, Receive);
   // Next, try to find a route
   NS_LOG_LOGIC ("Unicast destination- looking up global route");
   Ptr<Ipv4Route> rtentry = LookupGlobal (header, 0, idev);

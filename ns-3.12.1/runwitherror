@@ -1,0 +1,1 @@
+./waf --run examples/apanda/test --error=1 --packets=1

@@ -238,6 +238,13 @@ private:
     ReverseOutput
   };
 
+  enum DdcAction
+  {
+    Receive,
+    NoPath
+  };
+
+  void AdvanceStateMachine(Ipv4Address dest, uint32_t iface, DdcAction action);
   typedef std::list<Ipv4RoutingTableEntry *> HostRoutes;
   typedef std::list<Ipv4RoutingTableEntry *>::const_iterator HostRoutesCI;
   typedef std::list<Ipv4RoutingTableEntry *>::iterator HostRoutesI;
@@ -247,14 +254,19 @@ private:
   typedef std::list<Ipv4RoutingTableEntry *> ASExternalRoutes;
   typedef std::list<Ipv4RoutingTableEntry *>::const_iterator ASExternalRoutesCI;
   typedef std::list<Ipv4RoutingTableEntry *>::iterator ASExternalRoutesI;
-  typedef sgi::hash_map<Ipv4Address, std::vector<int>, Ipv4AddressHash> Intefaces;
+  typedef sgi::hash_map<Ipv4Address, std::list<int>, Ipv4AddressHash> Interfaces;
   typedef sgi::hash_map<Ipv4Address, std::vector<DdcState>, Ipv4AddressHash> StateMachines;
+  typedef sgi::hash_map<Ipv4Address, HostRoutes> DdcRoutes;
   
-  Intefaces m_outgoingInterfaces;
+  Interfaces m_inputInterfaces;
+  Interfaces m_reverseInputInterfaces;
+  Interfaces m_outputInterfaces;
+  Interfaces m_reverseOutputInterfaces;
   StateMachines m_stateMachines;
 
   Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);
 
+  DdcRoutes m_ddcRoutes;
   HostRoutes m_hostRoutes;
   NetworkRoutes m_networkRoutes;
   ASExternalRoutes m_ASexternalRoutes; // External routes imported
