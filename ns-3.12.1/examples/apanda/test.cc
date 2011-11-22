@@ -69,8 +69,10 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO("Creating point to point connections");
   PointToPointHelper pointToPoint;
+  pointToPoint.EnablePcapAll("DDCTest");
 
   std::vector<NetDeviceContainer> nodeDevices(NODES);
+  std::vector<NetDeviceContainer> linkDevices;
   for (int i = 0; i < NODES; i++) {
     for ( std::vector<uint32_t>::iterator iterator = connectivityGraph[i]->begin(); 
     iterator != connectivityGraph[i]->end();
@@ -79,6 +81,7 @@ main (int argc, char *argv[])
         pointToPoint.Install (nodes.Get(i), nodes.Get(*iterator));
       nodeDevices[i].Add(p2pDevices.Get(0));
       nodeDevices[*iterator].Add(p2pDevices.Get(1));
+      linkDevices.push_back(p2pDevices);
     }
   }
 
@@ -88,19 +91,16 @@ main (int argc, char *argv[])
   address.SetBase ("10.1.1.0", "255.255.255.0");
 
   NS_LOG_INFO("Assigning address");
-  std::vector<Ipv4InterfaceContainer> interfacesPerNode(NODES);
-  for (int i = 0; i < NODES; i++) {
+  for (int i = 0; i < (int)linkDevices.size(); i++) {
     //Ipv4InterfaceContainer current = AssignToSameAddress(nodeDevices[i], address);
-    Ipv4InterfaceContainer current = address.Assign(nodeDevices[i]);
+    Ipv4InterfaceContainer current = address.Assign(linkDevices[i]);
     // Need to do this to get routing to work correctly, no idea why
     address.NewNetwork();
-    interfacesPerNode[i].Add(current);
   }
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   // Simulate error
   if (simulateError) {
-    //interfacesPerNode[2].Get(0).first->SetDown(1);
     ((PointToPointChannel*)(PeekPointer(nodeDevices[2].Get(0)->GetChannel())))->SetLinkDown();
   }
 
@@ -110,7 +110,8 @@ main (int argc, char *argv[])
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
 
-  UdpEchoClientHelper echoClient (interfacesPerNode[3].GetAddress (0), 9);
+  UdpEchoClientHelper echoClient (nodes.Get(3)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
+                                    9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (packets));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
@@ -119,13 +120,23 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
   AsciiTraceHelper asciiHelper;
-  //pointToPoint.EnableAsciiAll(asciiHelper.CreateFileStream("ddc.tr"));
-  //pointToPoint.EnablePcapAll("ddc1");
+
   Ptr<OutputStreamWrapper> out = asciiHelper.CreateFileStream("route.table");
+  NS_LOG_INFO("Node interface list");
+  for (int i = 0; i < NODES; i++) {
+      Ptr<Ipv4> ipv4 = nodes.Get(i)->GetObject<Ipv4>();
+      NS_ASSERT(ipv4 != NULL);
+      for (int j = 0; j < (int)ipv4->GetNInterfaces(); j++) {
+          for (int k = 0; k < (int)ipv4->GetNAddresses(j); k++) {
+            Ipv4InterfaceAddress iaddr = ipv4->GetAddress (j, k);
+            Ipv4Address addr = iaddr.GetLocal ();
+            (*out->GetStream()) << i << "\t" << j << "\t" << addr << "\n";
+          }
+      }
+  }
   for (int i = 0; i < NODES; i++) {
     nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
   }
-  //nodes.Get(2)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
   Simulator::Run ();
   Simulator::Destroy ();
 
