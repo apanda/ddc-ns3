@@ -56,12 +56,6 @@ main (int argc, char *argv[])
   connectivityGraph[2]->push_back(3);
   connectivityGraph[2]->push_back(4);
   connectivityGraph[3]->push_back(4);
-  //connectivityGraph[0]->push_back(1);
-  //connectivityGraph[1]->push_back(2);
-  //connectivityGraph[2]->push_back(3);
-  //connectivityGraph[3]->push_back(4);
-  //connectivityGraph[0]->push_back(4);
-
 
   NS_LOG_INFO("Creating nodes");
   NodeContainer nodes;
@@ -92,16 +86,14 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO("Assigning address");
   for (int i = 0; i < (int)linkDevices.size(); i++) {
-    //Ipv4InterfaceContainer current = AssignToSameAddress(nodeDevices[i], address);
     Ipv4InterfaceContainer current = address.Assign(linkDevices[i]);
-    // Need to do this to get routing to work correctly, no idea why
     address.NewNetwork();
   }
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   // Simulate error
   if (simulateError) {
-    ((PointToPointChannel*)(PeekPointer(nodeDevices[0].Get(0)->GetChannel())))->SetLinkDown();
+    ((PointToPointChannel*)(PeekPointer(nodeDevices[2].Get(2)->GetChannel())))->SetLinkDown();
   }
 
   UdpEchoServerHelper echoServer (9);
@@ -110,7 +102,7 @@ main (int argc, char *argv[])
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (Seconds (10.0));
 
-  UdpEchoClientHelper echoClient (nodes.Get(3)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
+  UdpEchoClientHelper echoClient (nodes.Get(4)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
                                     9);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (packets));
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));

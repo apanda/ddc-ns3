@@ -1,1 +1,1 @@
-UdpEchoClientApplication=level_all|prefix_func:DataDrivenConnectivity1=level_all|prefix_func:UdpEchoServerApplication=level_all:Ipv4GlobalRouting=level_all|prefix_func
+UdpEchoClientApplication=level_all|prefix_node:DataDrivenConnectivity1=level_all|prefix_node:UdpEchoServerApplication=level_all|prefix_node:Ipv4GlobalRouting=level_all|prefix_func|prefix_node

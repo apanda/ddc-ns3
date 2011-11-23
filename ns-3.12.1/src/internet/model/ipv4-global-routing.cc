@@ -247,6 +247,15 @@ void
 Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcAction action) {
   NS_LOG_FUNCTION_NOARGS();
   switch (m_stateMachines[address][iface]) {
+    case NewInput: {
+      switch (action) {
+        case Send:
+          m_stateMachines[address][iface] = Input;
+          break;
+        default:
+          NS_ASSERT(false);
+      }
+    }
     case Input: {
       switch (action) {
         case NoPath:
@@ -262,6 +271,26 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_inputInterfaces[address].remove(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
           break;
+        case Send:
+          break; // Send just means sending on behalf of, an acceptable situation
+        default:
+          NS_ASSERT(false);
+      }
+      break;
+    }
+    case ReverseOutput: {
+      switch (action) {
+        case NoPath:
+          break; // RouteUsingDdc takes care of this
+        case Receive:
+          break; // Expected
+        case DetectFailure:
+          m_stateMachines[address][iface] = Dead;
+          m_reverseOutputInterfaces[address].remove(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
+          break;
+        case Send:
+          break; 
         default:
           NS_ASSERT(false);
       }
@@ -280,7 +309,11 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_outputInterfaces[address].remove(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
           break;
+        case Send:
+          break;
         case NoPath:
+          NS_ASSERT(false);
+        default:
           NS_ASSERT(false);
       }
       break;
@@ -289,7 +322,6 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
       switch (action) {
         case Receive:
           m_stateMachines[address][iface] = ReverseInputPrimed;
-          m_reverseInputInterfaces[address].remove(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI'");
           break;
         case DetectFailure:
@@ -297,7 +329,11 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_reverseInputInterfaces[address].remove(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
           break;
+        case Send:
+          break;
         case NoPath: 
+          NS_ASSERT(false);
+        default: 
           NS_ASSERT(false);
       }
       break;
@@ -305,7 +341,8 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
     case ReverseInputPrimed: {
       switch (action) {
         case Receive:
-          m_stateMachines[address][iface] = ReverseInput;
+          m_stateMachines[address][iface] = NewInput;
+          m_reverseInputInterfaces[address].remove(iface);
           m_inputInterfaces[address].push_back(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to I from RI'");
           break;
@@ -313,7 +350,11 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_stateMachines[address][iface] = Dead;
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
           break;
+        case Send:
+          break;
         case NoPath:
+          NS_ASSERT(false);
+        default:
           NS_ASSERT(false);
       }
       break;
@@ -324,8 +365,153 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
 }
 
 Ptr<Ipv4Route>
+Ipv4GlobalRouting::TryRouteThroughInterfaces (Interfaces interfaces, Ipv4Address dest)
+{
+  Ptr<Ipv4Route> rtentry = 0;
+  // Route through here
+  Ptr<NetDevice> device = 0;
+  while (!interfaces[dest].empty()) {
+    device = m_ipv4->GetNetDevice (interfaces[dest].front());
+    if (device->IsLinkUp()) {
+      break;
+    }
+    else {
+      AdvanceStateMachine(dest, interfaces[dest].front(), DetectFailure);
+      device = 0;
+    }
+  }
+  if (device != 0) {
+    rtentry = Create<Ipv4Route> ();
+    rtentry->SetDestination(dest);
+    rtentry->SetGateway(dest);
+    rtentry->SetOutputDevice(device);
+    return rtentry;
+  }
+  return rtentry;
+}
+
+// Call this when all options to find an open O port has failed, so we can make smarter decissions
+Ptr<Ipv4Route>
+Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev)
+{
+  NS_LOG_FUNCTION_NOARGS();
+  // This is just a result of sending from this node, not a routing issue
+  if (idev == 0) {
+    return 0;
+  }
+  Ipv4Address address = header.GetDestination();
+  uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
+  Ptr<Ipv4Route> rtentry = 0;
+  switch (m_stateMachines[address][iif]) {
+    case Input: {
+      AdvanceStateMachine(address, iif, NoPath);
+      rtentry = Create<Ipv4Route> ();
+      rtentry->SetDestination (address);
+      rtentry->SetGateway(header.GetSource());
+      rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+      NS_LOG_LOGIC("Bouncing packet because input didn't find path");
+      break;
+    }
+    case Output: {
+      NS_ASSERT(false); // We have already advanced state machine for receives at this point, we cannot really
+      // be in output and receive a packet
+      break;
+    }
+    case ReverseOutput: {
+      if (!m_inputInterfaces.empty()) { // At this point we know there are no O, so let's try setting all I to RI, and routing that way
+        NS_LOG_LOGIC("Setting all I interfaces to RI");
+        while (!m_inputInterfaces[address].empty()) {
+          uint32_t iface = m_inputInterfaces[address].front();
+          m_inputInterfaces[address].pop_front();
+          m_stateMachines[address][iface] = ReverseInput;
+          m_reverseInputInterfaces[address].push_back(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI");
+        }
+        rtentry = TryRouteThroughInterfaces(m_reverseInputInterfaces, address);
+        if (rtentry != 0) {
+          NS_LOG_LOGIC("Sending along RI");
+          break;
+        }
+      }
+      
+      NS_LOG_LOGIC("Setting all RO interfaces to O");
+      // OK, no O ports, no RI ports, we are in the only RO state
+      while (!m_reverseOutputInterfaces[address].empty()) {
+        uint32_t iface = m_reverseOutputInterfaces[address].front();
+        m_reverseOutputInterfaces[address].pop_front();
+        m_stateMachines[address][iface] = Output;
+        m_outputInterfaces[address].push_back(iface);
+        NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to O");
+      }
+      // Bounce packet back to sender
+      rtentry = Create<Ipv4Route> ();
+      rtentry->SetDestination (address);
+      rtentry->SetGateway(header.GetSource());
+      rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+      NS_LOG_LOGIC("Bouncing packet because RO logic changed to O");
+      break;
+    }
+    case ReverseInput: {
+      NS_ASSERT(false); // Must have made it to at least RI'
+      break;
+    }
+    case NewInput: {
+      AdvanceStateMachine(address, iif, Send);
+      // Already tried O, let's try RI
+      rtentry = TryRouteThroughInterfaces(m_reverseInputInterfaces, address);
+      if (rtentry != 0) {
+        NS_LOG_LOGIC("Sending along an RI path");
+        break;
+      }
+      if (!m_reverseOutputInterfaces[address].empty()) {
+        // Make all RO ports O ports
+        // send to one of them
+        while (!m_reverseOutputInterfaces[address].empty()) {
+          uint32_t iface = m_reverseOutputInterfaces[address].front();
+          m_reverseOutputInterfaces[address].pop_front();
+          m_stateMachines[address][iface] = Output;
+          m_outputInterfaces[address].push_back(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to O");
+        }
+        rtentry = TryRouteThroughInterfaces(m_outputInterfaces, address);
+        if (rtentry != 0) {
+           NS_LOG_LOGIC("Sending along O");
+           break;
+        }
+      }
+      // Set all I -> RI, bounce back
+      NS_LOG_LOGIC("Setting all I interfaces to RI");
+      while (!m_inputInterfaces[address].empty()) {
+        uint32_t iface = m_inputInterfaces[address].front();
+        m_inputInterfaces[address].pop_front();
+        m_stateMachines[address][iface] = ReverseInput;
+        m_reverseInputInterfaces[address].push_back(iface);
+        NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI");
+      }
+      NS_ASSERT(m_stateMachines[address][iif] == ReverseInput);
+      // Bounce packet back to sender
+      rtentry = Create<Ipv4Route> ();
+      rtentry->SetDestination (address);
+      rtentry->SetGateway(header.GetSource());
+      rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+      NS_LOG_LOGIC("Bouncing packet due to lack of paths for new I");
+      break;
+    }
+    case ReverseInputPrimed: {
+      NS_ASSERT(false); // We should never ever get here, LookupGlobal already bounced the packet
+      break;
+    }
+    default:
+      NS_ASSERT(false);
+  }
+  AdvanceStateMachine(address, iif, Send);
+  return rtentry;
+}
+
+Ptr<Ipv4Route>
 Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev)
 {
+  Ipv4RoutingTableEntry* route;
   Ipv4Address dest = header.GetDestination();
   uint32_t iif = 0;
   Ptr<Ipv4Route> rtentry = 0;
@@ -369,21 +555,14 @@ Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, P
             allRoutes.erase(allRoutes.begin() + selectIndex);
         }
       }
-      Ipv4RoutingTableEntry* route;
       if (allRoutes.empty()) {
-        if (idev != 0) {
-          AdvanceStateMachine(dest, iif, NoPath);
-          rtentry = Create<Ipv4Route> ();
-          rtentry->SetDestination (dest);
-          rtentry->SetGateway(header.GetSource());
-          rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
-          NS_LOG_LOGIC("Bouncing packet");
-          return rtentry;
-        }
         // Couldn't find an output port,
-        return 0;
+        return RouteThroughDdc(header, oif, idev);
       }
       else {
+        if (idev != 0) {
+          AdvanceStateMachine(dest, iif, Send);
+        }
         route = allRoutes.at (selectIndex);
         // create a Ipv4Route object from the selected routing table entry
         rtentry = Create<Ipv4Route> ();
@@ -623,14 +802,13 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Net
 }
 
 bool 
-Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const NetDevice> idev,                             UnicastForwardCallback ucb, MulticastForwardCallback mcb,
+Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const NetDevice> idev, UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                                 LocalDeliverCallback lcb, ErrorCallback ecb)
 { 
   NS_LOG_FUNCTION (this << p << header << header.GetSource () << header.GetDestination () << idev);
   // Check if input device supports IP
   NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
   uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
-
   if (header.GetDestination ().IsMulticast ())
     {
       NS_LOG_LOGIC ("Multicast destination-- returning false");
