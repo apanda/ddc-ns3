@@ -257,6 +257,11 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           break;
         case Receive:
           break;
+        case DetectFailure:
+          m_stateMachines[address][iface] = Dead;
+          m_inputInterfaces[address].remove(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
+          break;
         default:
           NS_ASSERT(false);
       }
@@ -270,6 +275,11 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_reverseOutputInterfaces[address].push_back(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RO");
           break;
+        case DetectFailure:
+          m_stateMachines[address][iface] = Dead;
+          m_outputInterfaces[address].remove(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
+          break;
         case NoPath:
           NS_ASSERT(false);
       }
@@ -282,6 +292,11 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_reverseInputInterfaces[address].remove(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI'");
           break;
+        case DetectFailure:
+          m_stateMachines[address][iface] = Dead;
+          m_reverseInputInterfaces[address].remove(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
+          break;
         case NoPath: 
           NS_ASSERT(false);
       }
@@ -293,6 +308,10 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_stateMachines[address][iface] = ReverseInput;
           m_inputInterfaces[address].push_back(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to I from RI'");
+          break;
+        case DetectFailure:
+          m_stateMachines[address][iface] = Dead;
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
           break;
         case NoPath:
           NS_ASSERT(false);
@@ -308,7 +327,21 @@ Ptr<Ipv4Route>
 Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev)
 {
   Ipv4Address dest = header.GetDestination();
+  uint32_t iif = 0;
   Ptr<Ipv4Route> rtentry = 0;
+  if (idev != 0) {
+    iif = m_ipv4->GetInterfaceForDevice (idev);
+    // We run state machine on receive before getting here, hence we shouldn't get here
+    // with RI ever. This is however a soft dependency at them moment
+    NS_ASSERT(m_stateMachines[dest][iif] != ReverseInput);
+    if (m_stateMachines[dest][iif] == ReverseInputPrimed) {
+      rtentry = Create<Ipv4Route> ();
+      rtentry->SetDestination (dest);
+      rtentry->SetGateway(header.GetSource());
+      rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+      NS_LOG_LOGIC("Bouncing packet");
+    }
+  }
   Ipv4GlobalRouting::RouteVec_t allRoutes = FindEqualCostPaths(dest, oif);
   if (allRoutes.size () > 0 ) // if route(s) is found
     {
@@ -331,13 +364,14 @@ Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, P
             break;
         }
         else {
+            // Remove the interface as a valid output interface, it is clearly down
+            AdvanceStateMachine(dest, interface, DetectFailure);
             allRoutes.erase(allRoutes.begin() + selectIndex);
         }
       }
       Ipv4RoutingTableEntry* route;
       if (allRoutes.empty()) {
         if (idev != 0) {
-          uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
           AdvanceStateMachine(dest, iif, NoPath);
           rtentry = Create<Ipv4Route> ();
           rtentry->SetDestination (dest);

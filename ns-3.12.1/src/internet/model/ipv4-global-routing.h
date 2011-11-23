@@ -235,13 +235,15 @@ private:
     ReverseInput,
     ReverseInputPrimed,
     Output,
-    ReverseOutput
+    ReverseOutput,
+    Dead = 0xffff
   };
 
   enum DdcAction
   {
     Receive,
-    NoPath
+    NoPath,
+    DetectFailure
   };
 
   void AdvanceStateMachine(Ipv4Address dest, uint32_t iface, DdcAction action);
