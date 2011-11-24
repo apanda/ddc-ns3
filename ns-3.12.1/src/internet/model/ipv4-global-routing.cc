@@ -26,9 +26,12 @@
 #include "ns3/net-device.h"
 #include "ns3/ipv4-route.h"
 #include "ns3/ipv4-routing-table-entry.h"
+#include "ns3/channel.h"
+#include "ns3/node.h"
 #include "ns3/boolean.h"
 #include "ipv4-global-routing.h"
 #include "global-route-manager.h"
+#include "global-router-interface.h"
 
 NS_LOG_COMPONENT_DEFINE ("Ipv4GlobalRouting");
 
@@ -66,6 +69,100 @@ Ipv4GlobalRouting::~Ipv4GlobalRouting ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
+void 
+Ipv4GlobalRouting::SetDistance (Ipv4Address address, 
+                                uint32_t distance)
+{
+  m_distances[address] = distance;
+}
+
+uint32_t
+Ipv4GlobalRouting::GetDistance (Ipv4Address address)
+{
+  return m_distances[address];
+}
+
+void
+Ipv4GlobalRouting::SetIfaceToOutput(Ipv4Address address, Ptr<const NetDevice> device)
+{
+  uint32_t iif = m_ipv4->GetInterfaceForDevice(device);
+  if (m_stateMachines[address][iif] != None) {
+    return;
+  }
+  m_outputInterfaces[address].push_back(iif);
+  m_stateMachines[address][iif] = Output;
+  NS_LOG_INFO ("Setting state for " << address << " interface " << iif << " to output");
+}
+
+void
+Ipv4GlobalRouting::SetIfaceToInput(Ipv4Address address, Ptr<const NetDevice> device)
+{
+  uint32_t iif = m_ipv4->GetInterfaceForDevice(device);
+  if (m_stateMachines[address][iif] != None) {
+    return;
+  }
+  m_inputInterfaces[address].push_back(iif);
+  m_stateMachines[address][iif] = Input;
+  NS_LOG_INFO ("Setting state for " << address << " interface " << iif << " to input");
+}
+
+void 
+Ipv4GlobalRouting::ClassifyInterfaces()
+{
+  std::vector<Ipv4Address> addresses;
+  // First find all addresses
+  for (DistanceMetricI it = m_distances.begin(); it != m_distances.end(); it++) {
+    addresses.push_back(it->first);
+    NS_LOG_INFO("Found address " << it->first);
+  }
+  for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
+    Ptr<NetDevice> dev = m_ipv4->GetNetDevice(i);
+    if (! dev->IsPointToPoint()) {
+      continue;
+    }
+    NS_ASSERT(dev != 0);
+    Ptr<Channel> channel = dev->GetChannel();
+    NS_ASSERT(channel != 0);
+    Ptr<NetDevice> other = 0;
+    
+    if (channel->GetDevice(0) == dev) {
+      other = channel->GetDevice(1);
+    }
+    else {
+      other = channel->GetDevice(0);
+    }
+    NS_ASSERT(other != 0);
+
+    Ptr<Node> us = dev->GetNode();
+    Ptr<Node> them = other->GetNode();
+    Ptr<Ipv4GlobalRouting> otherIpv4 = them->GetObject<GlobalRouter>()->GetRoutingProtocol();
+    NS_ASSERT(otherIpv4 != 0);
+    for (std::vector<Ipv4Address>::iterator it = addresses.begin();
+              it != addresses.end();
+              it++) {
+      if (m_stateMachines[*it][i] != None) {
+        continue;
+      }
+      uint32_t distance = GetDistance(*it);
+      uint32_t otherDistance = otherIpv4->GetDistance(*it);
+      if (distance < otherDistance) {
+        SetIfaceToInput(*it, dev);
+      }
+      else if (distance > otherDistance) {
+        SetIfaceToOutput(*it, dev);
+      }
+      else {
+        if (us->GetId() < them->GetId()) {
+          SetIfaceToInput(*it, dev);
+        }
+        else {
+          NS_ASSERT(us->GetId() > them->GetId());
+          SetIfaceToOutput(*it, dev);
+        }
+      }
+    }
+  }
+}
 
 void 
 Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest, 
@@ -79,11 +176,9 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   if (m_stateMachines.find(dest) == m_stateMachines.end()) {
     m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
-      m_stateMachines[dest][i] = Input;
-      m_inputInterfaces[dest].push_back(i);
+      m_stateMachines[dest][i] = None;
     }
   }
-  m_inputInterfaces[dest].remove(interface);
   m_outputInterfaces[dest].push_back(interface);
   m_stateMachines[dest][interface] = Output;
   NS_LOG_INFO ("Setting state for " << dest << " interface " << interface << " to output");
@@ -101,11 +196,9 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   if (m_stateMachines.find(dest) == m_stateMachines.end()) {
     m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
-      m_stateMachines[dest][i] = Input;
-      m_inputInterfaces[dest].push_back(i);
+      m_stateMachines[dest][i] = None;
     }
   }
-  m_inputInterfaces[dest].remove(interface);
   m_outputInterfaces[dest].push_back(interface);
   m_stateMachines[dest][interface] = Output;
   NS_LOG_INFO ("Setting state for " << dest << " interface " << interface << " to output");
@@ -397,6 +490,7 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
   NS_LOG_FUNCTION_NOARGS();
   // This is just a result of sending from this node, not a routing issue
   if (idev == 0) {
+    NS_LOG_INFO("Returning since there is no interface");
     return 0;
   }
   Ipv4Address address = header.GetDestination();
@@ -529,55 +623,48 @@ Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, P
     }
   }
   Ipv4GlobalRouting::RouteVec_t allRoutes = FindEqualCostPaths(dest, oif);
-  if (allRoutes.size () > 0 ) // if route(s) is found
-    {
-      // pick up one of the routes uniformly at random if random
-      // ECMP routing is enabled, or always select the first route
-      // consistently if random ECMP routing is disabled
-      uint32_t selectIndex;
-      while (!allRoutes.empty()) {
-        if (m_randomEcmpRouting)
-          {
-            selectIndex = m_rand.GetInteger (0, allRoutes.size ()-1);
-          }
-        else 
-          {
-            selectIndex = 0;
-          }
-        uint32_t interface = allRoutes.at (selectIndex)->GetInterface();
-        Ptr<NetDevice> device = m_ipv4->GetNetDevice (interface);
-        if (device->IsLinkUp()) {
-            break;
+    // pick up one of the routes uniformly at random if random
+    // ECMP routing is enabled, or always select the first route
+    // consistently if random ECMP routing is disabled
+    uint32_t selectIndex;
+    while (!allRoutes.empty()) {
+      if (m_randomEcmpRouting)
+        {
+          selectIndex = m_rand.GetInteger (0, allRoutes.size ()-1);
         }
-        else {
-            // Remove the interface as a valid output interface, it is clearly down
-            AdvanceStateMachine(dest, interface, DetectFailure);
-            allRoutes.erase(allRoutes.begin() + selectIndex);
+      else 
+        {
+          selectIndex = 0;
         }
-      }
-      if (allRoutes.empty()) {
-        // Couldn't find an output port,
-        return RouteThroughDdc(header, oif, idev);
+      uint32_t interface = allRoutes.at (selectIndex)->GetInterface();
+      Ptr<NetDevice> device = m_ipv4->GetNetDevice (interface);
+      if (device->IsLinkUp()) {
+          break;
       }
       else {
-        if (idev != 0) {
-          AdvanceStateMachine(dest, iif, Send);
-        }
-        route = allRoutes.at (selectIndex);
-        // create a Ipv4Route object from the selected routing table entry
-        rtentry = Create<Ipv4Route> ();
-        rtentry->SetDestination (route->GetDest ());
-        // XXX handle multi-address case
-        rtentry->SetSource (m_ipv4->GetAddress (route->GetInterface (), 0).GetLocal ());
-        rtentry->SetGateway (route->GetGateway ());
-        uint32_t interfaceIdx = route->GetInterface ();
-        rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
-        return rtentry;
+          // Remove the interface as a valid output interface, it is clearly down
+          AdvanceStateMachine(dest, interface, DetectFailure);
+          allRoutes.erase(allRoutes.begin() + selectIndex);
       }
     }
-  else 
-    {
-      return 0;
+    if (allRoutes.empty()) {
+      // Couldn't find an output port,
+      return RouteThroughDdc(header, oif, idev);
+    }
+    else {
+      if (idev != 0) {
+        AdvanceStateMachine(dest, iif, Send);
+      }
+      route = allRoutes.at (selectIndex);
+      // create a Ipv4Route object from the selected routing table entry
+      rtentry = Create<Ipv4Route> ();
+      rtentry->SetDestination (route->GetDest ());
+      // XXX handle multi-address case
+      rtentry->SetSource (m_ipv4->GetAddress (route->GetInterface (), 0).GetLocal ());
+      rtentry->SetGateway (route->GetGateway ());
+      uint32_t interfaceIdx = route->GetInterface ();
+      rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
+      return rtentry;
     }
 }
 

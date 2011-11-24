@@ -100,7 +100,7 @@ main (int argc, char *argv[])
 
   ApplicationContainer serverApps = echoServer.Install (nodes);
   serverApps.Start (Seconds (1.0));
-  serverApps.Stop (Seconds (10.0));
+  serverApps.Stop (Seconds (60.0));
 
   UdpEchoClientHelper echoClient (nodes.Get(4)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
                                     9);

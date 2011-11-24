@@ -218,6 +218,16 @@ public:
 
   RouteVec_t FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif = 0); 
 
+  void SetDistance(Ipv4Address address, uint32_t distance);
+  
+  uint32_t GetDistance(Ipv4Address address);
+
+  void SetIfaceToOutput (Ipv4Address address, Ptr<const NetDevice> device);
+
+  void SetIfaceToInput (Ipv4Address address, Ptr<const NetDevice> device);
+
+  void ClassifyInterfaces();
+
 protected:
   void DoDispose (void);
 
@@ -231,6 +241,7 @@ private:
 
   enum DdcState
   {
+    None,
     Input,
     ReverseInput,
     ReverseInputPrimed,
@@ -261,18 +272,19 @@ private:
   typedef std::list<Ipv4RoutingTableEntry *>::iterator ASExternalRoutesI;
   typedef sgi::hash_map<Ipv4Address, std::list<uint32_t>, Ipv4AddressHash> Interfaces;
   typedef sgi::hash_map<Ipv4Address, std::vector<DdcState>, Ipv4AddressHash> StateMachines;
-  typedef sgi::hash_map<Ipv4Address, HostRoutes> DdcRoutes;
+  typedef sgi::hash_map<Ipv4Address, uint32_t, Ipv4AddressHash> DistanceMetric;
+  typedef sgi::hash_map<Ipv4Address, uint32_t, Ipv4AddressHash>::iterator DistanceMetricI;
   
   Interfaces m_inputInterfaces;
   Interfaces m_reverseInputInterfaces;
   Interfaces m_outputInterfaces;
   Interfaces m_reverseOutputInterfaces;
   StateMachines m_stateMachines;
+  DistanceMetric m_distances;
 
   Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);
   Ptr<Ipv4Route> TryRouteThroughInterfaces (Interfaces interfaces, Ipv4Address address);
 
-  DdcRoutes m_ddcRoutes;
   HostRoutes m_hostRoutes;
   NetworkRoutes m_networkRoutes;
   ASExternalRoutes m_ASexternalRoutes; // External routes imported

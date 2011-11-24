@@ -1,43 +1,45 @@
 Waf: Entering directory `/home/apanda/code/ns-allinone-3.12.1/ns-3.12.1/build'
+[1247/1374] cxx: examples/apanda/test.cc -> build/debug/examples/apanda/test_1.o
+[1310/1374] cxx_link: build/debug/examples/apanda/test_1.o -> build/debug/examples/apanda/test
 Waf: Leaving directory `/home/apanda/code/ns-allinone-3.12.1/ns-3.12.1/build'
-'build' finished successfully (1.148s)
+'build' finished successfully (4.584s)
 Creating nodes
 -1 Creating point to point connections
 -1 Ipv4GlobalRouting:Ipv4GlobalRouting()
--1 Ipv4GlobalRouting:SetIpv4(0x20c2220, 0x20c1a20)
+-1 Ipv4GlobalRouting:SetIpv4(0x724220, 0x723a20)
 -1 Ipv4GlobalRouting:Ipv4GlobalRouting()
--1 Ipv4GlobalRouting:SetIpv4(0x20c5b70, 0x20c5310)
+-1 Ipv4GlobalRouting:SetIpv4(0x727b70, 0x727310)
 -1 Ipv4GlobalRouting:Ipv4GlobalRouting()
--1 Ipv4GlobalRouting:SetIpv4(0x20c9300, 0x20c8ab0)
+-1 Ipv4GlobalRouting:SetIpv4(0x72b300, 0x72aab0)
 -1 Ipv4GlobalRouting:Ipv4GlobalRouting()
--1 Ipv4GlobalRouting:SetIpv4(0x20cca90, 0x20cc240)
+-1 Ipv4GlobalRouting:SetIpv4(0x72ea90, 0x72e240)
 -1 Ipv4GlobalRouting:Ipv4GlobalRouting()
--1 Ipv4GlobalRouting:SetIpv4(0x20d0230, 0x20cf9d0)
+-1 Ipv4GlobalRouting:SetIpv4(0x732230, 0x7319d0)
 -1 Assigning address
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20c2220, 1, m_local=10.1.1.1; m_mask=255.255.255.0; m_broadcast=10.1.1.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20c2220, 1)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20c5b70, 1, m_local=10.1.1.2; m_mask=255.255.255.0; m_broadcast=10.1.1.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20c5b70, 1)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20c2220, 2, m_local=10.1.2.1; m_mask=255.255.255.0; m_broadcast=10.1.2.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20c2220, 2)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20c9300, 1, m_local=10.1.2.2; m_mask=255.255.255.0; m_broadcast=10.1.2.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20c9300, 1)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20c5b70, 2, m_local=10.1.3.1; m_mask=255.255.255.0; m_broadcast=10.1.3.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20c5b70, 2)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20cca90, 1, m_local=10.1.3.2; m_mask=255.255.255.0; m_broadcast=10.1.3.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20cca90, 1)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20c9300, 2, m_local=10.1.4.1; m_mask=255.255.255.0; m_broadcast=10.1.4.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20c9300, 2)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20cca90, 2, m_local=10.1.4.2; m_mask=255.255.255.0; m_broadcast=10.1.4.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20cca90, 2)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20c9300, 3, m_local=10.1.5.1; m_mask=255.255.255.0; m_broadcast=10.1.5.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20c9300, 3)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20d0230, 1, m_local=10.1.5.2; m_mask=255.255.255.0; m_broadcast=10.1.5.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20d0230, 1)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20cca90, 3, m_local=10.1.6.1; m_mask=255.255.255.0; m_broadcast=10.1.6.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20cca90, 3)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x20d0230, 2, m_local=10.1.6.2; m_mask=255.255.255.0; m_broadcast=10.1.6.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x20d0230, 2)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x724220, 1, m_local=10.1.1.1; m_mask=255.255.255.0; m_broadcast=10.1.1.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x724220, 1)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x727b70, 1, m_local=10.1.1.2; m_mask=255.255.255.0; m_broadcast=10.1.1.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x727b70, 1)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x724220, 2, m_local=10.1.2.1; m_mask=255.255.255.0; m_broadcast=10.1.2.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x724220, 2)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x72b300, 1, m_local=10.1.2.2; m_mask=255.255.255.0; m_broadcast=10.1.2.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72b300, 1)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x727b70, 2, m_local=10.1.3.1; m_mask=255.255.255.0; m_broadcast=10.1.3.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x727b70, 2)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x72ea90, 1, m_local=10.1.3.2; m_mask=255.255.255.0; m_broadcast=10.1.3.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72ea90, 1)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x72b300, 2, m_local=10.1.4.1; m_mask=255.255.255.0; m_broadcast=10.1.4.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72b300, 2)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x72ea90, 2, m_local=10.1.4.2; m_mask=255.255.255.0; m_broadcast=10.1.4.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72ea90, 2)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x72b300, 3, m_local=10.1.5.1; m_mask=255.255.255.0; m_broadcast=10.1.5.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72b300, 3)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x732230, 1, m_local=10.1.5.2; m_mask=255.255.255.0; m_broadcast=10.1.5.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x732230, 1)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x72ea90, 3, m_local=10.1.6.1; m_mask=255.255.255.0; m_broadcast=10.1.6.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72ea90, 3)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x732230, 2, m_local=10.1.6.2; m_mask=255.255.255.0; m_broadcast=10.1.6.255; m_scope=2; m_secondary=0)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x732230, 2)
 -1 Ipv4GlobalRouting:AddHostRouteTo(10.1.1.2, 10.1.1.2, 1)
 -1 Ipv4GlobalRouting:AddHostRouteTo(): Setting state for 10.1.1.2 interface 1 to output
 -1 Ipv4GlobalRouting:AddHostRouteTo(10.1.3.1, 10.1.1.2, 1)
@@ -236,6 +238,110 @@ Creating nodes
 -1 Ipv4GlobalRouting:AddNetworkRouteTo(10.1.1.0, 255.255.255.0, 10.1.6.1, 2)
 -1 Ipv4GlobalRouting:AddNetworkRouteTo(10.1.3.0, 255.255.255.0, 10.1.6.1, 2)
 -1 Ipv4GlobalRouting:AddNetworkRouteTo(127.0.0.0, 255.0.0.0, 10.1.6.1, 2)
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.5.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.5.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.2.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.6.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.6.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.3.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.3.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.4.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.4.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.1.2
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.5.1 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.5.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.2.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.6.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.4.1 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.3.1 interface 2 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.1.2 interface 2 to input
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.5.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.5.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.2.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.2.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.6.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.6.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.3.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.4.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.4.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.1.1
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.5.2 interface 1 to output
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.6.1 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.6.2 interface 1 to output
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.3.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.4.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.2.1 interface 2 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.1.1 interface 2 to input
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.5.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.2.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.6.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.6.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.3.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.3.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.4.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.1.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.1.2
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.5.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.6.1 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.6.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.3.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.4.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.5.2 interface 2 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.2.1 interface 2 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.6.2 interface 2 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.1.1 interface 2 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.2.1 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.6.1 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.3.1 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.3.2 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.4.2 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.1.1 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.1.2 interface 3 to input
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.5.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.5.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.2.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.2.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.6.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.3.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.4.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.1.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.1.2
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.5.1 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.5.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.2.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.6.2 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.4.1 interface 1 to input
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.5.2 interface 2 to output
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.6.2 interface 2 to output
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.3.1 interface 2 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.1.2 interface 2 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.5.1 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.2.1 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.2.2 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.3.1 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.4.1 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.1.1 interface 3 to input
+-1 Ipv4GlobalRouting:SetIfaceToInput(): Setting state for 10.1.1.2 interface 3 to input
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.5.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.2.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.2.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.6.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.3.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.3.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.4.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.4.2
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.1.1
+-1 Ipv4GlobalRouting:ClassifyInterfaces(): Found address 10.1.1.2
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.6.1 interface 1 to output
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.3.1 interface 1 to output
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.3.2 interface 1 to output
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.4.2 interface 1 to output
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.1.2 interface 1 to output
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.5.1 interface 2 to output
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.2.1 interface 2 to output
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.2.2 interface 2 to output
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.4.1 interface 2 to output
+-1 Ipv4GlobalRouting:SetIfaceToOutput(): Setting state for 10.1.1.1 interface 2 to output
 -1 UdpEchoServerApplication:UdpEchoServer()
 -1 UdpEchoServerApplication:UdpEchoServer()
 -1 UdpEchoServerApplication:UdpEchoServer()
@@ -546,149 +652,90 @@ Creating nodes
 0 Ipv4GlobalRouting:FindEqualCostPaths()
 0 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
 0 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
-0 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20d6740
+0 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x738520
 0 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
 0 Sent 1024 bytes to 10.1.5.2
-0 UdpEchoClientApplication:ScheduleTransmit()
-2 Ipv4GlobalRouting:RouteInput(0x20c9300, 0x20df9d0, tos 0x0 ttl 64 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x20bdec0)
+2 Ipv4GlobalRouting:RouteInput(0x72b300, 0x741670, tos 0x0 ttl 64 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x71fec0)
 2 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
 2 Ipv4GlobalRouting:RouteInput(): Address 10.1.2.2 not a match
 2 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.1 not a match
 2 Ipv4GlobalRouting:RouteInput(): Address 10.1.5.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): node = 10.1.2.2state machine = 0 dev = 1 dest = 10.1.5.2
+2 Ipv4GlobalRouting:RouteInput(): node = 10.1.2.2state machine = 1 dev = 1 dest = 10.1.5.2
 2 Ipv4GlobalRouting:AdvanceStateMachine()
 2 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
 2 Ipv4GlobalRouting:FindEqualCostPaths()
 2 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
 2 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20d87f0
+2 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x73a040
 2 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
 2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
-4 Received 1024 bytes from 10.1.2.1
-4 Echoing packet
-4 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
-4 Ipv4GlobalRouting:FindEqualCostPaths()
-4 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.2.1
-4 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 10
-4 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20dacd0
-4 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 1 interfaces  and an additional 0 RI interfaces
-2 Ipv4GlobalRouting:RouteInput(0x20c9300, 0x20e00b0, tos 0x0 ttl 64 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.5.2 > 10.1.2.1, 10.1.5.2, 10.1.2.1, 0x20c0100)
-2 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.2.2 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.5.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): node = 10.1.5.1state machine = 0 dev = 3 dest = 10.1.2.1
+2 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 3 for address 10.1.5.2 to dead
+2 Ipv4GlobalRouting:RouteThroughDdc()
 2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
-2 Ipv4GlobalRouting:FindEqualCostPaths()
-2 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.2.1
-2 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20d8170
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 1 interfaces  and an additional 0 RI interfaces
+2 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 1 for address 10.1.5.2 to RI
+2 Ipv4GlobalRouting:RouteThroughDdc(): Bouncing packet because input didn't find path
 2 Ipv4GlobalRouting:AdvanceStateMachine()
 2 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
-0 UdpEchoClientApplication:Send()
-0 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+0 Ipv4GlobalRouting:RouteInput(0x724220, 0x741a70, tos 0x0 ttl 63 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x71fba0)
+0 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+0 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.1 not a match
+0 Ipv4GlobalRouting:RouteInput(): Address 10.1.2.1 not a match
+0 Ipv4GlobalRouting:RouteInput(): node = 10.1.2.1state machine = 5 dev = 2 dest = 10.1.5.2
+0 Ipv4GlobalRouting:AdvanceStateMachine()
+0 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 2 for address 10.1.5.2 to RO
+0 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
 0 Ipv4GlobalRouting:FindEqualCostPaths()
 0 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
 0 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
-0 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20d6740
-0 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
-0 Sent 1024 bytes to 10.1.5.2
-0 UdpEchoClientApplication:ScheduleTransmit()
-0 UdpEchoClientApplication:HandleRead(0x20dbca0, 0x20df520)
-0 Received 1024 bytes from 10.1.5.2
-2 Ipv4GlobalRouting:RouteInput(0x20c9300, 0x20e01b0, tos 0x0 ttl 64 id 1 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x20bdec0)
-2 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.2.2 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.5.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): node = 10.1.2.2state machine = 0 dev = 1 dest = 10.1.5.2
-2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
-2 Ipv4GlobalRouting:FindEqualCostPaths()
-2 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
-2 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20d87f0
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
-2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
+0 Ipv4GlobalRouting:RouteThroughDdc()
+0 Ipv4GlobalRouting:RouteThroughDdc(): Setting all I interfaces to RI
+0 Ipv4GlobalRouting:RouteThroughDdc(): Setting 1 for address 10.1.5.2 to RI
+0 Ipv4GlobalRouting:RouteThroughDdc(): Sending along RI
+0 Ipv4GlobalRouting:AdvanceStateMachine()
+0 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
+1 Ipv4GlobalRouting:RouteInput(0x727b70, 0x741a00, tos 0x0 ttl 62 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x71f1b0)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.1.2state machine = 5 dev = 1 dest = 10.1.5.2
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 1 for address 10.1.5.2 to RO
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x7394c0
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
+3 Ipv4GlobalRouting:RouteInput(0x72ea90, 0x741670, tos 0x0 ttl 61 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x720af0)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.2state machine = 1 dev = 1 dest = 10.1.5.2
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x73ae00
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
 4 Received 1024 bytes from 10.1.2.1
 4 Echoing packet
 4 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
 4 Ipv4GlobalRouting:FindEqualCostPaths()
 4 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.2.1
 4 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 10
-4 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20dacd0
-4 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 1 interfaces  and an additional 0 RI interfaces
-2 Ipv4GlobalRouting:RouteInput(0x20c9300, 0x20e00b0, tos 0x0 ttl 64 id 1 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.5.2 > 10.1.2.1, 10.1.5.2, 10.1.2.1, 0x20c0100)
-2 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.2.2 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.5.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): node = 10.1.5.1state machine = 0 dev = 3 dest = 10.1.2.1
-2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
-2 Ipv4GlobalRouting:FindEqualCostPaths()
-2 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.2.1
-2 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20d8170
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 1 interfaces  and an additional 0 RI interfaces
-2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
-0 UdpEchoClientApplication:Send()
-0 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
-0 Ipv4GlobalRouting:FindEqualCostPaths()
-0 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
-0 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
-0 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20d6740
-0 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
-0 Sent 1024 bytes to 10.1.5.2
-0 UdpEchoClientApplication:HandleRead(0x20dbca0, 0x20df520)
-0 Received 1024 bytes from 10.1.5.2
-2 Ipv4GlobalRouting:RouteInput(0x20c9300, 0x20df9d0, tos 0x0 ttl 64 id 2 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x20bdec0)
-2 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.2.2 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.5.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): node = 10.1.2.2state machine = 0 dev = 1 dest = 10.1.5.2
-2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
-2 Ipv4GlobalRouting:FindEqualCostPaths()
-2 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
-2 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20d87f0
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
-2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
-4 Received 1024 bytes from 10.1.2.1
-4 Echoing packet
-4 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
-4 Ipv4GlobalRouting:FindEqualCostPaths()
-4 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.2.1
-4 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 10
-4 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20dacd0
-4 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 1 interfaces  and an additional 0 RI interfaces
-2 Ipv4GlobalRouting:RouteInput(0x20c9300, 0x20e00b0, tos 0x0 ttl 64 id 2 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.5.2 > 10.1.2.1, 10.1.5.2, 10.1.2.1, 0x20c0100)
-2 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.2.2 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): Address 10.1.5.1 not a match
-2 Ipv4GlobalRouting:RouteInput(): node = 10.1.5.1state machine = 0 dev = 3 dest = 10.1.2.1
-2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
-2 Ipv4GlobalRouting:FindEqualCostPaths()
-2 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.2.1
-2 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x20d8170
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 1 interfaces  and an additional 0 RI interfaces
-2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
-0 UdpEchoClientApplication:HandleRead(0x20dbca0, 0x20df520)
-0 Received 1024 bytes from 10.1.5.2
-0 UdpEchoServerApplication:StopApplication()
+4 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x73bdc0
+4 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 2 interfaces  and an additional 0 RI interfaces
+4 Ipv4GlobalRouting:AdvanceStateMachine()
+4 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 1 for address 10.1.2.1 to dead
+4 Ipv4GlobalRouting:RouteThroughDdc()
 0 UdpEchoClientApplication:StopApplication()
+0 UdpEchoServerApplication:StopApplication()
 1 UdpEchoServerApplication:StopApplication()
 2 UdpEchoServerApplication:StopApplication()
 3 UdpEchoServerApplication:StopApplication()

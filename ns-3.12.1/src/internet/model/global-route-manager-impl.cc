@@ -715,6 +715,28 @@ GlobalRouteManagerImpl::InitializeRoutes ()
         }
     }
   NS_LOG_INFO ("Finished SPF calculation");
+  
+  for (NodeList::Iterator i = NodeList::Begin (); i != listEnd; i++)
+    {
+      Ptr<Node> node = *i;
+//
+// Look for the GlobalRouter interface that indicates that the node is
+// participating in routing.
+//
+      Ptr<GlobalRouter> rtr = 
+        node->GetObject<GlobalRouter> ();
+
+      // Ignore nodes that are not assigned to our systemId (distributed sim)
+      if (node->GetSystemId () != MpiInterface::GetSystemId ()) 
+        {
+          continue;
+        }
+      if (rtr) {
+        Ptr<Ipv4GlobalRouting> gr = rtr->GetRoutingProtocol();
+        gr->ClassifyInterfaces();
+        NS_LOG_LOGIC("Running classify interfaces\n");
+      }
+    }
 }
 
 //
@@ -1640,6 +1662,7 @@ GlobalRouteManagerImpl::SPFAddASExternal (GlobalRoutingLSA *extlsa, SPFVertex *v
                                 " using next hop " << nextHop <<
                                 " since outgoing interface id is negative");
                 }
+              // Get distance from root, set it in router
             }
           return;
         } // if
@@ -2048,6 +2071,7 @@ GlobalRouteManagerImpl::SPFIntraAddRouter (SPFVertex* v)
                                     " since outgoing interface id is negative " << outIf);
                     }
                 } // for all routes from the root the vertex 'v'
+                gr->SetDistance(lr->GetLinkData(), v->GetDistanceFromRoot()); 
             }
 //
 // Done adding the routes for the selected node.
