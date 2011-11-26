@@ -703,6 +703,7 @@ Ipv4L3Protocol::SendRealOut (Ptr<Ipv4Route> route,
                              Ipv4Header const &ipHeader)
 {
   NS_LOG_FUNCTION (this << packet << &ipHeader);
+  NS_LOG_LOGIC("Destination " << ipHeader.GetDestination());
 
   if (route == 0)
     {

@@ -1,45 +1,162 @@
 Waf: Entering directory `/home/apanda/code/ns-allinone-3.12.1/ns-3.12.1/build'
-[1247/1374] cxx: examples/apanda/test.cc -> build/debug/examples/apanda/test_1.o
-[1310/1374] cxx_link: build/debug/examples/apanda/test_1.o -> build/debug/examples/apanda/test
 Waf: Leaving directory `/home/apanda/code/ns-allinone-3.12.1/ns-3.12.1/build'
-'build' finished successfully (4.584s)
+'build' finished successfully (1.141s)
 Creating nodes
 -1 Creating point to point connections
+-1 Ipv4L3Protocol:Ipv4L3Protocol(0x12f49a0)
+-1 Ipv4L3Protocol:SetIpForward(0x12f49a0, 1)
+-1 Ipv4L3Protocol:SetupLoopback(0x12f49a0)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12f49a0, 0x12f4ae0)
 -1 Ipv4GlobalRouting:Ipv4GlobalRouting()
--1 Ipv4GlobalRouting:SetIpv4(0x724220, 0x723a20)
+-1 Ipv4L3Protocol:SetRoutingProtocol(0x12f49a0)
+-1 Ipv4GlobalRouting:SetIpv4(0x12f51a0, 0x12f49a0)
+-1 Ipv4L3Protocol:Ipv4L3Protocol(0x12f8290)
+-1 Ipv4L3Protocol:SetIpForward(0x12f8290, 1)
+-1 Ipv4L3Protocol:SetupLoopback(0x12f8290)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12f8290, 0x12f83d0)
 -1 Ipv4GlobalRouting:Ipv4GlobalRouting()
--1 Ipv4GlobalRouting:SetIpv4(0x727b70, 0x727310)
+-1 Ipv4L3Protocol:SetRoutingProtocol(0x12f8290)
+-1 Ipv4GlobalRouting:SetIpv4(0x12f8af0, 0x12f8290)
+-1 Ipv4L3Protocol:Ipv4L3Protocol(0x12fba30)
+-1 Ipv4L3Protocol:SetIpForward(0x12fba30, 1)
+-1 Ipv4L3Protocol:SetupLoopback(0x12fba30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12fba30, 0x12fbb70)
 -1 Ipv4GlobalRouting:Ipv4GlobalRouting()
--1 Ipv4GlobalRouting:SetIpv4(0x72b300, 0x72aab0)
+-1 Ipv4L3Protocol:SetRoutingProtocol(0x12fba30)
+-1 Ipv4GlobalRouting:SetIpv4(0x12fc280, 0x12fba30)
+-1 Ipv4L3Protocol:Ipv4L3Protocol(0x12ff1c0)
+-1 Ipv4L3Protocol:SetIpForward(0x12ff1c0, 1)
+-1 Ipv4L3Protocol:SetupLoopback(0x12ff1c0)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12ff1c0, 0x12ff300)
 -1 Ipv4GlobalRouting:Ipv4GlobalRouting()
--1 Ipv4GlobalRouting:SetIpv4(0x72ea90, 0x72e240)
+-1 Ipv4L3Protocol:SetRoutingProtocol(0x12ff1c0)
+-1 Ipv4GlobalRouting:SetIpv4(0x12ffa10, 0x12ff1c0)
+-1 Ipv4L3Protocol:Ipv4L3Protocol(0x1302950)
+-1 Ipv4L3Protocol:SetIpForward(0x1302950, 1)
+-1 Ipv4L3Protocol:SetupLoopback(0x1302950)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x1302950, 0x1302a90)
 -1 Ipv4GlobalRouting:Ipv4GlobalRouting()
--1 Ipv4GlobalRouting:SetIpv4(0x732230, 0x7319d0)
+-1 Ipv4L3Protocol:SetRoutingProtocol(0x1302950)
+-1 Ipv4GlobalRouting:SetIpv4(0x13031b0, 0x1302950)
 -1 Assigning address
--1 Ipv4GlobalRouting:NotifyAddAddress(0x724220, 1, m_local=10.1.1.1; m_mask=255.255.255.0; m_broadcast=10.1.1.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x724220, 1)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x727b70, 1, m_local=10.1.1.2; m_mask=255.255.255.0; m_broadcast=10.1.1.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x727b70, 1)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x724220, 2, m_local=10.1.2.1; m_mask=255.255.255.0; m_broadcast=10.1.2.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x724220, 2)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x72b300, 1, m_local=10.1.2.2; m_mask=255.255.255.0; m_broadcast=10.1.2.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72b300, 1)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x727b70, 2, m_local=10.1.3.1; m_mask=255.255.255.0; m_broadcast=10.1.3.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x727b70, 2)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x72ea90, 1, m_local=10.1.3.2; m_mask=255.255.255.0; m_broadcast=10.1.3.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72ea90, 1)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x72b300, 2, m_local=10.1.4.1; m_mask=255.255.255.0; m_broadcast=10.1.4.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72b300, 2)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x72ea90, 2, m_local=10.1.4.2; m_mask=255.255.255.0; m_broadcast=10.1.4.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72ea90, 2)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x72b300, 3, m_local=10.1.5.1; m_mask=255.255.255.0; m_broadcast=10.1.5.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72b300, 3)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x732230, 1, m_local=10.1.5.2; m_mask=255.255.255.0; m_broadcast=10.1.5.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x732230, 1)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x72ea90, 3, m_local=10.1.6.1; m_mask=255.255.255.0; m_broadcast=10.1.6.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x72ea90, 3)
--1 Ipv4GlobalRouting:NotifyAddAddress(0x732230, 2, m_local=10.1.6.2; m_mask=255.255.255.0; m_broadcast=10.1.6.255; m_scope=2; m_secondary=0)
--1 Ipv4GlobalRouting:NotifyInterfaceUp(0x732230, 2)
+-1 Ipv4L3Protocol:AddInterface(0x12f49a0, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12f49a0, 0x13060d0)
+-1 Ipv4L3Protocol:AddAddress(0x12f49a0, 1, m_local=10.1.1.1; m_mask=255.255.255.0; m_broadcast=10.1.1.255; m_scope=2; m_secondary=0,  for node: , 0)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x12f51a0, 1, m_local=10.1.1.1; m_mask=255.255.255.0; m_broadcast=10.1.1.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x12f49a0, 1, 1)
+-1 Ipv4L3Protocol:SetUp(0x12f49a0, 1)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x12f51a0, 1)
+-1 Ipv4L3Protocol:AddInterface(0x12f8290, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12f8290, 0x1306540)
+-1 Ipv4L3Protocol:AddAddress(0x12f8290, 1, m_local=10.1.1.2; m_mask=255.255.255.0; m_broadcast=10.1.1.255; m_scope=2; m_secondary=0,  for node: , 1)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x12f8af0, 1, m_local=10.1.1.2; m_mask=255.255.255.0; m_broadcast=10.1.1.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x12f8290, 1, 1)
+-1 Ipv4L3Protocol:SetUp(0x12f8290, 1)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x12f8af0, 1)
+-1 Ipv4L3Protocol:AddInterface(0x12f49a0, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12f49a0, 0x1306730)
+-1 Ipv4L3Protocol:AddAddress(0x12f49a0, 2, m_local=10.1.2.1; m_mask=255.255.255.0; m_broadcast=10.1.2.255; m_scope=2; m_secondary=0,  for node: , 0)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x12f51a0, 2, m_local=10.1.2.1; m_mask=255.255.255.0; m_broadcast=10.1.2.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x12f49a0, 2, 1)
+-1 Ipv4L3Protocol:SetUp(0x12f49a0, 2)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x12f51a0, 2)
+-1 Ipv4L3Protocol:AddInterface(0x12fba30, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12fba30, 0x1306840)
+-1 Ipv4L3Protocol:AddAddress(0x12fba30, 1, m_local=10.1.2.2; m_mask=255.255.255.0; m_broadcast=10.1.2.255; m_scope=2; m_secondary=0,  for node: , 2)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x12fc280, 1, m_local=10.1.2.2; m_mask=255.255.255.0; m_broadcast=10.1.2.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x12fba30, 1, 1)
+-1 Ipv4L3Protocol:SetUp(0x12fba30, 1)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x12fc280, 1)
+-1 Ipv4L3Protocol:AddInterface(0x12f8290, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12f8290, 0x1306a30)
+-1 Ipv4L3Protocol:AddAddress(0x12f8290, 2, m_local=10.1.3.1; m_mask=255.255.255.0; m_broadcast=10.1.3.255; m_scope=2; m_secondary=0,  for node: , 1)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x12f8af0, 2, m_local=10.1.3.1; m_mask=255.255.255.0; m_broadcast=10.1.3.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x12f8290, 2, 1)
+-1 Ipv4L3Protocol:SetUp(0x12f8290, 2)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x12f8af0, 2)
+-1 Ipv4L3Protocol:AddInterface(0x12ff1c0, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12ff1c0, 0x1306b40)
+-1 Ipv4L3Protocol:AddAddress(0x12ff1c0, 1, m_local=10.1.3.2; m_mask=255.255.255.0; m_broadcast=10.1.3.255; m_scope=2; m_secondary=0,  for node: , 3)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x12ffa10, 1, m_local=10.1.3.2; m_mask=255.255.255.0; m_broadcast=10.1.3.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x12ff1c0, 1, 1)
+-1 Ipv4L3Protocol:SetUp(0x12ff1c0, 1)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x12ffa10, 1)
+-1 Ipv4L3Protocol:AddInterface(0x12fba30, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12fba30, 0x1306d30)
+-1 Ipv4L3Protocol:AddAddress(0x12fba30, 2, m_local=10.1.4.1; m_mask=255.255.255.0; m_broadcast=10.1.4.255; m_scope=2; m_secondary=0,  for node: , 2)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x12fc280, 2, m_local=10.1.4.1; m_mask=255.255.255.0; m_broadcast=10.1.4.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x12fba30, 2, 1)
+-1 Ipv4L3Protocol:SetUp(0x12fba30, 2)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x12fc280, 2)
+-1 Ipv4L3Protocol:AddInterface(0x12ff1c0, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12ff1c0, 0x1306f10)
+-1 Ipv4L3Protocol:AddAddress(0x12ff1c0, 2, m_local=10.1.4.2; m_mask=255.255.255.0; m_broadcast=10.1.4.255; m_scope=2; m_secondary=0,  for node: , 3)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x12ffa10, 2, m_local=10.1.4.2; m_mask=255.255.255.0; m_broadcast=10.1.4.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x12ff1c0, 2, 1)
+-1 Ipv4L3Protocol:SetUp(0x12ff1c0, 2)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x12ffa10, 2)
+-1 Ipv4L3Protocol:AddInterface(0x12fba30, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12fba30, 0x1307060)
+-1 Ipv4L3Protocol:AddAddress(0x12fba30, 3, m_local=10.1.5.1; m_mask=255.255.255.0; m_broadcast=10.1.5.255; m_scope=2; m_secondary=0,  for node: , 2)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x12fc280, 3, m_local=10.1.5.1; m_mask=255.255.255.0; m_broadcast=10.1.5.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x12fba30, 3, 1)
+-1 Ipv4L3Protocol:SetUp(0x12fba30, 3)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x12fc280, 3)
+-1 Ipv4L3Protocol:AddInterface(0x1302950, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x1302950, 0x1307140)
+-1 Ipv4L3Protocol:AddAddress(0x1302950, 1, m_local=10.1.5.2; m_mask=255.255.255.0; m_broadcast=10.1.5.255; m_scope=2; m_secondary=0,  for node: , 4)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x13031b0, 1, m_local=10.1.5.2; m_mask=255.255.255.0; m_broadcast=10.1.5.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x1302950, 1, 1)
+-1 Ipv4L3Protocol:SetUp(0x1302950, 1)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x13031b0, 1)
+-1 Ipv4L3Protocol:AddInterface(0x12ff1c0, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x12ff1c0, 0x1307260)
+-1 Ipv4L3Protocol:AddAddress(0x12ff1c0, 3, m_local=10.1.6.1; m_mask=255.255.255.0; m_broadcast=10.1.6.255; m_scope=2; m_secondary=0,  for node: , 3)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x12ffa10, 3, m_local=10.1.6.1; m_mask=255.255.255.0; m_broadcast=10.1.6.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x12ff1c0, 3, 1)
+-1 Ipv4L3Protocol:SetUp(0x12ff1c0, 3)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x12ffa10, 3)
+-1 Ipv4L3Protocol:AddInterface(0x1302950, 0x7fff8b286b30)
+-1 Ipv4L3Protocol:AddIpv4Interface(0x1302950, 0x1307430)
+-1 Ipv4L3Protocol:AddAddress(0x1302950, 2, m_local=10.1.6.2; m_mask=255.255.255.0; m_broadcast=10.1.6.255; m_scope=2; m_secondary=0,  for node: , 4)
+-1 Ipv4GlobalRouting:NotifyAddAddress(0x13031b0, 2, m_local=10.1.6.2; m_mask=255.255.255.0; m_broadcast=10.1.6.255; m_scope=2; m_secondary=0)
+-1 Ipv4L3Protocol:SetMetric(0x1302950, 2, 1)
+-1 Ipv4L3Protocol:SetUp(0x1302950, 2)
+-1 Ipv4GlobalRouting:NotifyInterfaceUp(0x13031b0, 2)
+-1 Ipv4L3Protocol:IsForwarding(0x12f49a0, 1)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12f49a0, 2)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12f49a0, 0)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12f8290, 0)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12fba30, 1)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12fba30, 2)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12fba30, 3)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12fba30, 0)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 2)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 0)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x1302950, 1)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x1302950, 2)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+-1 Ipv4L3Protocol:IsForwarding(0x1302950, 0)
+-1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
 -1 Ipv4GlobalRouting:AddHostRouteTo(10.1.1.2, 10.1.1.2, 1)
 -1 Ipv4GlobalRouting:AddHostRouteTo(): Setting state for 10.1.1.2 interface 1 to output
 -1 Ipv4GlobalRouting:AddHostRouteTo(10.1.3.1, 10.1.1.2, 1)
@@ -652,21 +769,38 @@ Creating nodes
 0 Ipv4GlobalRouting:FindEqualCostPaths()
 0 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
 0 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
-0 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x738520
+0 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x13094a0
 0 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
+0 Ipv4L3Protocol:Send(0x12f49a0, 0x1312ce0, 10.1.2.1, 10.1.5.2, 17, 0x1312a60)
+0 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.1.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.2.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+0 Ipv4L3Protocol:BuildHeader(0x12f49a0, 10.1.2.1, 10.1.5.2, 17, 1032, 64, 1)
+0 Ipv4L3Protocol:SendRealOut(0x12f49a0, 0x1312d50, 0x7fff8b285940)
+0 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+0 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+0 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.2.2
 0 Sent 1024 bytes to 10.1.5.2
-2 Ipv4GlobalRouting:RouteInput(0x72b300, 0x741670, tos 0x0 ttl 64 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x71fec0)
+0 UdpEchoClientApplication:ScheduleTransmit()
+2 Ipv4L3Protocol:Receive(0x12fba30, 0x7fff8b286360, 0x1312d50, 2048, 02-06-00:00:00:00:00:03)
+2 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:03 received on node 2
+2 Ipv4L3Protocol:IsForwarding(0x12fba30, 1)
+2 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+2 Ipv4GlobalRouting:RouteInput(0x12fc280, 0x1312950, tos 0x0 ttl 64 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x12f0e40)
 2 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
 2 Ipv4GlobalRouting:RouteInput(): Address 10.1.2.2 not a match
 2 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.1 not a match
 2 Ipv4GlobalRouting:RouteInput(): Address 10.1.5.1 not a match
+2 Ipv4L3Protocol:IsForwarding(0x12fba30, 1)
+2 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
 2 Ipv4GlobalRouting:RouteInput(): node = 10.1.2.2state machine = 1 dev = 1 dest = 10.1.5.2
 2 Ipv4GlobalRouting:AdvanceStateMachine()
 2 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
 2 Ipv4GlobalRouting:FindEqualCostPaths()
 2 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
 2 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
-2 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x73a040
+2 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130afc0
 2 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
 2 Ipv4GlobalRouting:AdvanceStateMachine()
 2 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 3 for address 10.1.5.2 to dead
@@ -675,11 +809,23 @@ Creating nodes
 2 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 1 for address 10.1.5.2 to RI
 2 Ipv4GlobalRouting:RouteThroughDdc(): Bouncing packet because input didn't find path
 2 Ipv4GlobalRouting:AdvanceStateMachine()
-2 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
-0 Ipv4GlobalRouting:RouteInput(0x724220, 0x741a70, tos 0x0 ttl 63 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x71fba0)
+2 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+2 Ipv4L3Protocol:IpForward(0x12fba30, 0x12f1f00, 0x1312950, tos 0x0 ttl 64 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2)
+2 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 2
+2 Ipv4L3Protocol:SendRealOut(0x12fba30, 0x1312ce0, 0x7fff8b2853b0)
+2 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+2 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+2 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.2.1
+0 Ipv4L3Protocol:Receive(0x12f49a0, 0x7fff8b286360, 0x1312ce0, 2048, 02-06-00:00:00:00:00:04)
+0 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:04 received on node 0
+0 Ipv4L3Protocol:IsForwarding(0x12f49a0, 2)
+0 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+0 Ipv4GlobalRouting:RouteInput(0x12f51a0, 0x1312d50, tos 0x0 ttl 63 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x12f0b20)
 0 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
 0 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.1 not a match
 0 Ipv4GlobalRouting:RouteInput(): Address 10.1.2.1 not a match
+0 Ipv4L3Protocol:IsForwarding(0x12f49a0, 2)
+0 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
 0 Ipv4GlobalRouting:RouteInput(): node = 10.1.2.1state machine = 5 dev = 2 dest = 10.1.5.2
 0 Ipv4GlobalRouting:AdvanceStateMachine()
 0 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 2 for address 10.1.5.2 to RO
@@ -687,16 +833,29 @@ Creating nodes
 0 Ipv4GlobalRouting:FindEqualCostPaths()
 0 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
 0 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Skipping interface 0x13094a0 since state is 6
 0 Ipv4GlobalRouting:RouteThroughDdc()
 0 Ipv4GlobalRouting:RouteThroughDdc(): Setting all I interfaces to RI
 0 Ipv4GlobalRouting:RouteThroughDdc(): Setting 1 for address 10.1.5.2 to RI
 0 Ipv4GlobalRouting:RouteThroughDdc(): Sending along RI
 0 Ipv4GlobalRouting:AdvanceStateMachine()
-0 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
-1 Ipv4GlobalRouting:RouteInput(0x727b70, 0x741a00, tos 0x0 ttl 62 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x71f1b0)
+0 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+0 Ipv4L3Protocol:IpForward(0x12f49a0, 0x130b040, 0x1312d50, tos 0x0 ttl 63 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2)
+0 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 0
+0 Ipv4L3Protocol:SendRealOut(0x12f49a0, 0x1312950, 0x7fff8b2853b0)
+0 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+0 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+0 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.5.2
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x1312950, 2048, 02-06-00:00:00:00:00:01)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:01 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x1312ce0, tos 0x0 ttl 62 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x12f0130)
 1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
 1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
 1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
 1 Ipv4GlobalRouting:RouteInput(): node = 10.1.1.2state machine = 5 dev = 1 dest = 10.1.5.2
 1 Ipv4GlobalRouting:AdvanceStateMachine()
 1 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 1 for address 10.1.5.2 to RO
@@ -704,55 +863,971 @@ Creating nodes
 1 Ipv4GlobalRouting:FindEqualCostPaths()
 1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
 1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
-1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x7394c0
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130a440
 1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
 1 Ipv4GlobalRouting:AdvanceStateMachine()
-1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
-3 Ipv4GlobalRouting:RouteInput(0x72ea90, 0x741670, tos 0x0 ttl 61 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x720af0)
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x1312ab0, 0x1312ce0, tos 0x0 ttl 62 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x1312d50, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.2
+0 UdpEchoClientApplication:Send()
+0 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+0 Ipv4GlobalRouting:FindEqualCostPaths()
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Skipping interface 0x13094a0 since state is 6
+0 Ipv4GlobalRouting:RouteThroughDdc()
+0 Ipv4GlobalRouting:RouteThroughDdc(): Could not send message
+0 Ipv4GlobalRouting:RouteThroughDdc(): I interfaces 0
+0 Ipv4GlobalRouting:RouteThroughDdc(): RI interfaces 1
+0 Ipv4GlobalRouting:RouteThroughDdc(): O interfaces 0
+0 Ipv4GlobalRouting:RouteThroughDdc(): RO interfaces 1
+0 Ipv4GlobalRouting:RouteThroughDdc(): Total interfaces 3
+0 Ipv4GlobalRouting:RouteThroughDdc(): Sending along an RI path
+0 Ipv4L3Protocol:Send(0x12f49a0, 0x1312ce0, 10.1.1.1, 10.1.5.2, 17, 0x1312a10)
+0 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.1.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.2.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+0 Ipv4L3Protocol:BuildHeader(0x12f49a0, 10.1.1.1, 10.1.5.2, 17, 1032, 64, 1)
+0 Ipv4L3Protocol:SendRealOut(0x12f49a0, 0x1312ed0, 0x7fff8b285940)
+0 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+0 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+0 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.5.2
+0 Sent 1024 bytes to 10.1.5.2
+0 UdpEchoClientApplication:ScheduleTransmit()
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1312d50, 2048, 02-06-00:00:00:00:00:05)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:05 received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x1312950, tos 0x0 ttl 61 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2, 10.1.2.1, 10.1.5.2, 0x12f1a70)
 3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
 3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
 3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
 3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
 3 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.2state machine = 1 dev = 1 dest = 10.1.5.2
 3 Ipv4GlobalRouting:AdvanceStateMachine()
 3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
 3 Ipv4GlobalRouting:FindEqualCostPaths()
 3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
 3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
-3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x73ae00
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bd80
 3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 2 interfaces  and an additional 0 RI interfaces
 3 Ipv4GlobalRouting:AdvanceStateMachine()
-3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312a10, 0x1312950, tos 0x0 ttl 61 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.2.1 > 10.1.5.2)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x1312ce0, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 2 ipv4InterfaceIndex 3
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.6.2
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x1312ed0, 2048, 02-06-00:00:00:00:00:01)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:01 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x1312d50, tos 0x0 ttl 64 id 1 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2, 10.1.1.1, 10.1.5.2, 0x12f0130)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.1.2state machine = 6 dev = 1 dest = 10.1.5.2
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130a440
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x1312ab0, 0x1312d50, tos 0x0 ttl 64 id 1 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x1312950, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.2
+4 Ipv4L3Protocol:Receive(0x1302950, 0x7fff8b286360, 0x1312ce0, 2048, 02-06-00:00:00:00:00:0b)
+4 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0b received on node 4
+4 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.5.2 match) on another interface
+4 Ipv4L3Protocol:LocalDeliver(0x1302950, 0x1312ed0, 0x7fff8b285f10)
 4 Received 1024 bytes from 10.1.2.1
 4 Echoing packet
 4 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
 4 Ipv4GlobalRouting:FindEqualCostPaths()
 4 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.2.1
 4 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 10
-4 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x73bdc0
+4 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130cd40
 4 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 2 interfaces  and an additional 0 RI interfaces
 4 Ipv4GlobalRouting:AdvanceStateMachine()
 4 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 1 for address 10.1.2.1 to dead
 4 Ipv4GlobalRouting:RouteThroughDdc()
+4 Ipv4GlobalRouting:RouteThroughDdc(): Routing through an O port
+4 Ipv4L3Protocol:Send(0x1302950, 0x1312ce0, 10.1.6.2, 10.1.2.1, 17, 0x1312f80)
+4 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.5.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.6.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+4 Ipv4L3Protocol:BuildHeader(0x1302950, 10.1.6.2, 10.1.2.1, 17, 1032, 64, 1)
+4 Ipv4L3Protocol:SendRealOut(0x1302950, 0x1312d50, 0x7fff8b285550)
+4 Ipv4L3Protocol:SendRealOut(): Destination 10.1.2.1
+4 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+4 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.2.1
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1312950, 2048, 02-06-00:00:00:00:00:05)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:05 received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x13130e0, tos 0x0 ttl 63 id 1 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2, 10.1.1.1, 10.1.5.2, 0x12f1a70)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.2state machine = 1 dev = 1 dest = 10.1.5.2
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bd80
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312a10, 0x13130e0, tos 0x0 ttl 63 id 1 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x1313070, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 2 ipv4InterfaceIndex 3
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.6.2
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1312d50, 2048, 02-06-00:00:00:00:00:0c)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0c received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x1312950, tos 0x0 ttl 64 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.2.1, 10.1.6.2, 10.1.2.1, 0x12f3cb0)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.6.1state machine = 1 dev = 3 dest = 10.1.2.1
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.2.1
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130c140
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 2 Found global host route 0x130c220
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.2.1
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312a10, 0x1312950, tos 0x0 ttl 64 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.2.1)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x13130e0, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.2.1
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.1
+4 Ipv4L3Protocol:Receive(0x1302950, 0x7fff8b286360, 0x1313070, 2048, 02-06-00:00:00:00:00:0b)
+4 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0b received on node 4
+4 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.5.2 match) on another interface
+4 Ipv4L3Protocol:LocalDeliver(0x1302950, 0x1312d50, 0x7fff8b285f10)
+4 Received 1024 bytes from 10.1.1.1
+4 Echoing packet
+4 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+4 Ipv4GlobalRouting:FindEqualCostPaths()
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 10
+4 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130cc40
+4 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+4 Ipv4GlobalRouting:AdvanceStateMachine()
+4 Ipv4GlobalRouting:AdvanceStateMachine(): Setting 1 for address 10.1.1.1 to dead
+4 Ipv4GlobalRouting:RouteThroughDdc()
+4 Ipv4GlobalRouting:RouteThroughDdc(): Routing through an O port
+4 Ipv4L3Protocol:Send(0x1302950, 0x1312950, 10.1.6.2, 10.1.1.1, 17, 0x1312e30)
+4 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.5.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.6.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+4 Ipv4L3Protocol:BuildHeader(0x1302950, 10.1.6.2, 10.1.1.1, 17, 1032, 64, 1)
+4 Ipv4L3Protocol:SendRealOut(0x1302950, 0x1312ed0, 0x7fff8b285550)
+4 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+4 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+4 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x13130e0, 2048, 02-06-00:00:00:00:00:06)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:06 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x13132c0, tos 0x0 ttl 63 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.2.1, 10.1.6.2, 10.1.2.1, 0x12f1830)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.1state machine = 1 dev = 2 dest = 10.1.2.1
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.2.1
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x1308c20
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.2.1 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.2.1
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x1312f80, 0x13132c0, tos 0x0 ttl 63 id 0 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.2.1)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x1313250, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.2.1
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+0 UdpEchoClientApplication:Send()
+0 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+0 Ipv4GlobalRouting:FindEqualCostPaths()
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Skipping interface 0x13094a0 since state is 6
+0 Ipv4GlobalRouting:RouteThroughDdc()
+0 Ipv4GlobalRouting:RouteThroughDdc(): Could not send message
+0 Ipv4GlobalRouting:RouteThroughDdc(): I interfaces 0
+0 Ipv4GlobalRouting:RouteThroughDdc(): RI interfaces 1
+0 Ipv4GlobalRouting:RouteThroughDdc(): O interfaces 0
+0 Ipv4GlobalRouting:RouteThroughDdc(): RO interfaces 1
+0 Ipv4GlobalRouting:RouteThroughDdc(): Total interfaces 3
+0 Ipv4GlobalRouting:RouteThroughDdc(): Sending along an RI path
+0 Ipv4L3Protocol:Send(0x12f49a0, 0x1312dc0, 10.1.1.1, 10.1.5.2, 17, 0x1312a10)
+0 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.1.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.2.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+0 Ipv4L3Protocol:BuildHeader(0x12f49a0, 10.1.1.1, 10.1.5.2, 17, 1032, 64, 1)
+0 Ipv4L3Protocol:SendRealOut(0x12f49a0, 0x1312950, 0x7fff8b285940)
+0 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+0 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+0 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.5.2
+0 Sent 1024 bytes to 10.1.5.2
+0 UdpEchoClientApplication:ScheduleTransmit()
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1312ed0, 2048, 02-06-00:00:00:00:00:0c)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0c received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x13130e0, tos 0x0 ttl 64 id 1 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1, 10.1.6.2, 10.1.1.1, 0x12f3cb0)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.6.1state machine = 1 dev = 3 dest = 10.1.1.1
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bfe0
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 2 Found global host route 0x130c0c0
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.1.1
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312f80, 0x13130e0, tos 0x0 ttl 64 id 1 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x1312dc0, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.1
+0 Ipv4L3Protocol:Receive(0x12f49a0, 0x7fff8b286360, 0x1313250, 2048, 02-06-00:00:00:00:00:02)
+0 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:02 received on node 0
+0 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.2.1 match) on another interface
+0 Ipv4L3Protocol:LocalDeliver(0x12f49a0, 0x1312ed0, 0x7fff8b285f10)
+0 UdpEchoClientApplication:HandleRead(0x130ec20, 0x13124a0)
+0 Received 1024 bytes from 10.1.6.2
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x1312950, 2048, 02-06-00:00:00:00:00:01)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:01 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x13133a0, tos 0x0 ttl 64 id 2 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2, 10.1.1.1, 10.1.5.2, 0x12f0130)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.1.2state machine = 6 dev = 1 dest = 10.1.5.2
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130a440
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x1312a10, 0x13133a0, tos 0x0 ttl 64 id 2 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x1313330, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.2
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x1312dc0, 2048, 02-06-00:00:00:00:00:06)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:06 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x1312950, tos 0x0 ttl 63 id 1 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1, 10.1.6.2, 10.1.1.1, 0x12f1830)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.1state machine = 1 dev = 2 dest = 10.1.1.1
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x1308880
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.1.1
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x13129c0, 0x1312950, tos 0x0 ttl 63 id 1 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x13133a0, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1313330, 2048, 02-06-00:00:00:00:00:05)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:05 received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x1312dc0, tos 0x0 ttl 63 id 2 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2, 10.1.1.1, 10.1.5.2, 0x12f1a70)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.2state machine = 1 dev = 1 dest = 10.1.5.2
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bd80
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312a10, 0x1312dc0, tos 0x0 ttl 63 id 2 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x1312950, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 2 ipv4InterfaceIndex 3
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.6.2
+0 Ipv4L3Protocol:Receive(0x12f49a0, 0x7fff8b286360, 0x13133a0, 2048, 02-06-00:00:00:00:00:02)
+0 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:02 received on node 0
+0 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.1.1 match)
+0 Ipv4L3Protocol:LocalDeliver(0x12f49a0, 0x1313330, 0x7fff8b285f10)
+0 UdpEchoClientApplication:HandleRead(0x130ec20, 0x13124a0)
+0 Received 1024 bytes from 10.1.6.2
+4 Ipv4L3Protocol:Receive(0x1302950, 0x7fff8b286360, 0x1312950, 2048, 02-06-00:00:00:00:00:0b)
+4 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0b received on node 4
+4 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.5.2 match) on another interface
+4 Ipv4L3Protocol:LocalDeliver(0x1302950, 0x13130e0, 0x7fff8b285f10)
+4 Received 1024 bytes from 10.1.1.1
+4 Echoing packet
+4 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+4 Ipv4GlobalRouting:FindEqualCostPaths()
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 10
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Skipping interface 0x130cc40 since state is 65535
+4 Ipv4GlobalRouting:RouteThroughDdc()
+4 Ipv4GlobalRouting:RouteThroughDdc(): Routing through an O port
+4 Ipv4L3Protocol:Send(0x1302950, 0x1312ef0, 10.1.6.2, 10.1.1.1, 17, 0x1312ed0)
+4 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.5.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.6.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+4 Ipv4L3Protocol:BuildHeader(0x1302950, 10.1.6.2, 10.1.1.1, 17, 1032, 64, 1)
+4 Ipv4L3Protocol:SendRealOut(0x1302950, 0x1312ce0, 0x7fff8b285550)
+4 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+4 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+4 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+0 UdpEchoClientApplication:Send()
+0 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+0 Ipv4GlobalRouting:FindEqualCostPaths()
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Skipping interface 0x13094a0 since state is 6
+0 Ipv4GlobalRouting:RouteThroughDdc()
+0 Ipv4GlobalRouting:RouteThroughDdc(): Could not send message
+0 Ipv4GlobalRouting:RouteThroughDdc(): I interfaces 0
+0 Ipv4GlobalRouting:RouteThroughDdc(): RI interfaces 1
+0 Ipv4GlobalRouting:RouteThroughDdc(): O interfaces 0
+0 Ipv4GlobalRouting:RouteThroughDdc(): RO interfaces 1
+0 Ipv4GlobalRouting:RouteThroughDdc(): Total interfaces 3
+0 Ipv4GlobalRouting:RouteThroughDdc(): Sending along an RI path
+0 Ipv4L3Protocol:Send(0x12f49a0, 0x1312d50, 10.1.1.1, 10.1.5.2, 17, 0x1312ab0)
+0 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.1.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.2.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+0 Ipv4L3Protocol:BuildHeader(0x12f49a0, 10.1.1.1, 10.1.5.2, 17, 1032, 64, 1)
+0 Ipv4L3Protocol:SendRealOut(0x12f49a0, 0x13129a0, 0x7fff8b285940)
+0 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+0 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+0 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.5.2
+0 Sent 1024 bytes to 10.1.5.2
+0 UdpEchoClientApplication:ScheduleTransmit()
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1312ce0, 2048, 02-06-00:00:00:00:00:0c)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0c received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x1312dc0, tos 0x0 ttl 64 id 2 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1, 10.1.6.2, 10.1.1.1, 0x12f3cb0)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.6.1state machine = 1 dev = 3 dest = 10.1.1.1
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bfe0
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 2 Found global host route 0x130c0c0
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.1.1
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312ed0, 0x1312dc0, tos 0x0 ttl 64 id 2 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x1312d50, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.1
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x13129a0, 2048, 02-06-00:00:00:00:00:01)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:01 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x1312ce0, tos 0x0 ttl 64 id 3 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2, 10.1.1.1, 10.1.5.2, 0x12f0130)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.1.2state machine = 6 dev = 1 dest = 10.1.5.2
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130a440
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x1312ab0, 0x1312ce0, tos 0x0 ttl 64 id 3 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x1312dc0, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.2
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x1312d50, 2048, 02-06-00:00:00:00:00:06)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:06 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x13129a0, tos 0x0 ttl 63 id 2 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1, 10.1.6.2, 10.1.1.1, 0x12f1830)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.1state machine = 1 dev = 2 dest = 10.1.1.1
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x1308880
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.1.1
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x1312ed0, 0x13129a0, tos 0x0 ttl 63 id 2 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x1312ce0, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1312dc0, 2048, 02-06-00:00:00:00:00:05)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:05 received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x1312d50, tos 0x0 ttl 63 id 3 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2, 10.1.1.1, 10.1.5.2, 0x12f1a70)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.2state machine = 1 dev = 1 dest = 10.1.5.2
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bd80
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312ab0, 0x1312d50, tos 0x0 ttl 63 id 3 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x13129a0, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 2 ipv4InterfaceIndex 3
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.6.2
+0 Ipv4L3Protocol:Receive(0x12f49a0, 0x7fff8b286360, 0x1312ce0, 2048, 02-06-00:00:00:00:00:02)
+0 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:02 received on node 0
+0 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.1.1 match)
+0 Ipv4L3Protocol:LocalDeliver(0x12f49a0, 0x1312dc0, 0x7fff8b285f10)
+0 UdpEchoClientApplication:HandleRead(0x130ec20, 0x13124a0)
+0 Received 1024 bytes from 10.1.6.2
+4 Ipv4L3Protocol:Receive(0x1302950, 0x7fff8b286360, 0x13129a0, 2048, 02-06-00:00:00:00:00:0b)
+4 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0b received on node 4
+4 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.5.2 match) on another interface
+4 Ipv4L3Protocol:LocalDeliver(0x1302950, 0x1313250, 0x7fff8b285f10)
+4 Received 1024 bytes from 10.1.1.1
+4 Echoing packet
+4 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+4 Ipv4GlobalRouting:FindEqualCostPaths()
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 10
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Skipping interface 0x130cc40 since state is 65535
+4 Ipv4GlobalRouting:RouteThroughDdc()
+4 Ipv4GlobalRouting:RouteThroughDdc(): Routing through an O port
+4 Ipv4L3Protocol:Send(0x1302950, 0x1312ef0, 10.1.6.2, 10.1.1.1, 17, 0x1312ed0)
+4 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.5.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.6.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+4 Ipv4L3Protocol:BuildHeader(0x1302950, 10.1.6.2, 10.1.1.1, 17, 1032, 64, 1)
+4 Ipv4L3Protocol:SendRealOut(0x1302950, 0x1312950, 0x7fff8b285550)
+4 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+4 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+4 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+0 UdpEchoClientApplication:Send()
+0 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+0 Ipv4GlobalRouting:FindEqualCostPaths()
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Skipping interface 0x13094a0 since state is 6
+0 Ipv4GlobalRouting:RouteThroughDdc()
+0 Ipv4GlobalRouting:RouteThroughDdc(): Could not send message
+0 Ipv4GlobalRouting:RouteThroughDdc(): I interfaces 0
+0 Ipv4GlobalRouting:RouteThroughDdc(): RI interfaces 1
+0 Ipv4GlobalRouting:RouteThroughDdc(): O interfaces 0
+0 Ipv4GlobalRouting:RouteThroughDdc(): RO interfaces 1
+0 Ipv4GlobalRouting:RouteThroughDdc(): Total interfaces 3
+0 Ipv4GlobalRouting:RouteThroughDdc(): Sending along an RI path
+0 Ipv4L3Protocol:Send(0x12f49a0, 0x13129c0, 10.1.1.1, 10.1.5.2, 17, 0x1312a60)
+0 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.1.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.2.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+0 Ipv4L3Protocol:BuildHeader(0x12f49a0, 10.1.1.1, 10.1.5.2, 17, 1032, 64, 1)
+0 Ipv4L3Protocol:SendRealOut(0x12f49a0, 0x1312dc0, 0x7fff8b285940)
+0 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+0 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+0 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.5.2
+0 Sent 1024 bytes to 10.1.5.2
+0 UdpEchoClientApplication:ScheduleTransmit()
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1312950, 2048, 02-06-00:00:00:00:00:0c)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0c received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x1312d50, tos 0x0 ttl 64 id 3 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1, 10.1.6.2, 10.1.1.1, 0x12f3cb0)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.6.1state machine = 1 dev = 3 dest = 10.1.1.1
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bfe0
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 2 Found global host route 0x130c0c0
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.1.1
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312ed0, 0x1312d50, tos 0x0 ttl 64 id 3 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x13129c0, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.1
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x1312dc0, 2048, 02-06-00:00:00:00:00:01)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:01 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x1312950, tos 0x0 ttl 64 id 4 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2, 10.1.1.1, 10.1.5.2, 0x12f0130)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.1.2state machine = 6 dev = 1 dest = 10.1.5.2
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130a440
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x1312a60, 0x1312950, tos 0x0 ttl 64 id 4 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x1312d50, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.2
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x13129c0, 2048, 02-06-00:00:00:00:00:06)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:06 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x1312dc0, tos 0x0 ttl 63 id 3 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1, 10.1.6.2, 10.1.1.1, 0x12f1830)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.1state machine = 1 dev = 2 dest = 10.1.1.1
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x1308880
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.1.1
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x1312ed0, 0x1312dc0, tos 0x0 ttl 63 id 3 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x1312950, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1312d50, 2048, 02-06-00:00:00:00:00:05)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:05 received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x13129c0, tos 0x0 ttl 63 id 4 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2, 10.1.1.1, 10.1.5.2, 0x12f1a70)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.2state machine = 1 dev = 1 dest = 10.1.5.2
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bd80
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312a60, 0x13129c0, tos 0x0 ttl 63 id 4 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x1312dc0, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 2 ipv4InterfaceIndex 3
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.6.2
+0 Ipv4L3Protocol:Receive(0x12f49a0, 0x7fff8b286360, 0x1312950, 2048, 02-06-00:00:00:00:00:02)
+0 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:02 received on node 0
+0 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.1.1 match)
+0 Ipv4L3Protocol:LocalDeliver(0x12f49a0, 0x1312d50, 0x7fff8b285f10)
+0 UdpEchoClientApplication:HandleRead(0x130ec20, 0x13124a0)
+0 Received 1024 bytes from 10.1.6.2
+4 Ipv4L3Protocol:Receive(0x1302950, 0x7fff8b286360, 0x1312dc0, 2048, 02-06-00:00:00:00:00:0b)
+4 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0b received on node 4
+4 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.5.2 match) on another interface
+4 Ipv4L3Protocol:LocalDeliver(0x1302950, 0x13132b0, 0x7fff8b285f10)
+4 Received 1024 bytes from 10.1.1.1
+4 Echoing packet
+4 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+4 Ipv4GlobalRouting:FindEqualCostPaths()
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 10
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Skipping interface 0x130cc40 since state is 65535
+4 Ipv4GlobalRouting:RouteThroughDdc()
+4 Ipv4GlobalRouting:RouteThroughDdc(): Routing through an O port
+4 Ipv4L3Protocol:Send(0x1302950, 0x12f2da0, 10.1.6.2, 10.1.1.1, 17, 0x1312950)
+4 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.5.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.6.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+4 Ipv4L3Protocol:BuildHeader(0x1302950, 10.1.6.2, 10.1.1.1, 17, 1032, 64, 1)
+4 Ipv4L3Protocol:SendRealOut(0x1302950, 0x1312dc0, 0x7fff8b285550)
+4 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+4 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+4 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+0 UdpEchoClientApplication:Send()
+0 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+0 Ipv4GlobalRouting:FindEqualCostPaths()
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+0 Ipv4GlobalRouting:FindEqualCostPaths(): Skipping interface 0x13094a0 since state is 6
+0 Ipv4GlobalRouting:RouteThroughDdc()
+0 Ipv4GlobalRouting:RouteThroughDdc(): Could not send message
+0 Ipv4GlobalRouting:RouteThroughDdc(): I interfaces 0
+0 Ipv4GlobalRouting:RouteThroughDdc(): RI interfaces 1
+0 Ipv4GlobalRouting:RouteThroughDdc(): O interfaces 0
+0 Ipv4GlobalRouting:RouteThroughDdc(): RO interfaces 1
+0 Ipv4GlobalRouting:RouteThroughDdc(): Total interfaces 3
+0 Ipv4GlobalRouting:RouteThroughDdc(): Sending along an RI path
+0 Ipv4L3Protocol:Send(0x12f49a0, 0x1312ed0, 10.1.1.1, 10.1.5.2, 17, 0x130cc80)
+0 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.1.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Testing address 10.1.2.1 with mask 255.255.255.0
+0 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+0 Ipv4L3Protocol:BuildHeader(0x12f49a0, 10.1.1.1, 10.1.5.2, 17, 1032, 64, 1)
+0 Ipv4L3Protocol:SendRealOut(0x12f49a0, 0x1312d50, 0x7fff8b285940)
+0 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+0 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+0 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.5.2
+0 Sent 1024 bytes to 10.1.5.2
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1312dc0, 2048, 02-06-00:00:00:00:00:0c)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0c received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x13129c0, tos 0x0 ttl 64 id 4 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1, 10.1.6.2, 10.1.1.1, 0x12f3cb0)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.6.1state machine = 1 dev = 3 dest = 10.1.1.1
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bfe0
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 2 Found global host route 0x130c0c0
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.1.1
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312950, 0x13129c0, tos 0x0 ttl 64 id 4 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x1312ed0, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.1
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x1312d50, 2048, 02-06-00:00:00:00:00:01)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:01 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x1312dc0, tos 0x0 ttl 64 id 5 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2, 10.1.1.1, 10.1.5.2, 0x12f0130)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 1)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.1.2state machine = 6 dev = 1 dest = 10.1.5.2
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130a440
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x130cc80, 0x1312dc0, tos 0x0 ttl 64 id 5 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x13129c0, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.2
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x1312ed0, 2048, 02-06-00:00:00:00:00:06)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:06 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x1312d50, tos 0x0 ttl 63 id 4 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1, 10.1.6.2, 10.1.1.1, 0x12f1830)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.1state machine = 1 dev = 2 dest = 10.1.1.1
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x1308880
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.1.1
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x1312950, 0x1312d50, tos 0x0 ttl 63 id 4 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x1312dc0, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x13129c0, 2048, 02-06-00:00:00:00:00:05)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:05 received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x1312ed0, tos 0x0 ttl 63 id 5 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2, 10.1.1.1, 10.1.5.2, 0x12f1a70)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 1)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.2state machine = 1 dev = 1 dest = 10.1.5.2
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.5.2
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bd80
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.5.2 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.5.2
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x130cc80, 0x1312ed0, tos 0x0 ttl 63 id 5 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.1.1 > 10.1.5.2)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x1312d50, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.5.2
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 2 ipv4InterfaceIndex 3
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.6.2
+0 Ipv4L3Protocol:Receive(0x12f49a0, 0x7fff8b286360, 0x1312dc0, 2048, 02-06-00:00:00:00:00:02)
+0 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:02 received on node 0
+0 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.1.1 match)
+0 Ipv4L3Protocol:LocalDeliver(0x12f49a0, 0x13129c0, 0x7fff8b285f10)
+0 UdpEchoClientApplication:HandleRead(0x130ec20, 0x13124a0)
+0 Received 1024 bytes from 10.1.6.2
+4 Ipv4L3Protocol:Receive(0x1302950, 0x7fff8b286360, 0x1312d50, 2048, 02-06-00:00:00:00:00:0b)
+4 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0b received on node 4
+4 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.5.2 match) on another interface
+4 Ipv4L3Protocol:LocalDeliver(0x1302950, 0x13132b0, 0x7fff8b285f10)
+4 Received 1024 bytes from 10.1.1.1
+4 Echoing packet
+4 Ipv4GlobalRouting:RouteOutput(): Unicast destination- looking up
+4 Ipv4GlobalRouting:FindEqualCostPaths()
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 10
+4 Ipv4GlobalRouting:FindEqualCostPaths(): Skipping interface 0x130cc40 since state is 65535
+4 Ipv4GlobalRouting:RouteThroughDdc()
+4 Ipv4GlobalRouting:RouteThroughDdc(): Routing through an O port
+4 Ipv4L3Protocol:Send(0x1302950, 0x1312ce0, 10.1.6.2, 10.1.1.1, 17, 0x1312950)
+4 Ipv4L3Protocol:Send(): Testing address 127.0.0.1 with mask 255.0.0.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.5.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Testing address 10.1.6.2 with mask 255.255.255.0
+4 Ipv4L3Protocol:Send(): Ipv4L3Protocol::Send case 3:  passed in with route
+4 Ipv4L3Protocol:BuildHeader(0x1302950, 10.1.6.2, 10.1.1.1, 17, 1032, 64, 1)
+4 Ipv4L3Protocol:SendRealOut(0x1302950, 0x1312d50, 0x7fff8b285550)
+4 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+4 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 1 ipv4InterfaceIndex 2
+4 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+3 Ipv4L3Protocol:Receive(0x12ff1c0, 0x7fff8b286360, 0x1312d50, 2048, 02-06-00:00:00:00:00:0c)
+3 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:0c received on node 3
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(0x12ffa10, 0x1312ed0, tos 0x0 ttl 64 id 5 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1, 10.1.6.2, 10.1.1.1, 0x12f3cb0)
+3 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.4.2 not a match
+3 Ipv4GlobalRouting:RouteInput(): Address 10.1.6.1 not a match
+3 Ipv4L3Protocol:IsForwarding(0x12ff1c0, 3)
+3 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+3 Ipv4GlobalRouting:RouteInput(): node = 10.1.6.1state machine = 1 dev = 3 dest = 10.1.1.1
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+3 Ipv4GlobalRouting:FindEqualCostPaths()
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+3 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 11
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x130bfe0
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 2 Found global host route 0x130c0c0
+3 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 2 interfaces  and an additional 0 RI interfaces
+3 Ipv4GlobalRouting:AdvanceStateMachine()
+3 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.1.1
+3 Ipv4L3Protocol:IpForward(0x12ff1c0, 0x1312950, 0x1312ed0, tos 0x0 ttl 64 id 5 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1)
+3 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 3
+3 Ipv4L3Protocol:SendRealOut(0x12ff1c0, 0x13129c0, 0x7fff8b2853b0)
+3 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+3 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+3 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.3.1
+1 Ipv4L3Protocol:Receive(0x12f8290, 0x7fff8b286360, 0x13129c0, 2048, 02-06-00:00:00:00:00:06)
+1 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:06 received on node 1
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(0x12f8af0, 0x1312d50, tos 0x0 ttl 63 id 5 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1, 10.1.6.2, 10.1.1.1, 0x12f1830)
+1 Ipv4GlobalRouting:RouteInput(): Address 127.0.0.1 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.1.2 not a match
+1 Ipv4GlobalRouting:RouteInput(): Address 10.1.3.1 not a match
+1 Ipv4L3Protocol:IsForwarding(0x12f8290, 2)
+1 Ipv4L3Protocol:IsForwarding(): Forwarding state: 1
+1 Ipv4GlobalRouting:RouteInput(): node = 10.1.3.1state machine = 1 dev = 2 dest = 10.1.1.1
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Unicast destination- looking up global route
+1 Ipv4GlobalRouting:FindEqualCostPaths()
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Looking for route for destination 10.1.1.1
+1 Ipv4GlobalRouting:FindEqualCostPaths(): Number of m_hostRoutes = 13
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 1 Found global host route 0x1308880
+1 Ipv4GlobalRouting:FindEqualCostPaths(): 10.1.1.1 can use 1 interfaces  and an additional 0 RI interfaces
+1 Ipv4GlobalRouting:AdvanceStateMachine()
+1 Ipv4GlobalRouting:RouteInput(): Found unicast destination- calling unicast callback, header.destination 10.1.1.1
+1 Ipv4L3Protocol:IpForward(0x12f8290, 0x130e470, 0x1312d50, tos 0x0 ttl 63 id 5 protocol 17 offset (bytes) 0 flags [none] length: 1052 10.1.6.2 > 10.1.1.1)
+1 Ipv4L3Protocol:IpForward(): Forwarding logic for node: 1
+1 Ipv4L3Protocol:SendRealOut(0x12f8290, 0x1312ed0, 0x7fff8b2853b0)
+1 Ipv4L3Protocol:SendRealOut(): Destination 10.1.1.1
+1 Ipv4L3Protocol:SendRealOut(): Send via NetDevice ifIndex 0 ipv4InterfaceIndex 1
+1 Ipv4L3Protocol:SendRealOut(): Send to gateway 10.1.1.1
+0 Ipv4L3Protocol:Receive(0x12f49a0, 0x7fff8b286360, 0x1312ed0, 2048, 02-06-00:00:00:00:00:02)
+0 Ipv4L3Protocol:Receive(): Packet from 02-06-00:00:00:00:00:02 received on node 0
+0 Ipv4L3Protocol:IsDestinationAddress(): For me (destination 10.1.1.1 match)
+0 Ipv4L3Protocol:LocalDeliver(0x12f49a0, 0x13129c0, 0x7fff8b285f10)
+0 UdpEchoClientApplication:HandleRead(0x130ec20, 0x13124a0)
+0 Received 1024 bytes from 10.1.6.2
 0 UdpEchoClientApplication:StopApplication()
 0 UdpEchoServerApplication:StopApplication()
 1 UdpEchoServerApplication:StopApplication()
 2 UdpEchoServerApplication:StopApplication()
 3 UdpEchoServerApplication:StopApplication()
 4 UdpEchoServerApplication:StopApplication()
+Ipv4L3Protocol:DoDispose(0x12f49a0)
 Ipv4GlobalRouting:DoDispose()
 Ipv4GlobalRouting:~Ipv4GlobalRouting()
 UdpEchoServerApplication:DoDispose()
 UdpEchoClientApplication:DoDispose()
+Ipv4L3Protocol:DoDispose(0x12f8290)
 Ipv4GlobalRouting:DoDispose()
 Ipv4GlobalRouting:~Ipv4GlobalRouting()
 UdpEchoServerApplication:DoDispose()
+Ipv4L3Protocol:DoDispose(0x12fba30)
 Ipv4GlobalRouting:DoDispose()
 Ipv4GlobalRouting:~Ipv4GlobalRouting()
 UdpEchoServerApplication:DoDispose()
+Ipv4L3Protocol:DoDispose(0x12ff1c0)
 Ipv4GlobalRouting:DoDispose()
 Ipv4GlobalRouting:~Ipv4GlobalRouting()
 UdpEchoServerApplication:DoDispose()
+Ipv4L3Protocol:DoDispose(0x1302950)
 Ipv4GlobalRouting:DoDispose()
 Ipv4GlobalRouting:~Ipv4GlobalRouting()
 UdpEchoServerApplication:DoDispose()
@@ -762,3 +1837,8 @@ UdpEchoServerApplication:~UdpEchoServer()
 UdpEchoServerApplication:~UdpEchoServer()
 UdpEchoServerApplication:~UdpEchoServer()
 UdpEchoServerApplication:~UdpEchoServer()
+Ipv4L3Protocol:~Ipv4L3Protocol(0x12f49a0)
+Ipv4L3Protocol:~Ipv4L3Protocol(0x12f8290)
+Ipv4L3Protocol:~Ipv4L3Protocol(0x12fba30)
+Ipv4L3Protocol:~Ipv4L3Protocol(0x12ff1c0)
+Ipv4L3Protocol:~Ipv4L3Protocol(0x1302950)

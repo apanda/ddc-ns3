@@ -483,6 +483,7 @@ Ipv4GlobalRouting::TryRouteThroughInterfaces (Interfaces interfaces, Ipv4Address
     rtentry->SetDestination(dest);
     rtentry->SetGateway(dest);
     rtentry->SetOutputDevice(device);
+    rtentry->SetSource (m_ipv4->GetAddress (interfaces[dest].front(), 0).GetLocal ());
     return rtentry;
   }
   return rtentry;
@@ -556,6 +557,7 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
       rtentry->SetDestination (address);
       rtentry->SetGateway(header.GetSource());
       rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+      rtentry->SetSource (m_ipv4->GetAddress (iif, 0).GetLocal ());
       NS_LOG_LOGIC("Bouncing packet because input didn't find path");
       break;
     }
@@ -595,6 +597,7 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
       rtentry->SetDestination (address);
       rtentry->SetGateway(header.GetSource());
       rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+      rtentry->SetSource (m_ipv4->GetAddress (iif, 0).GetLocal ());
       NS_LOG_LOGIC("Bouncing packet because RO logic changed to O");
       break;
     }
@@ -641,6 +644,7 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
       rtentry->SetDestination (address);
       rtentry->SetGateway(header.GetSource());
       rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+      rtentry->SetSource (m_ipv4->GetAddress (iif, 0).GetLocal ());
       NS_LOG_LOGIC("Bouncing packet due to lack of paths for new I");
       break;
     }
@@ -676,6 +680,7 @@ Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, P
       rtentry->SetDestination (dest);
       rtentry->SetGateway(header.GetSource());
       rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+      rtentry->SetSource (m_ipv4->GetAddress (iif, 0).GetLocal ());
       NS_LOG_LOGIC("Bouncing packet");
     }
   }
@@ -1020,7 +1025,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
   Ptr<Ipv4Route> rtentry = LookupGlobal (header, 0, idev);
   if (rtentry != 0)
     {
-      NS_LOG_LOGIC ("Found unicast destination- calling unicast callback");
+      NS_LOG_LOGIC ("Found unicast destination- calling unicast callback, header.destination " << header.GetDestination());
       ucb (rtentry, p, header);
       return true;
     }
