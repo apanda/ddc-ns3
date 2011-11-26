@@ -83,9 +83,8 @@ Ipv4GlobalRouting::GetDistance (Ipv4Address address)
 }
 
 void
-Ipv4GlobalRouting::SetIfaceToOutput(Ipv4Address address, Ptr<const NetDevice> device)
+Ipv4GlobalRouting::SetIfaceToOutput(Ipv4Address address, uint32_t iif)
 {
-  uint32_t iif = m_ipv4->GetInterfaceForDevice(device);
   if (m_stateMachines[address][iif] != None) {
     return;
   }
@@ -95,9 +94,8 @@ Ipv4GlobalRouting::SetIfaceToOutput(Ipv4Address address, Ptr<const NetDevice> de
 }
 
 void
-Ipv4GlobalRouting::SetIfaceToInput(Ipv4Address address, Ptr<const NetDevice> device)
+Ipv4GlobalRouting::SetIfaceToInput(Ipv4Address address, uint32_t iif)
 {
-  uint32_t iif = m_ipv4->GetInterfaceForDevice(device);
   if (m_stateMachines[address][iif] != None) {
     return;
   }
@@ -146,21 +144,27 @@ Ipv4GlobalRouting::ClassifyInterfaces()
       uint32_t distance = GetDistance(*it);
       uint32_t otherDistance = otherIpv4->GetDistance(*it);
       if (distance < otherDistance) {
-        SetIfaceToInput(*it, dev);
+        SetIfaceToInput(*it, i);
       }
       else if (distance > otherDistance) {
-        SetIfaceToOutput(*it, dev);
+        SetIfaceToOutput(*it, i);
       }
       else {
         if (us->GetId() < them->GetId()) {
-          SetIfaceToInput(*it, dev);
+          SetIfaceToInput(*it, i);
         }
         else {
           NS_ASSERT(us->GetId() > them->GetId());
-          SetIfaceToOutput(*it, dev);
+          SetIfaceToOutput(*it, i);
         }
       }
     }
+  }
+  
+  for (std::vector<Ipv4Address>::iterator it = addresses.begin();
+            it != addresses.end();
+            it++) {
+    NS_ASSERT((m_inputInterfaces[*it].size() + m_outputInterfaces[*it].size()) == m_ipv4->GetNInterfaces() - 1);
   }
 }
 
@@ -274,6 +278,7 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
           // Don't send packets on ports which are RO
           if (m_stateMachines[dest][(*i)->GetInterface()] != Output) {
             foundHostRoute = true;
+            NS_LOG_LOGIC("Skipping interface " << *i << " since state is " <<m_stateMachines[dest][(*i)->GetInterface()]);
             continue;
           }
           allRoutes.push_back (*i);
@@ -488,14 +493,62 @@ Ptr<Ipv4Route>
 Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev)
 {
   NS_LOG_FUNCTION_NOARGS();
+  Ipv4Address address = header.GetDestination();
+  Ptr<Ipv4Route> rtentry = 0;
+  uint32_t iif = 0xffffffff;
+  rtentry = TryRouteThroughInterfaces(m_outputInterfaces, address);
+  if (rtentry != 0) {
+    NS_LOG_LOGIC("Routing through an O port");
+    goto AdvanceAndExit;
+  }
   // This is just a result of sending from this node, not a routing issue
   if (idev == 0) {
-    NS_LOG_INFO("Returning since there is no interface");
-    return 0;
+    // Trigger special processing, just doing a send, which we will really never do, so just do the same thing new input
+    // would do.
+    // Already tried O, let's try RI
+    NS_LOG_LOGIC("Could not send message");
+    NS_LOG_LOGIC("I interfaces " << m_inputInterfaces[address].size());
+    NS_LOG_LOGIC("RI interfaces " << m_reverseInputInterfaces[address].size());
+    NS_LOG_LOGIC("O interfaces " << m_outputInterfaces[address].size());
+    NS_LOG_LOGIC("RO interfaces " << m_reverseOutputInterfaces[address].size());
+    NS_LOG_LOGIC("Total interfaces " << m_ipv4->GetNInterfaces());
+    rtentry = TryRouteThroughInterfaces(m_reverseInputInterfaces, address);
+    if (rtentry != 0) {
+      NS_LOG_LOGIC("Sending along an RI path");
+      goto AdvanceAndExit;
+    }
+    if (!m_reverseOutputInterfaces[address].empty()) {
+      // Make all RO ports O ports
+      // send to one of them
+      while (!m_reverseOutputInterfaces[address].empty()) {
+        uint32_t iface = m_reverseOutputInterfaces[address].front();
+        m_reverseOutputInterfaces[address].pop_front();
+        m_stateMachines[address][iface] = Output;
+        m_outputInterfaces[address].push_back(iface);
+        NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to O");
+      }
+      rtentry = TryRouteThroughInterfaces(m_outputInterfaces, address);
+      if (rtentry != 0) {
+         NS_LOG_LOGIC("Sending along O");
+         goto AdvanceAndExit;
+      }
+    }
+    // Set all I -> RI, send to one of those
+    NS_LOG_LOGIC("Setting all "  << m_inputInterfaces[address].size() <<  " I interfaces to RI");
+    while (!m_inputInterfaces[address].empty()) {
+      uint32_t iface = m_inputInterfaces[address].front();
+      m_inputInterfaces[address].pop_front();
+      m_stateMachines[address][iface] = ReverseInput;
+      m_reverseInputInterfaces[address].push_back(iface);
+      NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI");
+    }
+    rtentry = TryRouteThroughInterfaces(m_reverseInputInterfaces, address);
+    if (rtentry != 0) {
+      NS_LOG_LOGIC("Sending along some new RI paths");
+    }
+    goto AdvanceAndExit;
   }
-  Ipv4Address address = header.GetDestination();
-  uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
-  Ptr<Ipv4Route> rtentry = 0;
+  iif = m_ipv4->GetInterfaceForDevice (idev);
   switch (m_stateMachines[address][iif]) {
     case Input: {
       AdvanceStateMachine(address, iif, NoPath);
@@ -598,7 +651,11 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
     default:
       NS_ASSERT(false);
   }
-  AdvanceStateMachine(address, iif, Send);
+
+AdvanceAndExit:
+  if (idev != 0) {
+    AdvanceStateMachine(address, iif, Send);
+  }
   return rtentry;
 }
 
@@ -623,49 +680,49 @@ Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, P
     }
   }
   Ipv4GlobalRouting::RouteVec_t allRoutes = FindEqualCostPaths(dest, oif);
-    // pick up one of the routes uniformly at random if random
-    // ECMP routing is enabled, or always select the first route
-    // consistently if random ECMP routing is disabled
-    uint32_t selectIndex;
-    while (!allRoutes.empty()) {
-      if (m_randomEcmpRouting)
-        {
-          selectIndex = m_rand.GetInteger (0, allRoutes.size ()-1);
-        }
-      else 
-        {
-          selectIndex = 0;
-        }
-      uint32_t interface = allRoutes.at (selectIndex)->GetInterface();
-      Ptr<NetDevice> device = m_ipv4->GetNetDevice (interface);
-      if (device->IsLinkUp()) {
-          break;
+  // pick up one of the routes uniformly at random if random
+  // ECMP routing is enabled, or always select the first route
+  // consistently if random ECMP routing is disabled
+  uint32_t selectIndex;
+  while (!allRoutes.empty()) {
+    if (m_randomEcmpRouting)
+      {
+        selectIndex = m_rand.GetInteger (0, allRoutes.size ()-1);
       }
-      else {
-          // Remove the interface as a valid output interface, it is clearly down
-          AdvanceStateMachine(dest, interface, DetectFailure);
-          allRoutes.erase(allRoutes.begin() + selectIndex);
+    else 
+      {
+        selectIndex = 0;
       }
-    }
-    if (allRoutes.empty()) {
-      // Couldn't find an output port,
-      return RouteThroughDdc(header, oif, idev);
+    uint32_t interface = allRoutes.at (selectIndex)->GetInterface();
+    Ptr<NetDevice> device = m_ipv4->GetNetDevice (interface);
+    if (device->IsLinkUp()) {
+        break;
     }
     else {
-      if (idev != 0) {
-        AdvanceStateMachine(dest, iif, Send);
-      }
-      route = allRoutes.at (selectIndex);
-      // create a Ipv4Route object from the selected routing table entry
-      rtentry = Create<Ipv4Route> ();
-      rtentry->SetDestination (route->GetDest ());
-      // XXX handle multi-address case
-      rtentry->SetSource (m_ipv4->GetAddress (route->GetInterface (), 0).GetLocal ());
-      rtentry->SetGateway (route->GetGateway ());
-      uint32_t interfaceIdx = route->GetInterface ();
-      rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
-      return rtentry;
+        // Remove the interface as a valid output interface, it is clearly down
+        AdvanceStateMachine(dest, interface, DetectFailure);
+        allRoutes.erase(allRoutes.begin() + selectIndex);
     }
+  }
+  if (allRoutes.empty()) {
+    // Couldn't find an output port,
+    return RouteThroughDdc(header, oif, idev);
+  }
+  else {
+    if (idev != 0) {
+      AdvanceStateMachine(dest, iif, Send);
+    }
+    route = allRoutes.at (selectIndex);
+    // create a Ipv4Route object from the selected routing table entry
+    rtentry = Create<Ipv4Route> ();
+    rtentry->SetDestination (route->GetDest ());
+    // XXX handle multi-address case
+    rtentry->SetSource (m_ipv4->GetAddress (route->GetInterface (), 0).GetLocal ());
+    rtentry->SetGateway (route->GetGateway ());
+    uint32_t interfaceIdx = route->GetInterface ();
+    rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
+    return rtentry;
+  }
 }
 
 uint32_t 

@@ -222,9 +222,9 @@ public:
   
   uint32_t GetDistance(Ipv4Address address);
 
-  void SetIfaceToOutput (Ipv4Address address, Ptr<const NetDevice> device);
+  void SetIfaceToOutput (Ipv4Address address, uint32_t iif);
 
-  void SetIfaceToInput (Ipv4Address address, Ptr<const NetDevice> device);
+  void SetIfaceToInput (Ipv4Address address, uint32_t iif);
 
   void ClassifyInterfaces();
 
