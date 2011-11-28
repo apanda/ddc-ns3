@@ -553,13 +553,49 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
   switch (m_stateMachines[address][iif]) {
     case Input: {
       AdvanceStateMachine(address, iif, NoPath);
-      rtentry = Create<Ipv4Route> ();
-      rtentry->SetDestination (address);
-      rtentry->SetGateway(header.GetSource());
-      rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
-      rtentry->SetSource (m_ipv4->GetAddress (iif, 0).GetLocal ());
-      NS_LOG_LOGIC("Bouncing packet because input didn't find path");
-      break;
+      if (idev->IsLinkUp()) {
+        rtentry = Create<Ipv4Route> ();
+        rtentry->SetDestination (address);
+        rtentry->SetGateway(header.GetSource());
+        rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+        rtentry->SetSource (m_ipv4->GetAddress (iif, 0).GetLocal ());
+        NS_LOG_LOGIC("Bouncing packet because input didn't find path");
+        break;
+      }
+      else {
+        NS_LOG_LOGIC("incoming interface is dead");
+        AdvanceStateMachine(address, iif, DetectFailure);
+        if (!m_inputInterfaces.empty()) { // At this point we know there are no O, so let's try setting all I to RI, and routing that way
+          NS_LOG_LOGIC("Setting all I interfaces to RI");
+          while (!m_inputInterfaces[address].empty()) {
+            uint32_t iface = m_inputInterfaces[address].front();
+            m_inputInterfaces[address].pop_front();
+            m_stateMachines[address][iface] = ReverseInput;
+            m_reverseInputInterfaces[address].push_back(iface);
+            NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI");
+          }
+          rtentry = TryRouteThroughInterfaces(m_reverseInputInterfaces, address);
+          if (rtentry != 0) {
+            NS_LOG_LOGIC("Sending along RI");
+            break;
+          }
+        }
+        
+        NS_LOG_LOGIC("Setting all RO interfaces to O");
+        // OK, no O ports, no RI ports, we are in the only RO state
+        while (!m_reverseOutputInterfaces[address].empty()) {
+          uint32_t iface = m_reverseOutputInterfaces[address].front();
+          m_reverseOutputInterfaces[address].pop_front();
+          m_stateMachines[address][iface] = Output;
+          m_outputInterfaces[address].push_back(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to O");
+        }
+        rtentry = TryRouteThroughInterfaces(m_outputInterfaces, address);
+        if (rtentry != 0) {
+          NS_LOG_LOGIC("Sending along O");
+        }
+        break;
+      }
     }
     case Output: {
       NS_ASSERT(false); // We have already advanced state machine for receives at this point, we cannot really
@@ -592,14 +628,23 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
         m_outputInterfaces[address].push_back(iface);
         NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to O");
       }
-      // Bounce packet back to sender
-      rtentry = Create<Ipv4Route> ();
-      rtentry->SetDestination (address);
-      rtentry->SetGateway(header.GetSource());
-      rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
-      rtentry->SetSource (m_ipv4->GetAddress (iif, 0).GetLocal ());
-      NS_LOG_LOGIC("Bouncing packet because RO logic changed to O");
-      break;
+      if (idev->IsLinkUp()) {
+        // Bounce packet back to sender
+        rtentry = Create<Ipv4Route> ();
+        rtentry->SetDestination (address);
+        rtentry->SetGateway(header.GetSource());
+        rtentry->SetOutputDevice(m_ipv4->GetNetDevice (iif));
+        rtentry->SetSource (m_ipv4->GetAddress (iif, 0).GetLocal ());
+        NS_LOG_LOGIC("Bouncing packet because RO logic changed to O");
+        break;
+      }
+      else {
+        rtentry = TryRouteThroughInterfaces(m_outputInterfaces, address);
+        if (rtentry != 0) {
+          NS_LOG_LOGIC("Sending along O");
+        }
+        break;
+      }
     }
     case ReverseInput: {
       NS_ASSERT(false); // Must have made it to at least RI'
