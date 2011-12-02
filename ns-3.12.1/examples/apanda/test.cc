@@ -19,12 +19,28 @@
 #include "ns3/internet-module.h"
 #include "ns3/point-to-point-module.h"
 #include "ns3/applications-module.h"
+#include "ns3/random-variable.h"
 #include <list>
 #include <vector>
 
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("DataDrivenConnectivity1");
+
+uint32_t failedLink = ((uint32_t)-1);
+std::vector<PointToPointChannel* > channels;
+UniformVariable randVar;
+
+void ScheduleLinkFailure() 
+{
+  if (failedLink != ((uint32_t)-1)) {
+    channels[failedLink]->SetLinkUp();
+  }
+  failedLink = randVar.GetInteger(0, channels.size() - 1);
+  channels[failedLink]->SetLinkDown();
+  NS_LOG_INFO("Taking " << failedLink << " down");
+  Simulator::Schedule(Seconds(randVar.GetValue(240.0, 3600.0)), &ScheduleLinkFailure);
+}
 
 int
 main (int argc, char *argv[])
@@ -76,6 +92,7 @@ main (int argc, char *argv[])
       nodeDevices[i].Add(p2pDevices.Get(0));
       nodeDevices[*iterator].Add(p2pDevices.Get(1));
       linkDevices.push_back(p2pDevices);
+      channels.push_back((PointToPointChannel*)GetPointer(p2pDevices.Get(0)->GetChannel()));
     }
   }
 
@@ -93,24 +110,30 @@ main (int argc, char *argv[])
 
   // Simulate error
   if (simulateError) {
-    ((PointToPointChannel*)(PeekPointer(nodeDevices[2].Get(2)->GetChannel())))->SetLinkDown();
+    ScheduleLinkFailure();
   }
 
   UdpEchoServerHelper echoServer (9);
 
   ApplicationContainer serverApps = echoServer.Install (nodes);
   serverApps.Start (Seconds (1.0));
-  serverApps.Stop (Seconds (60.0));
+  serverApps.Stop (Seconds (60.0 * 60.0 * 24 * 7));
+  for (int i = 0; i < NODES; i++) {
+    for (int j = 0; j < NODES; j++) {
+      if (i == j) {
+        continue;
+      }
+      UdpEchoClientHelper echoClient (nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
+                                        9);
+      echoClient.SetAttribute ("MaxPackets", UintegerValue (0));
+      echoClient.SetAttribute ("Interval", TimeValue (Seconds (randVar.GetValue(1.0, 3000.0))));
+      echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+      ApplicationContainer clientApps = echoClient.Install (nodes.Get (i));
+      clientApps.Start (Seconds (randVar.GetValue(1.0, 120.0)));
+      clientApps.Stop (Seconds (60.0 * 60.0 * 24 * 7));
+    }
+  }
 
-  UdpEchoClientHelper echoClient (nodes.Get(4)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
-                                    9);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (packets));
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
-  echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
-
-  ApplicationContainer clientApps = echoClient.Install (nodes.Get (0));
-  clientApps.Start (Seconds (2.0));
-  clientApps.Stop (Seconds (10.0));
   AsciiTraceHelper asciiHelper;
 
   Ptr<OutputStreamWrapper> out = asciiHelper.CreateFileStream("route.table");

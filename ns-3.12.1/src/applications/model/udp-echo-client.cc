@@ -283,7 +283,7 @@ UdpEchoClient::Send (void)
 
   NS_LOG_INFO ("Sent " << m_size << " bytes to " << m_peerAddress);
 
-  if (m_sent < m_count) 
+  if (m_count == 0 || m_sent < m_count) 
     {
       ScheduleTransmit (m_interval);
     }
