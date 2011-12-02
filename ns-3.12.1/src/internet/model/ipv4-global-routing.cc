@@ -88,6 +88,7 @@ Ipv4GlobalRouting::SetIfaceToOutput(Ipv4Address address, uint32_t iif)
   if (m_stateMachines[address][iif] != None) {
     return;
   }
+  m_originalStates[address][iif] = Output;
   m_outputInterfaces[address].push_back(iif);
   m_stateMachines[address][iif] = Output;
   NS_LOG_INFO ("Setting state for " << address << " interface " << iif << " to output");
@@ -99,6 +100,7 @@ Ipv4GlobalRouting::SetIfaceToInput(Ipv4Address address, uint32_t iif)
   if (m_stateMachines[address][iif] != None) {
     return;
   }
+  m_originalStates[address][iif] = Input;
   m_inputInterfaces[address].push_back(iif);
   m_stateMachines[address][iif] = Input;
   NS_LOG_INFO ("Setting state for " << address << " interface " << iif << " to input");
@@ -179,12 +181,15 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   m_hostRoutes.push_back (route);
   if (m_stateMachines.find(dest) == m_stateMachines.end()) {
     m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    m_originalStates[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[dest][i] = None;
+      m_originalStates[dest][i] = None;
     }
   }
   m_outputInterfaces[dest].push_back(interface);
   m_stateMachines[dest][interface] = Output;
+  m_originalStates[dest][interface] = Output;
   NS_LOG_INFO ("Setting state for " << dest << " interface " << interface << " to output");
 }
 
@@ -199,12 +204,15 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   m_hostRoutes.push_back (route);
   if (m_stateMachines.find(dest) == m_stateMachines.end()) {
     m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    m_originalStates[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[dest][i] = None;
+      m_originalStates[dest][i] = None;
     }
   }
   m_outputInterfaces[dest].push_back(interface);
   m_stateMachines[dest][interface] = Output;
+  m_originalStates[dest][interface] = Output;
   NS_LOG_INFO ("Setting state for " << dest << " interface " << interface << " to output");
 }
 
@@ -342,6 +350,33 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
 }
 
 void
+Ipv4GlobalRouting::CheckIfLinksReanimated(Ipv4Address dest) {
+  NS_LOG_FUNCTION_NOARGS();
+  std::list<uint32_t> reanimate;
+  for (std::list<uint32_t>::iterator it = m_deadInterfaces[dest].begin(); it != m_deadInterfaces[dest].end(); it++) {
+    Ptr<NetDevice> device = 0;
+    device = m_ipv4->GetNetDevice (*it);
+    if (device->IsLinkUp()) {
+      reanimate.push_back(*it);
+    }
+  }
+  while (!reanimate.empty()) {
+    uint32_t interface = reanimate.front();
+    reanimate.pop_front();
+    NS_ASSERT(m_originalStates[dest][interface] == Output ||
+              m_originalStates[dest][interface] == Input);
+    m_deadInterfaces[dest].remove(interface);
+    m_stateMachines[dest][interface] = m_originalStates[dest][interface];
+    if (m_stateMachines[dest][interface] == Output) {
+      m_outputInterfaces[dest].push_back(interface);
+    }
+    else {
+      m_inputInterfaces[dest].push_back(interface);
+    }
+  }
+}
+
+void
 Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcAction action) {
   NS_LOG_FUNCTION_NOARGS();
   switch (m_stateMachines[address][iface]) {
@@ -367,6 +402,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
         case DetectFailure:
           m_stateMachines[address][iface] = Dead;
           m_inputInterfaces[address].remove(iface);
+          m_deadInterfaces[address].push_back(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
@@ -385,6 +421,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
         case DetectFailure:
           m_stateMachines[address][iface] = Dead;
           m_reverseOutputInterfaces[address].remove(iface);
+          m_deadInterfaces[address].push_back(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
@@ -405,6 +442,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
         case DetectFailure:
           m_stateMachines[address][iface] = Dead;
           m_outputInterfaces[address].remove(iface);
+          m_deadInterfaces[address].push_back(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
@@ -425,6 +463,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
         case DetectFailure:
           m_stateMachines[address][iface] = Dead;
           m_reverseInputInterfaces[address].remove(iface);
+          m_deadInterfaces[address].push_back(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
@@ -446,6 +485,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           break;
         case DetectFailure:
           m_stateMachines[address][iface] = Dead;
+          m_deadInterfaces[address].push_back(iface);
           NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
@@ -715,6 +755,7 @@ Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, P
   Ipv4Address dest = header.GetDestination();
   uint32_t iif = 0;
   Ptr<Ipv4Route> rtentry = 0;
+  CheckIfLinksReanimated(dest);
   if (idev != 0) {
     iif = m_ipv4->GetInterfaceForDevice (idev);
     // We run state machine on receive before getting here, hence we shouldn't get here
@@ -991,6 +1032,7 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Net
   else
     {
       sockerr = Socket::ERROR_NOROUTETOHOST;
+      NS_LOG_LOGIC ("IP dropping packet no route found to " << header.GetDestination());
     }
   return rtentry;
 }
@@ -1076,7 +1118,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
     }
   else
     {
-      NS_LOG_LOGIC ("Did not find unicast destination- returning false");
+      NS_LOG_LOGIC ("IP dropping packet no route found to " << header.GetDestination());
       return false; // Let other routing protocols try to handle this
                     // route request.
     }

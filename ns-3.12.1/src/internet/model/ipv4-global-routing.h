@@ -259,6 +259,7 @@ private:
     Send
   };
 
+  void CheckIfLinksReanimated(Ipv4Address dest);
   void AdvanceStateMachine(Ipv4Address dest, uint32_t iface, DdcAction action);
   Ptr<Ipv4Route> RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev);
   typedef std::list<Ipv4RoutingTableEntry *> HostRoutes;
@@ -275,10 +276,12 @@ private:
   typedef sgi::hash_map<Ipv4Address, uint32_t, Ipv4AddressHash> DistanceMetric;
   typedef sgi::hash_map<Ipv4Address, uint32_t, Ipv4AddressHash>::iterator DistanceMetricI;
   
+  StateMachines m_originalStates;
   Interfaces m_inputInterfaces;
   Interfaces m_reverseInputInterfaces;
   Interfaces m_outputInterfaces;
   Interfaces m_reverseOutputInterfaces;
+  Interfaces m_deadInterfaces;
   StateMachines m_stateMachines;
   DistanceMetric m_distances;
 
