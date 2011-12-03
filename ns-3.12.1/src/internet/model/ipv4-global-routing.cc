@@ -500,6 +500,9 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
     }
     case Dead: {
       switch (action) {
+        case Receive:
+        case Send:
+          break;
         case DetectFailure:
           NS_ASSERT(false);
         default:
@@ -623,7 +626,8 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
       else {
         NS_LOG_LOGIC("incoming interface is dead");
         AdvanceStateMachine(address, iif, DetectFailure);
-        if (!m_inputInterfaces.empty()) { // At this point we know there are no O, so let's try setting all I to RI, and routing that way
+        idev = 0;
+        if (!m_inputInterfaces[address].empty()) { // At this point we know there are no O, so let's try setting all I to RI, and routing that way
           NS_LOG_LOGIC("Setting all I interfaces to RI");
           while (!m_inputInterfaces[address].empty()) {
             uint32_t iface = m_inputInterfaces[address].front();
@@ -1056,6 +1060,11 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Net
     {
       sockerr = Socket::ERROR_NOROUTETOHOST;
       NS_LOG_ERROR ("IP dropping packet no route found to " << header.GetDestination());
+      NS_LOG_ERROR ("   Dead interface " << m_deadInterfaces[header.GetDestination()].size());
+      NS_LOG_ERROR ("   Total interfaces " << m_stateMachines[header.GetDestination()].size());
+      for (uint32_t iif = 0; iif < m_stateMachines[header.GetDestination()].size(); iif++) {
+        NS_LOG_ERROR("State for " << iif << " = " << m_stateMachines[header.GetDestination()][iif]);
+      }
     }
   return rtentry;
 }
@@ -1130,7 +1139,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
                m_stateMachines[header.GetDestination()][iif] << 
                " dev = " << iif <<
                " dest = " << header.GetDestination());
-   AdvanceStateMachine(header.GetDestination(), iif, Receive);
+  AdvanceStateMachine(header.GetDestination(), iif, Receive);
   // Next, try to find a route
   NS_LOG_LOGIC ("Unicast destination- looking up global route");
   Ptr<Ipv4Route> rtentry = LookupGlobal (header, 0, idev);

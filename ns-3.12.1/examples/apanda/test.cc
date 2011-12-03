@@ -27,19 +27,32 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("DataDrivenConnectivity1");
 
-uint32_t failedLink = ((uint32_t)-1);
 std::vector<PointToPointChannel* > channels;
 UniformVariable randVar;
 
+void ScheduleLinkRecovery(uint32_t failedLink) 
+{
+  channels[failedLink]->SetLinkUp();
+  NS_LOG_ERROR("Link " << failedLink << " is now up");
+}
+
 void ScheduleLinkFailure() 
 {
-  if (failedLink != ((uint32_t)-1)) {
-    channels[failedLink]->SetLinkUp();
+  uint32_t linkOfInterest = (uint32_t)-1;
+  linkOfInterest = randVar.GetInteger(0, channels.size() - 1);
+  channels[linkOfInterest]->SetLinkDown();
+  NS_LOG_ERROR("Taking " << linkOfInterest << " down");
+  Time downStep = Seconds(randVar.GetValue(240.0, 3600.0));
+  Time tAbsolute = Simulator::Now() + downStep; 
+  if (tAbsolute < Seconds (60.0 * 60.0 * 24 * 7)) {
+    Simulator::Schedule(downStep, &ScheduleLinkFailure);
   }
-  failedLink = randVar.GetInteger(0, channels.size() - 1);
-  channels[failedLink]->SetLinkDown();
-  NS_LOG_INFO("Taking " << failedLink << " down");
-  Simulator::Schedule(Seconds(randVar.GetValue(240.0, 3600.0)), &ScheduleLinkFailure);
+  Time upStep = Seconds(randVar.GetValue(240.0, 1800.0));
+  tAbsolute = Simulator::Now() + upStep;
+  if (tAbsolute < Seconds(60.0 * 60.0 * 24 * 7)) {
+    Simulator::Schedule(upStep, &ScheduleLinkRecovery, linkOfInterest);
+  }
+  //Simulator::Schedule(Seconds(randVar.GetValue(180.0, 6000.0)), &ScheduleLinkRecovery, failedLink);
 }
 
 int
@@ -51,8 +64,8 @@ main (int argc, char *argv[])
   cmd.AddValue("packets", "Number of packets to echo", packets);
   cmd.AddValue("error", "Simulate error", simulateError);
   cmd.Parse(argc, argv);
-  LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
-  LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
+  //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
+  //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
   const int32_t NODES = 5;
   std::vector<std::vector<uint32_t>*> connectivityGraph(NODES);
