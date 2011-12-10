@@ -1037,6 +1037,33 @@ Ptr<Ipv4Route>
 Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
 {
 
+  // TODO:  Configurable option to enable RFC 1222 Strong End System Model
+  // Right now, we will be permissive and allow a source to send us
+  // a packet to one of our other interface addresses; that is, the
+  // destination unicast address does not match one of the iif addresses,
+  // but we check our other interfaces.  This could be an option
+  // (to remove the outer loop immediately below and just check iif).
+  for (uint32_t j = 0; j < m_ipv4->GetNInterfaces (); j++)
+    {
+      
+      for (uint32_t i = 0; i < m_ipv4->GetNAddresses (j); i++)
+        {
+          Ipv4InterfaceAddress iaddr = m_ipv4->GetAddress (j, i);
+          Ipv4Address addr = iaddr.GetLocal ();
+          if (addr.IsEqual (header.GetDestination ()))
+            {
+              NS_LOG_LOGIC("Sending message to self");
+              sockerr = Socket::ERROR_NOTERROR;
+              Ptr<NetDevice> device = m_ipv4->GetNetDevice (0);
+              Ptr<Ipv4Route> rtentry = Create<Ipv4Route> ();
+              rtentry->SetDestination(header.GetDestination());
+              rtentry->SetGateway(header.GetDestination());
+              rtentry->SetOutputDevice(device);
+              rtentry->SetSource (m_ipv4->GetAddress (1, 0).GetLocal ());
+              return rtentry;
+            }
+        }
+    }
 //
 // First, see if this is a multicast packet we have a route for.  If we
 // have a route, then send the packet down each of the specified interfaces.
