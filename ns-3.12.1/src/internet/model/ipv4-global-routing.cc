@@ -961,6 +961,12 @@ Ipv4GlobalRouting::RemoveRoute (uint32_t index)
 }
 
 void
+Ipv4GlobalRouting::DoStart (void)
+{
+  NS_LOG_ERROR("DoStart called, establish open ports");
+}
+
+void
 Ipv4GlobalRouting::DoDispose (void)
 {
   NS_LOG_FUNCTION_NOARGS ();

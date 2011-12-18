@@ -707,6 +707,9 @@ public:
  */
   bool WithdrawRoute (Ipv4Address network, Ipv4Mask networkMask);
 
+protected:
+ void DoStart (void);
+
 private:
   virtual ~GlobalRouter ();
   void ClearLSAs (void);

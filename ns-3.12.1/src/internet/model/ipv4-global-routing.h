@@ -229,6 +229,7 @@ public:
   void ClassifyInterfaces();
 
 protected:
+  void DoStart (void);
   void DoDispose (void);
 
 private:

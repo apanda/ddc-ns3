@@ -513,6 +513,12 @@ GlobalRouter::GetTypeId (void)
   return tid;
 }
 
+void
+GlobalRouter::DoStart (void)
+{
+  m_routingProtocol->Start();
+}
+
 GlobalRouter::GlobalRouter ()
   : m_LSAs ()
 {
