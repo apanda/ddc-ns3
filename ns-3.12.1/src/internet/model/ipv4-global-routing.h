@@ -23,6 +23,7 @@
 #include "ns3/sgi-hashmap.h"
 #include <vector>
 #include <list>
+#include <map>
 #include <stdint.h>
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv4-header.h"
@@ -30,6 +31,7 @@
 #include "ns3/ipv4.h"
 #include "ns3/ipv4-routing-protocol.h"
 #include "ns3/random-variable.h"
+#include "ns3/socket.h"
 
 namespace ns3 {
 
@@ -276,6 +278,9 @@ private:
   typedef sgi::hash_map<Ipv4Address, std::vector<DdcState>, Ipv4AddressHash> StateMachines;
   typedef sgi::hash_map<Ipv4Address, uint32_t, Ipv4AddressHash> DistanceMetric;
   typedef sgi::hash_map<Ipv4Address, uint32_t, Ipv4AddressHash>::iterator DistanceMetricI;
+  typedef std::map<Ptr<Socket>, Ipv4Address> SocketToAddress;
+  typedef sgi::hash_map<Ipv4Address, Ptr<Socket>, Ipv4AddressHash> AddressToSocket;
+  typedef sgi::hash_map<uint32_t, Ptr<Socket> > InterfaceToSocket;
   
   StateMachines m_originalStates;
   Interfaces m_inputInterfaces;
@@ -285,6 +290,10 @@ private:
   Interfaces m_deadInterfaces;
   StateMachines m_stateMachines;
   DistanceMetric m_distances;
+  SocketToAddress m_addressForSocket;
+  AddressToSocket m_socketForAddress;
+  InterfaceToSocket m_socketForInterface;
+  static const uint16_t RAD_PORT = 698;
 
   Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);
   Ptr<Ipv4Route> TryRouteThroughInterfaces (Interfaces interfaces, Ipv4Address address);

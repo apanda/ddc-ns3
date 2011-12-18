@@ -29,6 +29,8 @@
 #include "ns3/channel.h"
 #include "ns3/node.h"
 #include "ns3/boolean.h"
+#include "ns3/udp-socket-factory.h" 
+#include "ns3/inet-socket-address.h"   
 #include "ipv4-global-routing.h"
 #include "global-route-manager.h"
 #include "global-router-interface.h"
@@ -69,6 +71,30 @@ Ipv4GlobalRouting::~Ipv4GlobalRouting ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
+
+void
+Ipv4GlobalRouting::DoStart ()
+{
+  static const Ipv4Address loopback ("127.0.0.1");
+  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
+    Ipv4Address address = m_ipv4->GetAddress(i, 0).GetLocal();
+    if (address == loopback) {
+      continue;
+    }
+    Ptr<Socket> socket = Socket::CreateSocket (m_ipv4->GetNetDevice(i)->GetNode(), 
+                                   UdpSocketFactory::GetTypeId ());
+    socket->SetAllowBroadcast (true);
+    InetSocketAddress inetAddr (address, RAD_PORT);
+    if (socket->Bind (inetAddr)) {
+      NS_FATAL_ERROR("Could not bind socket");
+    }
+    socket->BindToNetDevice (m_ipv4->GetNetDevice(i));
+    m_addressForSocket[socket] = address;
+    m_socketForAddress[address] = socket;
+    m_socketForInterface[i] = socket;
+  }
+}
+
 void 
 Ipv4GlobalRouting::SetDistance (Ipv4Address address, 
                                 uint32_t distance)
@@ -958,12 +984,6 @@ Ipv4GlobalRouting::RemoveRoute (uint32_t index)
       tmp++;
     }
   NS_ASSERT (false);
-}
-
-void
-Ipv4GlobalRouting::DoStart (void)
-{
-  NS_LOG_ERROR("DoStart called, establish open ports");
 }
 
 void
