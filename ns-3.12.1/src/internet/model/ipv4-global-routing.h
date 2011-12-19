@@ -32,6 +32,7 @@
 #include "ns3/ipv4-routing-protocol.h"
 #include "ns3/random-variable.h"
 #include "ns3/socket.h"
+#include "ddc-headers.h"
 
 namespace ns3 {
 
@@ -43,7 +44,6 @@ class Ipv4Header;
 class Ipv4RoutingTableEntry;
 class Ipv4MulticastRoutingTableEntry;
 class Node;
-
 
 /**
  * \brief Global routing protocol for IP version 4 stacks.
@@ -235,6 +235,7 @@ protected:
   void DoDispose (void);
 
 private:
+  
   /// Set to true if packets are randomly routed among ECMP; set to false for using only one route consistently
   bool m_randomEcmpRouting;
   /// Set to true if this interface should respond to interface events by globallly recomputing routes 

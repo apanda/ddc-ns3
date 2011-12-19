@@ -183,6 +183,7 @@ def build(bld):
         'helper/ipv6-address-helper.cc',
         'helper/ipv6-interface-container.cc',
         'helper/ipv6-routing-helper.cc',
+        'model/ddc-headers.cc',
         ]
 
     internet_test = bld.create_ns3_module_test_library('internet')
@@ -275,6 +276,7 @@ def build(bld):
         'helper/ipv6-address-helper.h',
         'helper/ipv6-interface-container.h',
         'helper/ipv6-routing-helper.h',
+        'model/ddc-headers.h',
        ]
 
     if bld.env['NSC_ENABLED']:
