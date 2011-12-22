@@ -327,23 +327,56 @@ void Ipv4GlobalRouting::ReceiveHealingResponse (uint32_t iface,
     if (m_localAddresses.find(addr) != m_localAddresses.end()) {
       continue;
     }
-
+    switch (m_stateMachines[addr][iface]) {
+      case Input: {
+        m_inputInterfaces[addr].remove(iface);
+        break;
+      }
+      case Output: {
+        m_outputInterfaces[addr].remove(iface);
+        break;
+      }
+      case ReverseInput: {
+        m_reverseInputInterfaces[addr].remove(iface);
+        break;
+      }
+      case ReverseOutput: {
+        m_reverseOutputInterfaces[addr].remove(iface);
+        break;
+      }
+      case ReverseInputPrimed: {
+        m_reverseInputInterfaces[addr].remove(iface);
+        break;
+      }
+      case NewInput: {
+        m_inputInterfaces[addr].remove(iface);
+        break;
+      }
+      case Dead:
+      case None:
+        break;
+    }
     if (m_outputInterfaces[addr].empty()) {
       // Unconditionally make this an output port, there's nothing better we can do
       m_stateMachines[addr][iface] = Output;
+      m_outputInterfaces[addr].push_back(iface);
     }
     else if (it->metric < GetDistance(addr)) {
       m_stateMachines[addr][iface] = Output;
+      m_outputInterfaces[addr].push_back(iface);
       SetDistance(addr, it->metric + 1);
     }
     else if (it->metric > GetDistance(addr)) {
       m_stateMachines[addr][iface] = Input;
+      m_inputInterfaces[addr].push_back(iface);
     }
     else if (addr.Get() < message.GetOriginator().Get()) {
       m_stateMachines[addr][iface] = Input;
+      m_inputInterfaces[addr].push_back(iface);
     }
     else {
       m_stateMachines[addr][iface] = Output;
+      m_outputInterfaces[addr].push_back(iface);
     }
   }
 }
@@ -577,7 +610,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_inputInterfaces[address].remove(iface);
           m_deadInterfaces[address].push_back(iface);
           m_isInterfaceDead[iface] = true;
-          NS_LOG_LOGIC("0 Setting " << iface << " for address " << address << " to dead");
+          NS_LOG_ERROR("0 Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
           break; // Send just means sending on behalf of, an acceptable situation
@@ -597,7 +630,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_reverseOutputInterfaces[address].remove(iface);
           m_deadInterfaces[address].push_back(iface);
           m_isInterfaceDead[iface] = true;
-          NS_LOG_LOGIC("1 Setting " << iface << " for address " << address << " to dead");
+          NS_LOG_ERROR("1 Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
           break; 
@@ -619,7 +652,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_outputInterfaces[address].remove(iface);
           m_deadInterfaces[address].push_back(iface);
           m_isInterfaceDead[iface] = true;
-          NS_LOG_LOGIC("2 Setting " << iface << " for address " << address << " to dead");
+          NS_LOG_ERROR("2 Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
           break;
@@ -641,7 +674,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_reverseInputInterfaces[address].remove(iface);
           m_deadInterfaces[address].push_back(iface);
           m_isInterfaceDead[iface] = true;
-          NS_LOG_LOGIC("3 Setting " << iface << " for address " << address << " to dead");
+          NS_LOG_ERROR("3 Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
           break;
@@ -665,7 +698,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_reverseInputInterfaces[address].remove(iface);
           m_deadInterfaces[address].push_back(iface);
           m_isInterfaceDead[iface] = true;
-          NS_LOG_LOGIC("4 Setting " << iface << " for address " << address << " to dead");
+          NS_LOG_ERROR("4 Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
           break;
@@ -683,6 +716,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
         case NoPath:
           break;
         case DetectFailure:
+          NS_LOG_ERROR("About to die iface is " << iface << " address is " << address);
           NS_ASSERT(false);
         default:
           NS_ASSERT(false);
