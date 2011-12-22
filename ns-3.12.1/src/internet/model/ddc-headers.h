@@ -93,12 +93,40 @@ public:
 // -----------------------------------------------------------------
 // | TTL           |  Hops         |      Message Seq              |
 // -----------------------------------------------------------------
+//
+//
+// -----------------------------------------------------------------
+// | Count         |  Metric 0     |  Metric 1     | Metric 2      |
+// -----------------------------------------------------------------
+// |                       IP 0                                    |
+// -----------------------------------------------------------------
+// |                       IP 1                                    |
+// -----------------------------------------------------------------
+// |                       IP 2                                    |
+// -----------------------------------------------------------------
+// | Count         | ...                                           |
+// |                          .                                    |
+// |                          .                                    |
+// |                          .                                    |
+// -----------------------------------------------------------------
+// |0 0 0 0 0 0 0 0|0 0 0 0 0 0 0 0|0 0 0 0 0 0 0 0|0 0 0 0 0 0 0 0|
+// -----------------------------------------------------------------
 class MessageHeader : public Header
 {
 public:
   enum MessageType {
     REQUEST_METRIC,
     RESPONSE_METRIC
+  };
+
+  struct MetricListEntry {
+    Ipv4Address address;
+    uint8_t metric;
+    MetricListEntry (Ipv4Address _address, uint8_t _metric)
+    {
+      address = _address;
+      metric = _metric;
+    }
   };
 
   MessageHeader ();
@@ -108,7 +136,7 @@ public:
   {
     m_type = (uint8_t)type;
   }
-  MessageType GetPacketLength () const
+  MessageType GetMessageType () const
   {
     return (MessageType)m_type;
   }
@@ -117,21 +145,11 @@ public:
   {
     m_vtime = vtime;
   }
-  uint16_t GetValidTime () const
+  uint8_t GetValidTime () const
   {
     return m_vtime;
   }
   
-  void SetMessageLength (uint16_t size) 
-  {
-    m_size = size;
-  }
-
-  uint16_t GetMessageLength () const
-  {
-    return m_size;
-  }
-
   void SetOriginator (Ipv4Address originator)
   {
     m_originator = originator;
@@ -181,14 +199,20 @@ public:
   {
     return m_seq;
   }
+
+  std::list<MetricListEntry>& GetMetricList()
+  {
+    return m_metrics;
+  }
+
 private:
   uint8_t m_type;
   uint8_t m_vtime;
-  uint16_t m_size;
   Ipv4Address m_originator;
   uint8_t m_ttl;
   uint8_t m_hops;
   uint16_t m_seq;
+  std::list<MetricListEntry> m_metrics;
 public:
   static TypeId GetTypeId (void);
   virtual TypeId GetInstanceTypeId (void) const;
@@ -197,21 +221,5 @@ public:
   virtual void Serialize (Buffer::Iterator start) const;
   virtual uint32_t Deserialize (Buffer::Iterator start);
 };
-// -----------------------------------------------------------------
-// | Count         |  Metric 0     |  Metric 1     | Metric 2      |
-// -----------------------------------------------------------------
-// |                       IP 0                                    |
-// -----------------------------------------------------------------
-// |                       IP 1                                    |
-// -----------------------------------------------------------------
-// |                       IP 2                                    |
-// -----------------------------------------------------------------
-// | Count         | ...                                           |
-// |                          .                                    |
-// |                          .                                    |
-// |                          .                                    |
-// -----------------------------------------------------------------
-// |0 0 0 0 0 0 0 0|0 0 0 0 0 0 0 0|0 0 0 0 0 0 0 0|0 0 0 0 0 0 0 0|
-// -----------------------------------------------------------------
 }
 #endif

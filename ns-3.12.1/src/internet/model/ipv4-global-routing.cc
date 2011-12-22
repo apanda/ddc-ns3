@@ -84,15 +84,37 @@ Ipv4GlobalRouting::DoStart ()
     Ptr<Socket> socket = Socket::CreateSocket (m_ipv4->GetNetDevice(i)->GetNode(), 
                                    UdpSocketFactory::GetTypeId ());
     socket->SetAllowBroadcast (true);
+    socket->SetRecvCallback (MakeCallback (&Ipv4GlobalRouting::RecvDdcHealing, this));
     InetSocketAddress inetAddr (address, RAD_PORT);
     if (socket->Bind (inetAddr)) {
       NS_FATAL_ERROR("Could not bind socket");
     }
     socket->BindToNetDevice (m_ipv4->GetNetDevice(i));
-    m_addressForSocket[socket] = address;
+    m_addressForSocket[socket] = m_ipv4->GetAddress(i, 0);
     m_socketForAddress[address] = socket;
     m_socketForInterface[i] = socket;
+    m_interfaceForSocket[socket] = i;
   }
+}
+
+void
+Ipv4GlobalRouting::RecvDdcHealing (Ptr<Socket> socket)
+{
+  Ptr<Packet> receivedPacket;
+  Address sourceAddress;
+  receivedPacket = socket->RecvFrom(sourceAddress);
+  
+  InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
+  Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
+  Ipv4Address receiverIfaceAddr = m_addressForSocket[socket].GetLocal();
+  //uint32_t interface = m_interfaceForSocket[socket];
+  NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
+
+  PacketHeader header;
+  receivedPacket->RemoveHeader(header);
+
+  MessageHeader messageHeader;
+  receivedPacket->RemoveHeader(messageHeader);
 }
 
 void 
@@ -194,6 +216,43 @@ Ipv4GlobalRouting::ClassifyInterfaces()
             it++) {
     NS_ASSERT((m_inputInterfaces[*it].size() + m_outputInterfaces[*it].size()) == m_ipv4->GetNInterfaces() - 1);
   }
+}
+
+void
+Ipv4GlobalRouting::FillInMetric (MessageHeader& message)
+{
+  std::list<MessageHeader::MetricListEntry>& list = message.GetMetricList();
+  for (DistanceMetricI it = m_distances.begin(); it != m_distances.end(); it++)
+  {
+    list.push_back(MessageHeader::MetricListEntry(it->first, it->second));
+  }
+}
+
+void Ipv4GlobalRouting::SendMetricRequest (uint32_t iface)
+{
+  Ptr<Socket> sock = m_socketForInterface[iface];
+  Ipv4Address originAddress = m_ipv4->GetAddress(iface, 0).GetLocal();
+  MessageHeader message;
+  message.SetMessageType(MessageHeader::REQUEST_METRIC);
+  message.SetValidTime(255);
+  message.SetOriginator(originAddress);
+  message.SetTTL(255);
+  message.SetHops(0);
+  message.SetMessageSequence(0);
+  FillInMetric(message);
+  SendMessage(sock, message);
+}
+
+void Ipv4GlobalRouting::SendMessage (Ptr<Socket>& socket, MessageHeader& message)
+{
+  Ptr<Packet> packet = Create<Packet>();
+  packet->AddHeader(message);
+  PacketHeader header;
+  header.SetPacketLength(header.GetSerializedSize() + packet->GetSize ());
+  packet->AddHeader(header);
+  
+  Ipv4Address bcastAddress = m_addressForSocket[socket].GetLocal().GetSubnetDirectedBroadcast(m_addressForSocket[socket].GetMask());
+  socket->SendTo(packet, 0, InetSocketAddress(bcastAddress, RAD_PORT)); 
 }
 
 void 
@@ -393,6 +452,7 @@ Ipv4GlobalRouting::CheckIfLinksReanimated(Ipv4Address dest) {
               m_originalStates[dest][interface] == Input);
     m_deadInterfaces[dest].remove(interface);
     m_stateMachines[dest][interface] = m_originalStates[dest][interface];
+    SendMetricRequest(interface);
     if (m_stateMachines[dest][interface] == Output) {
       m_outputInterfaces[dest].push_back(interface);
     }
@@ -1008,7 +1068,13 @@ Ipv4GlobalRouting::DoDispose (void)
     {
       delete (*l);
     }
-
+  
+  for (SocketToAddress::iterator it = m_addressForSocket.begin();
+       it != m_addressForSocket.end();
+       it++)
+    {
+      it->first->Close();
+    }
   Ipv4RoutingProtocol::DoDispose ();
 }
 

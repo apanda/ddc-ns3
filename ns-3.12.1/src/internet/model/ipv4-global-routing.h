@@ -235,7 +235,14 @@ protected:
   void DoDispose (void);
 
 private:
-  
+  /// Send a message along
+  void SendMessage (Ptr<Socket>& socket, MessageHeader& message);
+  /// Given a message header, initialize the metric correctly
+  void FillInMetric (MessageHeader& message);
+  /// Something happened to trigger the need to heal, request metrics from our neighbor, while simultaneously
+  /// sending them ours. I am mostly planning on using this sending of the metrics as a way to get both sides on
+  /// the same idea about I and O. This isn't essential, but why not do it.
+  void SendMetricRequest (uint32_t iface);
   /// Set to true if packets are randomly routed among ECMP; set to false for using only one route consistently
   bool m_randomEcmpRouting;
   /// Set to true if this interface should respond to interface events by globallly recomputing routes 
@@ -263,6 +270,8 @@ private:
     Send
   };
 
+  void RecvDdcHealing (Ptr<Socket> socket);
+
   void CheckIfLinksReanimated(Ipv4Address dest);
   void AdvanceStateMachine(Ipv4Address dest, uint32_t iface, DdcAction action);
   Ptr<Ipv4Route> RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev);
@@ -279,7 +288,8 @@ private:
   typedef sgi::hash_map<Ipv4Address, std::vector<DdcState>, Ipv4AddressHash> StateMachines;
   typedef sgi::hash_map<Ipv4Address, uint32_t, Ipv4AddressHash> DistanceMetric;
   typedef sgi::hash_map<Ipv4Address, uint32_t, Ipv4AddressHash>::iterator DistanceMetricI;
-  typedef std::map<Ptr<Socket>, Ipv4Address> SocketToAddress;
+  typedef std::map<Ptr<Socket>, Ipv4InterfaceAddress> SocketToAddress;
+  typedef std::map<Ptr<Socket>, uint32_t> SocketToInterface;
   typedef sgi::hash_map<Ipv4Address, Ptr<Socket>, Ipv4AddressHash> AddressToSocket;
   typedef sgi::hash_map<uint32_t, Ptr<Socket> > InterfaceToSocket;
   
@@ -294,6 +304,7 @@ private:
   SocketToAddress m_addressForSocket;
   AddressToSocket m_socketForAddress;
   InterfaceToSocket m_socketForInterface;
+  SocketToInterface m_interfaceForSocket;
   static const uint16_t RAD_PORT = 698;
 
   Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);

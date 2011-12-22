@@ -24,6 +24,7 @@
 #include "ns3/log.h"
 
 #define IPV4_ADDRESS_SIZE 4
+#define METRIC_WORD_SIZE 4
 #define DDC_MSG_HEADER_SIZE 12
 #define DDC_PKT_HEADER_SIZE 4
 
@@ -112,7 +113,12 @@ MessageHeader::GetInstanceTypeId (void) const
 uint32_t 
 MessageHeader::GetSerializedSize (void) const
 {
-  return DDC_MSG_HEADER_SIZE;
+  uint32_t size = DDC_MSG_HEADER_SIZE + METRIC_WORD_SIZE;
+  if (m_metrics.size() != 0) {
+    uint32_t clusters = ((m_metrics.size() - 1) / 3) + 1;
+    size += (clusters * ((3 * IPV4_ADDRESS_SIZE) + METRIC_WORD_SIZE));
+  }
+  return size;
 }
 
 void 
@@ -125,16 +131,85 @@ void
 MessageHeader::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
-  //i.WriteHtonU16 (m_packetLength);
-  //i.WriteHtonU16 (m_packetSequenceNumber);
+  i.WriteU8 (m_type);
+  i.WriteU8 (m_vtime);
+  i.WriteHtonU16 (GetSerializedSize());
+  i.WriteHtonU32 (m_originator.Get());
+  i.WriteU8 (m_ttl);
+  i.WriteU8 (m_hops);
+  i.WriteHtonU16 (m_seq);
+  uint8_t metric[3];
+  Ipv4Address address[3];
+  int node = 0;
+  for (int j = 0; j < 3; j++) {
+    metric[j] = 0;
+    address[j] = Ipv4Address ();
+  }
+  for (std::list<MetricListEntry>::const_iterator it = m_metrics.begin();
+          it != m_metrics.end();
+          it++) {
+    const MetricListEntry &entry = *it;
+    metric[node] = entry.metric;
+    address[node] = entry.address;
+    node++;
+    NS_ASSERT (node <= 3);
+    if (node == 3) {
+      i.WriteU8(3); // Count
+      i.WriteU8(metric[0]); // metric 0
+      i.WriteU8(metric[1]); // metric 1
+      i.WriteU8(metric[2]); // metric 2
+      i.WriteHtonU32(address[0].Get());
+      i.WriteHtonU32(address[1].Get());
+      i.WriteHtonU32(address[2].Get());
+      node = 0;
+      for (int j = 0; j < 3; j++) {
+        metric[j] = 0;
+        address[j] = Ipv4Address ();
+      }
+    }
+  }
+  if (node != 0) {
+    i.WriteU8(node);
+    for (int j = 0; j < 3; j++) {
+      i.WriteU8(metric[j]);
+    }
+    for (int j = 0; j < 3; j++) {
+      i.WriteHtonU32(address[j].Get());
+    }
+  }
+  i.WriteHtonU32(0);
 }
 
 uint32_t
 MessageHeader::Deserialize (Buffer::Iterator start)
 {
   Buffer::Iterator i = start;
-  //m_packetLength  = i.ReadNtohU16 ();
-  //m_packetSequenceNumber = i.ReadNtohU16 ();
+  m_type = i.ReadU8();
+  m_vtime = i.ReadU8();
+  uint16_t size = i.ReadNtohU16();
+  m_originator = Ipv4Address (i.ReadNtohU32());
+  m_ttl = i.ReadU8();
+  m_hops = i.ReadU8();
+  m_seq = i.ReadNtohU16();
+  size -= (DDC_MSG_HEADER_SIZE + METRIC_WORD_SIZE);
+  NS_ASSERT ((size % ((3 * IPV4_ADDRESS_SIZE) + METRIC_WORD_SIZE)) == 0);
+  int cluster = size / ((3 * IPV4_ADDRESS_SIZE) + METRIC_WORD_SIZE);
+  for (int j = 0; j < cluster; j++) {
+    uint8_t count = i.ReadU8();
+    uint8_t metric[3];
+    for (int ii = 0; ii < 3; ii++) {
+      metric[ii] = i.ReadU8();
+    }
+    Ipv4Address addresses[3];
+    for (int ii = 0; ii < 3; ii++) {
+      addresses[ii] = Ipv4Address(i.ReadNtohU32());
+    }
+    for (int ii = 0; ii < count; ii++) {
+      m_metrics.push_back(MetricListEntry(addresses[ii], metric[ii]));
+    }
+  }
+  int endMarker = i.ReadNtohU32();
+  NS_ASSERT(endMarker == 0);
   return GetSerializedSize ();
 }
 }
