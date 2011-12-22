@@ -62,7 +62,9 @@ Ipv4GlobalRouting::GetTypeId (void)
 
 Ipv4GlobalRouting::Ipv4GlobalRouting () 
   : m_randomEcmpRouting (false),
-    m_respondToInterfaceEvents (false)
+    m_respondToInterfaceEvents (false),
+    m_messageSequence (0),
+    m_reanimationTimer (Timer::CANCEL_ON_DESTROY)
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -95,6 +97,9 @@ Ipv4GlobalRouting::DoStart ()
     m_socketForInterface[i] = socket;
     m_interfaceForSocket[socket] = i;
   }
+  m_reanimationTimer.SetFunction(&Ipv4GlobalRouting::CheckIfLinksReanimated, this);
+  m_reanimationTimer.Schedule (MilliSeconds(100)); 
+  
 }
 
 void
@@ -107,7 +112,7 @@ Ipv4GlobalRouting::RecvDdcHealing (Ptr<Socket> socket)
   InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
   Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
   Ipv4Address receiverIfaceAddr = m_addressForSocket[socket].GetLocal();
-  //uint32_t interface = m_interfaceForSocket[socket];
+  uint32_t iface = m_interfaceForSocket[socket];
   NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
 
   PacketHeader header;
@@ -115,6 +120,15 @@ Ipv4GlobalRouting::RecvDdcHealing (Ptr<Socket> socket)
 
   MessageHeader messageHeader;
   receivedPacket->RemoveHeader(messageHeader);
+  
+  if (messageHeader.GetMessageType() == MessageHeader::REQUEST_METRIC) {
+    /// Receive a request for metric
+    ReceiveHealingRequest (iface, messageHeader);
+  }
+  else if (messageHeader.GetMessageType() == MessageHeader::RESPONSE_METRIC) {
+    /// Receive a response to a previous request
+    ReceiveHealingResponse (iface, messageHeader);
+  }
 }
 
 void 
@@ -133,7 +147,7 @@ Ipv4GlobalRouting::GetDistance (Ipv4Address address)
 void
 Ipv4GlobalRouting::SetIfaceToOutput(Ipv4Address address, uint32_t iif)
 {
-  if (m_stateMachines[address][iif] != None) {
+  if (m_stateMachines[address][iif] != None && m_stateMachines[address][iif] != Dead) {
     return;
   }
   m_originalStates[address][iif] = Output;
@@ -216,6 +230,15 @@ Ipv4GlobalRouting::ClassifyInterfaces()
             it++) {
     NS_ASSERT((m_inputInterfaces[*it].size() + m_outputInterfaces[*it].size()) == m_ipv4->GetNInterfaces() - 1);
   }
+  for (uint32_t j = 0; j < m_ipv4->GetNInterfaces (); j++)
+  {
+    for (uint32_t i = 0; i < m_ipv4->GetNAddresses (j); i++)
+    {
+      Ipv4InterfaceAddress iaddr = m_ipv4->GetAddress (j, i);
+      Ipv4Address addr = iaddr.GetLocal ();
+      m_localAddresses[addr] = true;
+    }
+  }
 }
 
 void
@@ -224,22 +247,51 @@ Ipv4GlobalRouting::FillInMetric (MessageHeader& message)
   std::list<MessageHeader::MetricListEntry>& list = message.GetMetricList();
   for (DistanceMetricI it = m_distances.begin(); it != m_distances.end(); it++)
   {
-    list.push_back(MessageHeader::MetricListEntry(it->first, it->second));
+    if (!m_outputInterfaces[it->first].empty()) {
+      list.push_back(MessageHeader::MetricListEntry(it->first, it->second));
+    }
+    else if (m_localAddresses.find(it->first) != m_localAddresses.end()) {
+      NS_ASSERT(it->second == 0);
+      list.push_back(MessageHeader::MetricListEntry(it->first, it->second));
+    }
+    else {
+      list.push_back(MessageHeader::MetricListEntry(it->first, 255));
+    }
   }
+  for (LocalAddressI it = m_localAddresses.begin(); it != m_localAddresses.end(); it++)
+  {
+    list.push_back(MessageHeader::MetricListEntry(it->first, 0));
+  }
+}
+
+void Ipv4GlobalRouting::CommonBuildPacket (uint32_t iface, MessageHeader& message)
+{
+  Ptr<Socket> sock = m_socketForInterface[iface];
+  Ipv4Address originAddress = m_ipv4->GetAddress(iface, 0).GetLocal();
+  message.SetValidTime(255);
+  message.SetOriginator(originAddress);
+  message.SetTTL(255);
+  message.SetHops(0);
+  message.SetMessageSequence(m_messageSequence);
+  m_messageSequence++;
+  FillInMetric(message);
 }
 
 void Ipv4GlobalRouting::SendMetricRequest (uint32_t iface)
 {
   Ptr<Socket> sock = m_socketForInterface[iface];
-  Ipv4Address originAddress = m_ipv4->GetAddress(iface, 0).GetLocal();
   MessageHeader message;
   message.SetMessageType(MessageHeader::REQUEST_METRIC);
-  message.SetValidTime(255);
-  message.SetOriginator(originAddress);
-  message.SetTTL(255);
-  message.SetHops(0);
-  message.SetMessageSequence(0);
-  FillInMetric(message);
+  CommonBuildPacket (iface, message);
+  SendMessage(sock, message);
+}
+
+void Ipv4GlobalRouting::SendMetricResponse (uint32_t iface)
+{
+  Ptr<Socket> sock = m_socketForInterface[iface];
+  MessageHeader message;
+  message.SetMessageType(MessageHeader::RESPONSE_METRIC);
+  CommonBuildPacket (iface, message);
   SendMessage(sock, message);
 }
 
@@ -253,6 +305,47 @@ void Ipv4GlobalRouting::SendMessage (Ptr<Socket>& socket, MessageHeader& message
   
   Ipv4Address bcastAddress = m_addressForSocket[socket].GetLocal().GetSubnetDirectedBroadcast(m_addressForSocket[socket].GetMask());
   socket->SendTo(packet, 0, InetSocketAddress(bcastAddress, RAD_PORT)); 
+}
+
+void Ipv4GlobalRouting::ReceiveHealingRequest (uint32_t iface, 
+                                               MessageHeader& message)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+  SendMetricResponse (iface);
+}
+
+void Ipv4GlobalRouting::ReceiveHealingResponse (uint32_t iface,
+                                                MessageHeader& message)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+  m_isInterfaceDead[iface] = true;
+  std::list<MessageHeader::MetricListEntry>& metric = message.GetMetricList();
+  for (std::list<MessageHeader::MetricListEntry>::iterator it = metric.begin();
+       it != metric.end(); 
+       it++) {
+    Ipv4Address addr = it->address;
+    if (m_localAddresses.find(addr) != m_localAddresses.end()) {
+      continue;
+    }
+
+    if (m_outputInterfaces[addr].empty()) {
+      // Unconditionally make this an output port, there's nothing better we can do
+      m_stateMachines[addr][iface] = Output;
+    }
+    else if (it->metric < GetDistance(addr)) {
+      m_stateMachines[addr][iface] = Output;
+      SetDistance(addr, it->metric + 1);
+    }
+    else if (it->metric > GetDistance(addr)) {
+      m_stateMachines[addr][iface] = Input;
+    }
+    else if (addr.Get() < message.GetOriginator().Get()) {
+      m_stateMachines[addr][iface] = Input;
+    }
+    else {
+      m_stateMachines[addr][iface] = Output;
+    }
+  }
 }
 
 void 
@@ -435,31 +528,25 @@ Ipv4GlobalRouting::FindEqualCostPaths (Ipv4Address dest, Ptr<NetDevice> oif)
 }
 
 void
-Ipv4GlobalRouting::CheckIfLinksReanimated(Ipv4Address dest) {
+Ipv4GlobalRouting::CheckIfLinksReanimated() {
   NS_LOG_FUNCTION_NOARGS();
   std::list<uint32_t> reanimate;
-  for (std::list<uint32_t>::iterator it = m_deadInterfaces[dest].begin(); it != m_deadInterfaces[dest].end(); it++) {
-    Ptr<NetDevice> device = 0;
-    device = m_ipv4->GetNetDevice (*it);
-    if (device->IsLinkUp()) {
-      reanimate.push_back(*it);
+  for (sgi::hash_map<uint32_t, bool>::iterator it = m_isInterfaceDead.begin(); it != m_isInterfaceDead.end(); it++) {
+    if (it->second) {
+      Ptr<NetDevice> device = 0;
+      device = m_ipv4->GetNetDevice (it->first);
+      if (device->IsLinkUp()) {
+        reanimate.push_back(it->first);
+      }
     }
   }
   while (!reanimate.empty()) {
     uint32_t interface = reanimate.front();
     reanimate.pop_front();
-    NS_ASSERT(m_originalStates[dest][interface] == Output ||
-              m_originalStates[dest][interface] == Input);
-    m_deadInterfaces[dest].remove(interface);
-    m_stateMachines[dest][interface] = m_originalStates[dest][interface];
+    m_isInterfaceDead[interface] = false;
     SendMetricRequest(interface);
-    if (m_stateMachines[dest][interface] == Output) {
-      m_outputInterfaces[dest].push_back(interface);
-    }
-    else {
-      m_inputInterfaces[dest].push_back(interface);
-    }
   }
+  m_reanimationTimer.Schedule (MilliSeconds(100)); 
 }
 
 void
@@ -489,6 +576,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_stateMachines[address][iface] = Dead;
           m_inputInterfaces[address].remove(iface);
           m_deadInterfaces[address].push_back(iface);
+          m_isInterfaceDead[iface] = true;
           NS_LOG_LOGIC("0 Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
@@ -508,6 +596,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_stateMachines[address][iface] = Dead;
           m_reverseOutputInterfaces[address].remove(iface);
           m_deadInterfaces[address].push_back(iface);
+          m_isInterfaceDead[iface] = true;
           NS_LOG_LOGIC("1 Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
@@ -529,6 +618,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_stateMachines[address][iface] = Dead;
           m_outputInterfaces[address].remove(iface);
           m_deadInterfaces[address].push_back(iface);
+          m_isInterfaceDead[iface] = true;
           NS_LOG_LOGIC("2 Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
@@ -550,6 +640,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_stateMachines[address][iface] = Dead;
           m_reverseInputInterfaces[address].remove(iface);
           m_deadInterfaces[address].push_back(iface);
+          m_isInterfaceDead[iface] = true;
           NS_LOG_LOGIC("3 Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
@@ -573,6 +664,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
           m_stateMachines[address][iface] = Dead;
           m_reverseInputInterfaces[address].remove(iface);
           m_deadInterfaces[address].push_back(iface);
+          m_isInterfaceDead[iface] = true;
           NS_LOG_LOGIC("4 Setting " << iface << " for address " << address << " to dead");
           break;
         case Send:
@@ -588,6 +680,7 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
       switch (action) {
         case Receive:
         case Send:
+        case NoPath:
           break;
         case DetectFailure:
           NS_ASSERT(false);
@@ -698,6 +791,7 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
     goto AdvanceAndExit;
   }
   switch (m_stateMachines[address][iif]) {
+    case Dead:
     case Input: {
       AdvanceStateMachine(address, iif, NoPath);
       if (idev->IsLinkUp()) {
@@ -1168,7 +1262,7 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Net
 //
 // See if this is a unicast packet we have a route for.
 //
-  CheckIfLinksReanimated(header.GetDestination());
+  //CheckIfLinksReanimated(header.GetDestination());
   NS_LOG_LOGIC ("Unicast destination- looking up");
   Ptr<Ipv4Route> rtentry = LookupGlobal (header, oif);
   if (rtentry)
@@ -1252,7 +1346,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
       return false;
     }
 
-  CheckIfLinksReanimated(header.GetDestination());
+  //CheckIfLinksReanimated(header.GetDestination());
   NS_LOG_LOGIC("node = " << m_ipv4->GetAddress(iif, 0).GetLocal() <<
                "state machine = " << 
                m_stateMachines[header.GetDestination()][iif] << 
@@ -1278,6 +1372,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, P
 void 
 Ipv4GlobalRouting::NotifyInterfaceUp (uint32_t i)
 {
+  NS_LOG_ERROR("Notifying interface up");
   NS_LOG_FUNCTION (this << i);
   if (m_respondToInterfaceEvents && Simulator::Now ().GetSeconds () > 0)  // avoid startup events
     {
@@ -1290,6 +1385,7 @@ Ipv4GlobalRouting::NotifyInterfaceUp (uint32_t i)
 void 
 Ipv4GlobalRouting::NotifyInterfaceDown (uint32_t i)
 {
+  NS_LOG_ERROR("Notifying interface down");
   NS_LOG_FUNCTION (this << i);
   if (m_respondToInterfaceEvents && Simulator::Now ().GetSeconds () > 0)  // avoid startup events
     {
