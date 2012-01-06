@@ -356,9 +356,13 @@ void Ipv4GlobalRouting::ReceiveHealingResponse (uint32_t iface,
       case None:
         break;
     }
-    if (m_outputInterfaces[addr].empty()) {
-      // Unconditionally make this an output port, there's nothing better we can do
+    // 255 here always signifies infinite distance
+    if (m_outputInterfaces[addr].empty() && it->metric < 255) {
+      // Unconditionally make this an output port, there's nothing better we can do.
+      // Also establish metric on this. In reality this might not be a great idea, given
+      // that a RI port might do significantly better, but this is ok for now.
       m_stateMachines[addr][iface] = Output;
+      SetDistance(addr, it->metric + 1);
       m_outputInterfaces[addr].push_back(iface);
     }
     else if (it->metric < GetDistance(addr)) {
@@ -841,20 +845,19 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
         NS_LOG_LOGIC("incoming interface is dead");
         AdvanceStateMachine(address, iif, DetectFailure);
         idev = 0;
-        if (!m_inputInterfaces[address].empty()) { // At this point we know there are no O, so let's try setting all I to RI, and routing that way
-          NS_LOG_LOGIC("Setting all I interfaces to RI");
-          while (!m_inputInterfaces[address].empty()) {
-            uint32_t iface = m_inputInterfaces[address].front();
-            m_inputInterfaces[address].pop_front();
-            m_stateMachines[address][iface] = ReverseInput;
-            m_reverseInputInterfaces[address].push_back(iface);
-            NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI");
-          }
-          rtentry = TryRouteThroughInterfaces(m_reverseInputInterfaces, address);
-          if (rtentry != 0) {
-            NS_LOG_LOGIC("Sending along RI");
-            break;
-          }
+        // At this point we know there are no O, so let's try setting all I to RI, and routing that way
+        NS_LOG_LOGIC("Setting all I interfaces to RI");
+        while (!m_inputInterfaces[address].empty()) {
+          uint32_t iface = m_inputInterfaces[address].front();
+          m_inputInterfaces[address].pop_front();
+          m_stateMachines[address][iface] = ReverseInput;
+          m_reverseInputInterfaces[address].push_back(iface);
+          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI");
+        }
+        rtentry = TryRouteThroughInterfaces(m_reverseInputInterfaces, address);
+        if (rtentry != 0) {
+          NS_LOG_LOGIC("Sending along RI");
+          break;
         }
         
         NS_LOG_LOGIC("Setting all RO interfaces to O");
@@ -879,20 +882,19 @@ Ipv4GlobalRouting::RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif,
       break;
     }
     case ReverseOutput: {
-      if (!m_inputInterfaces.empty()) { // At this point we know there are no O, so let's try setting all I to RI, and routing that way
-        NS_LOG_LOGIC("Setting all I interfaces to RI");
-        while (!m_inputInterfaces[address].empty()) {
-          uint32_t iface = m_inputInterfaces[address].front();
-          m_inputInterfaces[address].pop_front();
-          m_stateMachines[address][iface] = ReverseInput;
-          m_reverseInputInterfaces[address].push_back(iface);
-          NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI");
-        }
-        rtentry = TryRouteThroughInterfaces(m_reverseInputInterfaces, address);
-        if (rtentry != 0) {
-          NS_LOG_LOGIC("Sending along RI");
-          break;
-        }
+      // At this point we know there are no O, so let's try setting all I to RI, and routing that way
+      NS_LOG_LOGIC("Setting all I interfaces to RI");
+      while (!m_inputInterfaces[address].empty()) {
+        uint32_t iface = m_inputInterfaces[address].front();
+        m_inputInterfaces[address].pop_front();
+        m_stateMachines[address][iface] = ReverseInput;
+        m_reverseInputInterfaces[address].push_back(iface);
+        NS_LOG_LOGIC("Setting " << iface << " for address " << address << " to RI");
+      }
+      rtentry = TryRouteThroughInterfaces(m_reverseInputInterfaces, address);
+      if (rtentry != 0) {
+        NS_LOG_LOGIC("Sending along RI");
+        break;
       }
       
       NS_LOG_LOGIC("Setting all RO interfaces to O");
