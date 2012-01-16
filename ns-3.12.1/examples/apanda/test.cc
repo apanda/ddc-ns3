@@ -107,7 +107,7 @@ void ScheduleLinkFailure()
   IsGraphConnected(nodeSrc);
   channels[linkOfInterest]->SetLinkDown();
   NS_LOG_INFO("Taking " << linkOfInterest << " down");
-  Time downStep = Seconds(randVar.GetValue(240.0, 3600.0));
+  /*Time downStep = Seconds(randVar.GetValue(240.0, 3600.0));
   Time tAbsolute = Simulator::Now() + downStep; 
   if (tAbsolute < simulationEnd) {
     Simulator::Schedule(downStep, &ScheduleLinkFailure);
@@ -116,7 +116,7 @@ void ScheduleLinkFailure()
   tAbsolute = Simulator::Now() + upStep;
   if (tAbsolute < simulationEnd) {
     Simulator::Schedule(upStep, &ScheduleLinkRecovery, linkOfInterest);
-  }
+  }*/
   //Simulator::Schedule(Seconds(randVar.GetValue(180.0, 6000.0)), &ScheduleLinkRecovery, failedLink);
 }
 
@@ -210,9 +210,9 @@ main (int argc, char *argv[])
 
   // Simulate error
   if (simulateError) {
-    for (int i = 0 ; i < 5; i++) {
+    //for (int i = 0 ; i < 5; i++) {
       ScheduleLinkFailure();
-    }
+    //}
   }
 
   UdpEchoServerHelper echoServer (9);
