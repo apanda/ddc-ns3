@@ -320,7 +320,7 @@ TcpL4Protocol::Send (Ptr<Packet> packet,
 
   packet->AddHeader (tcpHeader);
 
-  Ptr<Ipv4> ipv4 = m_node->GetObject<Ipv4> ();
+  Ptr<Ipv4L3Protocol> ipv4 = m_node->GetObject<Ipv4L3Protocol> ();
   if (ipv4 != 0)
     {
       Ipv4Header header;
@@ -338,7 +338,7 @@ TcpL4Protocol::Send (Ptr<Packet> packet,
           NS_LOG_ERROR ("No IPV4 Routing Protocol");
           route = 0;
         }
-      ipv4->Send (packet, saddr, daddr, PROT_NUMBER, route);
+      ipv4->SendDdc (packet, saddr, daddr, PROT_NUMBER, header.GetDdcInformation(), route);
     }
 }
 
@@ -365,8 +365,8 @@ TcpL4Protocol::SendPacket (Ptr<Packet> packet, const TcpHeader &outgoing,
 
   packet->AddHeader (outgoingHeader);
 
-  Ptr<Ipv4> ipv4 = 
-    m_node->GetObject<Ipv4> ();
+  Ptr<Ipv4L3Protocol> ipv4 = 
+    m_node->GetObject<Ipv4L3Protocol> ();
   if (ipv4 != 0)
     {
       Ipv4Header header;
@@ -383,7 +383,8 @@ TcpL4Protocol::SendPacket (Ptr<Packet> packet, const TcpHeader &outgoing,
           NS_LOG_ERROR ("No IPV4 Routing Protocol");
           route = 0;
         }
-      m_downTarget (packet, saddr, daddr, PROT_NUMBER, route);
+      ipv4->SendDdc (packet, saddr, daddr, PROT_NUMBER, header.GetDdcInformation(), route);
+      //m_downTarget (packet, saddr, daddr, PROT_NUMBER, route);
     }
   else
     NS_FATAL_ERROR ("Trying to use Tcp on a node without an Ipv4 interface");
