@@ -753,6 +753,108 @@ Ipv4GlobalRouting::AdvanceStateMachine(Ipv4Address address, uint32_t iface, DdcA
   }
 }
 
+void 
+Ipv4GlobalRouting::SetAllLinksGoodToReverse (Ipv4Address destination)
+{
+  for (int i = 0; i < (int)m_stateMachines[destination].size(); i++) {
+    if (m_stateMachines[destination][i] != Dead && 
+        m_stateMachines[destination][i] != None) {
+      NS_ASSERT(m_stateMachines[destination][i] == Input ||
+                m_stateMachines[destination][i] == Output);
+      m_goodToReverse[destination].push_back(i);
+    }
+  }
+}
+
+void
+Ipv4GlobalRouting::PopulateGoodToReverse (Ipv4Address destination)
+{
+  m_goodToReverse[destination].clear();
+  m_goodToReverse[destination].insert(m_goodToReverse[destination].begin(),
+            m_inputInterfaces[destination].begin(),
+            m_inputInterfaces[destination].end());
+}
+
+/// Standard methods for the Illinois algorithm                                                                                                                                                                                   
+Ptr<Ipv4Route> 
+Ipv4GlobalRouting::StandardReceive (Ipv4Header &header)
+{
+  Ipv4Address destination = header.GetDestination();
+  Ptr<Ipv4Route> rtentry = 0;
+  if (m_outputInterfaces[destination].empty()) {
+    if (m_goodToReverse[destination].empty()) {
+      SetAllLinksGoodToReverse(destination);
+    }
+    while (!m_goodToReverse[destination].empty()) {
+      ReverseInToOut(destination, m_goodToReverse[destination].front()); 
+    }
+    PopulateGoodToReverse(destination);
+  }
+  rtentry = TryRouteThroughOutputInterfaces(header);
+  if (rtentry == 0) {
+    NS_ASSERT(m_outputInterfaces[destination].empty());
+    if (!m_inputInterfaces[destination].empty()) {
+      return StandardReceive(header);
+    }
+  }
+  return rtentry;
+}
+
+Ptr<Ipv4Route>
+Ipv4GlobalRouting::TryRouteThroughOutputInterfaces (Ipv4Header &header)
+{
+  Ptr<Ipv4Route> rtentry = 0;
+  Ipv4Address destination = header.GetDestination();
+  while (rtentry == 0 && !m_outputInterfaces[destination].empty()) {
+    rtentry = SendOnOutLink(m_outputInterfaces[destination].front(), header);
+    if (rtentry == 0) {
+      m_stateMachines[destination][m_outputInterfaces[destination].front()] = Dead;
+      m_isInterfaceDead[m_outputInterfaces[destination].front()] = true;
+      m_outputInterfaces[destination].pop_front(); 
+    }
+  }
+  return rtentry;
+}
+
+Ptr<Ipv4Route> 
+Ipv4GlobalRouting::SendOnOutLink (uint32_t link, Ipv4Header &header)
+{
+  Ipv4Address destination = header.GetDestination();
+  uint32_t pseq = (uint32_t)m_localSeq[destination][link];
+  Ptr<NetDevice> device = m_ipv4->GetNetDevice (link);
+  Ptr<Ipv4Route> rtentry = 0;
+  if (device->IsLinkUp()) {
+    header.SetDdcInformation(pseq);
+    rtentry = Create<Ipv4Route> ();
+    rtentry->SetDestination(destination);
+    rtentry->SetGateway(destination);
+    rtentry->SetOutputDevice(device);
+    rtentry->SetSource (m_ipv4->GetAddress(link, 0).GetLocal());
+  }
+  return rtentry;
+}
+
+void 
+Ipv4GlobalRouting::ReverseOutToIn (Ipv4Address dest, uint32_t link)
+{
+  NS_ASSERT(m_stateMachines[dest][link] == Output);
+  m_stateMachines[dest][link] = Input;
+  m_remoteSeq[dest][link] = ((m_remoteSeq[dest][link] + 1) & 1);
+  m_outputInterfaces[dest].remove(link);
+  m_inputInterfaces[dest].push_back(link);
+}
+
+void 
+Ipv4GlobalRouting::ReverseInToOut (Ipv4Address dest, uint32_t link)
+{
+  NS_ASSERT(m_stateMachines[dest][link] == Input);
+  m_stateMachines[dest][link] = Output;
+  m_remoteSeq[dest][link] = ((m_remoteSeq[dest][link] + 1) & 1);
+  m_goodToReverse[dest].remove(link);
+  m_inputInterfaces[dest].remove(link);
+  m_outputInterfaces[dest].push_back(link);
+}
+
 Ptr<Ipv4Route>
 Ipv4GlobalRouting::TryRouteThroughInterfaces (Interfaces interfaces, Ipv4Address dest)
 {
@@ -1277,7 +1379,7 @@ Ipv4GlobalRouting::PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const
 }
 
 Ptr<Ipv4Route>
-Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
+Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
 {
 
   // TODO:  Configurable option to enable RFC 1222 Strong End System Model
@@ -1319,7 +1421,6 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Net
 //
 // See if this is a unicast packet we have a route for.
 //
-  //CheckIfLinksReanimated(header.GetDestination());
   NS_LOG_LOGIC ("Unicast destination- looking up");
   Ptr<Ipv4Route> rtentry = LookupGlobal (header, oif);
   if (rtentry)
@@ -1340,7 +1441,7 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Net
 }
 
 bool 
-Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const NetDevice> idev, UnicastForwardCallback ucb, MulticastForwardCallback mcb,
+Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<const NetDevice> idev, UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                                 LocalDeliverCallback lcb, ErrorCallback ecb)
 { 
   NS_LOG_FUNCTION (this << p << header << header.GetSource () << header.GetDestination () << idev);

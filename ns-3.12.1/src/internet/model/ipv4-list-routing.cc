@@ -97,7 +97,7 @@ Ipv4ListRouting::DoStart (void)
 
 
 Ptr<Ipv4Route>
-Ipv4ListRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, enum Socket::SocketErrno &sockerr)
+Ipv4ListRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice> oif, enum Socket::SocketErrno &sockerr)
 {
   NS_LOG_FUNCTION (this << header.GetDestination () << " " << header.GetSource () << " " << oif);
   Ptr<Ipv4Route> route;
@@ -123,7 +123,7 @@ Ipv4ListRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDe
 
 // Patterned after Linux ip_route_input and ip_route_input_slow
 bool 
-Ipv4ListRouting::RouteInput (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const NetDevice> idev, 
+Ipv4ListRouting::RouteInput (Ptr<const Packet> p, Ipv4Header &header, Ptr<const NetDevice> idev, 
                              UnicastForwardCallback ucb, MulticastForwardCallback mcb, 
                              LocalDeliverCallback lcb, ErrorCallback ecb)
 {

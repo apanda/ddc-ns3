@@ -87,9 +87,9 @@ public:
   virtual ~Ipv4GlobalRouting ();
 
   // These methods inherited from base class
-  virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr);
+  virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr);
 
-  virtual bool RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const NetDevice> idev,
+  virtual bool RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<const NetDevice> idev,
                             UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                             LocalDeliverCallback lcb, ErrorCallback ecb);
   virtual void NotifyInterfaceUp (uint32_t interface);
@@ -238,22 +238,6 @@ protected:
   void DoDispose (void);
 
 private:
-  /// Send a message along
-  void SendMessage (Ptr<Socket>& socket, MessageHeader& message);
-  /// Receive a request for metric
-  void ReceiveHealingRequest (uint32_t iface, MessageHeader& message);
-  /// Receive a response to a previous request
-  void ReceiveHealingResponse (uint32_t iface, MessageHeader& message);
-  /// Given a message header, initialize the metric correctly
-  void FillInMetric (MessageHeader& message);
-  /// Common handling for packets
-  void CommonBuildPacket (uint32_t iface, MessageHeader& message);
-  /// Something happened to trigger the need to heal, request metrics from our neighbor, while simultaneously
-  /// sending them ours. I am mostly planning on using this sending of the metrics as a way to get both sides on
-  /// the same idea about I and O. This isn't essential, but why not do it.
-  void SendMetricRequest (uint32_t iface);
-  // Send a response in response to a request for our metrics
-  void SendMetricResponse (uint32_t iface);
   /// Set to true if packets are randomly routed among ECMP; set to false for using only one route consistently
   bool m_randomEcmpRouting;
   /// Set to true if this interface should respond to interface events by globallly recomputing routes 
@@ -281,11 +265,6 @@ private:
     Send
   };
 
-  void RecvDdcHealing (Ptr<Socket> socket);
-
-  void CheckIfLinksReanimated();
-  void AdvanceStateMachine(Ipv4Address dest, uint32_t iface, DdcAction action);
-  Ptr<Ipv4Route> RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev);
   typedef std::list<Ipv4RoutingTableEntry *> HostRoutes;
   typedef std::list<Ipv4RoutingTableEntry *>::const_iterator HostRoutesCI;
   typedef std::list<Ipv4RoutingTableEntry *>::iterator HostRoutesI;
@@ -330,14 +309,46 @@ private:
   Timer m_reanimationTimer;
   Time m_simulationEndTime;
 
-  Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);
-  Ptr<Ipv4Route> TryRouteThroughInterfaces (Interfaces interfaces, Ipv4Address address);
-
   HostRoutes m_hostRoutes;
   NetworkRoutes m_networkRoutes;
   ASExternalRoutes m_ASexternalRoutes; // External routes imported
 
   Ptr<Ipv4> m_ipv4;
+
+  /// Standard methods for the Illinois algorithm
+  Ptr<Ipv4Route> StandardReceive (Ipv4Header &header);
+  Ptr<Ipv4Route> SendOnOutLink (uint32_t link, Ipv4Header &header);
+  void ReverseOutToIn (Ipv4Address destination, uint32_t link);
+  void ReverseInToOut (Ipv4Address destination, uint32_t link);
+  void SetAllLinksGoodToReverse (Ipv4Address destination);
+  void PopulateGoodToReverse (Ipv4Address destination);
+  Ptr<Ipv4Route> TryRouteThroughOutputInterfaces (Ipv4Header &header);
+
+  /// Send a message along
+  void SendMessage (Ptr<Socket>& socket, MessageHeader& message);
+  /// Receive a request for metric
+  void ReceiveHealingRequest (uint32_t iface, MessageHeader& message);
+  /// Receive a response to a previous request
+  void ReceiveHealingResponse (uint32_t iface, MessageHeader& message);
+  /// Given a message header, initialize the metric correctly
+  void FillInMetric (MessageHeader& message);
+  /// Common handling for packets
+  void CommonBuildPacket (uint32_t iface, MessageHeader& message);
+  /// Original routing methods for the Berkeley algorithm
+  void RecvDdcHealing (Ptr<Socket> socket);
+
+  void CheckIfLinksReanimated();
+  void AdvanceStateMachine(Ipv4Address dest, uint32_t iface, DdcAction action);
+  Ptr<Ipv4Route> RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev);
+  Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);
+  Ptr<Ipv4Route> TryRouteThroughInterfaces (Interfaces interfaces, Ipv4Address address);
+
+  /// Something happened to trigger the need to heal, request metrics from our neighbor, while simultaneously
+  /// sending them ours. I am mostly planning on using this sending of the metrics as a way to get both sides on
+  /// the same idea about I and O. This isn't essential, but why not do it.
+  void SendMetricRequest (uint32_t iface);
+  // Send a response in response to a request for our metrics
+  void SendMetricResponse (uint32_t iface);
 };
 
 } // Namespace ns3
