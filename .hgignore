@@ -1,3 +1,4 @@
+syntax: regexp
 \.rej$
 \.orig$
 \.o$
@@ -30,3 +31,7 @@ massif.*
 \.diff$
 \.tr$
 \#[^\#/]+\#$
+
+syntax: glob
+*.swp
+*.sw*
