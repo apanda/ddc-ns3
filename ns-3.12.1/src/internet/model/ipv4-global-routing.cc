@@ -164,6 +164,7 @@ Ipv4GlobalRouting::SetIfaceToInput(Ipv4Address address, uint32_t iif)
   }
   m_originalStates[address][iif] = Input;
   m_inputInterfaces[address].push_back(iif);
+  m_goodToReverse[address].push_back(iif);
   m_stateMachines[address][iif] = Input;
   NS_LOG_INFO ("Setting state for " << address << " interface " << iif << " to input");
 }
@@ -397,9 +398,14 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   if (m_stateMachines.find(dest) == m_stateMachines.end()) {
     m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     m_originalStates[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    m_goodToReverse[dest] = std::list<uint32_t>();
+    m_remoteSeq[dest] = std::vector<uint8_t>(m_ipv4->GetNInterfaces());
+    m_localSeq[dest] = std::vector<uint8_t>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[dest][i] = None;
       m_originalStates[dest][i] = None;
+      m_remoteSeq[dest][i] = 0;
+      m_localSeq[dest][i] = 1;
     }
   }
   m_outputInterfaces[dest].push_back(interface);
@@ -420,9 +426,14 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   if (m_stateMachines.find(dest) == m_stateMachines.end()) {
     m_stateMachines[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     m_originalStates[dest] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    m_goodToReverse[dest] = std::list<uint32_t>();
+    m_remoteSeq[dest] = std::vector<uint8_t>(m_ipv4->GetNInterfaces());
+    m_localSeq[dest] = std::vector<uint8_t>(m_ipv4->GetNInterfaces());
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[dest][i] = None;
       m_originalStates[dest][i] = None;
+      m_remoteSeq[dest][i] = 0;
+      m_localSeq[dest][i] = 1;
     }
   }
   m_outputInterfaces[dest].push_back(interface);

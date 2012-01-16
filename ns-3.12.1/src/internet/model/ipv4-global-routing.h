@@ -295,6 +295,7 @@ private:
   typedef std::list<Ipv4RoutingTableEntry *>::iterator ASExternalRoutesI;
   typedef sgi::hash_map<Ipv4Address, std::list<uint32_t>, Ipv4AddressHash> Interfaces;
   typedef sgi::hash_map<Ipv4Address, std::vector<DdcState>, Ipv4AddressHash> StateMachines;
+  typedef sgi::hash_map<Ipv4Address, std::vector<uint8_t>, Ipv4AddressHash> SequenceNumbers;
   typedef sgi::hash_map<Ipv4Address, uint32_t, Ipv4AddressHash> DistanceMetric;
   typedef sgi::hash_map<Ipv4Address, bool, Ipv4AddressHash> LocalAddress;
   typedef sgi::hash_map<Ipv4Address, bool, Ipv4AddressHash>::iterator LocalAddressI;
@@ -319,6 +320,9 @@ private:
   SocketToInterface m_interfaceForSocket;
   LocalAddress m_localAddresses;
   InterfaceStates m_isInterfaceDead;
+  SequenceNumbers m_remoteSeq;
+  SequenceNumbers m_localSeq;
+  Interfaces m_goodToReverse;
   static const uint16_t RAD_PORT = 698;
   uint16_t m_messageSequence;
   Timer m_reanimationTimer;
