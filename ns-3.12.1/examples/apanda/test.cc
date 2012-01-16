@@ -33,7 +33,7 @@ std::vector<PointToPointChannel* > channels;
 UniformVariable randVar;
 const int32_t NODES = 12;
 std::vector<std::list<uint32_t>*> connectivityGraph(NODES);
-Time simulationEnd = Seconds(60.0 * 60.0);
+Time simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
 bool IsGraphConnected(int start) 
 {
   bool visited[NODES] = {false};
@@ -210,9 +210,9 @@ main (int argc, char *argv[])
 
   // Simulate error
   if (simulateError) {
-    //for (int i = 0 ; i < 5; i++) {
+    for (int i = 0 ; i < 5; i++) {
       ScheduleLinkFailure();
-    //}
+    }
   }
 
   UdpEchoServerHelper echoServer (9);

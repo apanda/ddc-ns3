@@ -408,8 +408,8 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[dest][i] = None;
       m_originalStates[dest][i] = None;
-      m_remoteSeq[dest][i] = 1;
-      m_localSeq[dest][i] = 1;
+      m_remoteSeq[dest][i] = 0;
+      m_localSeq[dest][i] = 0;
     }
   }
   m_outputInterfaces[dest].push_back(interface);
@@ -843,6 +843,7 @@ Ipv4GlobalRouting::ReverseOutToIn (Ipv4Address dest, uint32_t link)
 {
   NS_ASSERT(m_stateMachines[dest][link] == Output);
   m_stateMachines[dest][link] = Input;
+  NS_LOG_LOGIC("Setting remote seq for " << dest << " link " << link << " to " << ((m_remoteSeq[dest][link] + 1) & 1));
   m_remoteSeq[dest][link] = ((m_remoteSeq[dest][link] + 1) & 1);
   m_outputInterfaces[dest].remove(link);
   m_inputInterfaces[dest].push_back(link);
@@ -853,7 +854,8 @@ Ipv4GlobalRouting::ReverseInToOut (Ipv4Address dest, uint32_t link)
 {
   NS_ASSERT(m_stateMachines[dest][link] == Input);
   m_stateMachines[dest][link] = Output;
-  m_remoteSeq[dest][link] = ((m_remoteSeq[dest][link] + 1) & 1);
+  NS_LOG_LOGIC("Setting local seq for " << dest << " link " << link << " to " << ((m_localSeq[dest][link] + 1) & 1));
+  m_localSeq[dest][link] = ((m_localSeq[dest][link] + 1) & 1);
   m_goodToReverse[dest].remove(link);
   m_inputInterfaces[dest].remove(link);
   m_outputInterfaces[dest].push_back(link);
