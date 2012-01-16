@@ -741,6 +741,8 @@ public:
  */
   void DebugSPFCalculate (Ipv4Address root);
 
+  void SetSimulationEndTime (Time time);
+
 private:
 /**
  * @brief GlobalRouteManagerImpl copy construction is disallowed.
@@ -774,6 +776,7 @@ private:
   void SPFAddASExternal (GlobalRoutingLSA *extlsa, SPFVertex *v);
   int32_t FindOutgoingInterfaceId (Ipv4Address a, 
                                    Ipv4Mask amask = Ipv4Mask ("255.255.255.255"));
+  Time m_simulationEndTime;
 };
 
 } // namespace ns3

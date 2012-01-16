@@ -527,7 +527,8 @@ GlobalRouteManagerLSDB::GetLSAByLinkData (Ipv4Address addr) const
 
 GlobalRouteManagerImpl::GlobalRouteManagerImpl () 
   :
-    m_spfroot (0)
+    m_spfroot (0),
+    m_simulationEndTime (Seconds(60.0 * 60.0 * 24 * 7))
 {
   NS_LOG_FUNCTION_NOARGS ();
   m_lsdb = new GlobalRouteManagerLSDB ();
@@ -734,6 +735,7 @@ GlobalRouteManagerImpl::InitializeRoutes ()
       if (rtr) {
         Ptr<Ipv4GlobalRouting> gr = rtr->GetRoutingProtocol();
         gr->ClassifyInterfaces();
+        gr->SetStopTime(m_simulationEndTime);
         NS_LOG_LOGIC("Running classify interfaces\n");
       }
     }
@@ -2211,7 +2213,12 @@ GlobalRouteManagerImpl::SPFVertexAddParent (SPFVertex* v)
       parent->AddChild (v);
     }
 }
-
+void 
+GlobalRouteManagerImpl::SetSimulationEndTime (Time time)
+{
+  NS_LOG_FUNCTION_NOARGS();
+  m_simulationEndTime = time;
+}
 } // namespace ns3
 
 

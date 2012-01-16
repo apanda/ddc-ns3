@@ -83,6 +83,8 @@ public:
    *
    */
   static void RecomputeRoutingTables (void);
+
+  static void SetSimulationEndTime (Time time);
 private:
   /**
    * \internal

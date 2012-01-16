@@ -57,6 +57,12 @@ Ipv4GlobalRoutingHelper::Create (Ptr<Node> node) const
   return globalRouting;
 }
 
+void
+Ipv4GlobalRoutingHelper::SetSimulationEndTime (Time time)
+{
+  GlobalRouteManager::SetSimulationEndTime (time);
+}
+
 void 
 Ipv4GlobalRoutingHelper::PopulateRoutingTables (void)
 {

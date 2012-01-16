@@ -246,7 +246,7 @@ Ipv4Header::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
 
-  uint8_t verIhl = (4 << 4) | (5);
+  uint8_t verIhl = (4 << 4) | (IPV4_HEADER_LENGTH);
   i.WriteU8 (verIhl);
   i.WriteU8 (m_tos);
   i.WriteHtonU16 (m_payloadSize + IPV4_HEADER_LENGTH*4);

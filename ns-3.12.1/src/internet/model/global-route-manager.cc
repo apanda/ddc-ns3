@@ -53,6 +53,14 @@ GlobalRouteManager::InitializeRoutes (void)
   InitializeRoutes ();
 }
 
+void 
+GlobalRouteManager::SetSimulationEndTime (Time time)
+{
+  
+  SimulationSingleton<GlobalRouteManagerImpl>::Get ()->
+  SetSimulationEndTime (time);
+}
+
 uint32_t
 GlobalRouteManager::AllocateRouterId (void)
 {

@@ -64,7 +64,8 @@ Ipv4GlobalRouting::Ipv4GlobalRouting ()
   : m_randomEcmpRouting (false),
     m_respondToInterfaceEvents (false),
     m_messageSequence (0),
-    m_reanimationTimer (Timer::CANCEL_ON_DESTROY)
+    m_reanimationTimer (Timer::REMOVE_ON_DESTROY),
+    m_simulationEndTime(Seconds(60.0 * 60.0 * 24 * 7))
 {
   NS_LOG_FUNCTION_NOARGS ();
 }
@@ -594,7 +595,16 @@ Ipv4GlobalRouting::CheckIfLinksReanimated() {
     m_isInterfaceDead[interface] = false;
     SendMetricRequest(interface);
   }
-  m_reanimationTimer.Schedule (MilliSeconds(100)); 
+  Time upStep = MilliSeconds(100);                                                                                                                                                                           
+  Time tAbsolute = Simulator::Now() + upStep;                                                                                                                                                                                            
+  if (tAbsolute < m_simulationEndTime) {
+      m_reanimationTimer.Schedule (MilliSeconds(100)); 
+  }
+}
+
+void
+Ipv4GlobalRouting::SetStopTime(Time time) {
+    m_simulationEndTime = time;
 }
 
 void

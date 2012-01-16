@@ -33,7 +33,7 @@ std::vector<PointToPointChannel* > channels;
 UniformVariable randVar;
 const int32_t NODES = 12;
 std::vector<std::list<uint32_t>*> connectivityGraph(NODES);
-
+Time simulationEnd = Seconds(60.0 * 60.0);
 bool IsGraphConnected(int start) 
 {
   bool visited[NODES] = {false};
@@ -109,12 +109,12 @@ void ScheduleLinkFailure()
   NS_LOG_INFO("Taking " << linkOfInterest << " down");
   Time downStep = Seconds(randVar.GetValue(240.0, 3600.0));
   Time tAbsolute = Simulator::Now() + downStep; 
-  if (tAbsolute < Seconds (60.0 * 60.0 * 24 * 7)) {
+  if (tAbsolute < simulationEnd) {
     Simulator::Schedule(downStep, &ScheduleLinkFailure);
   }
   Time upStep = Seconds(randVar.GetValue(240.0, 5200.0));
   tAbsolute = Simulator::Now() + upStep;
-  if (tAbsolute < Seconds(60.0 * 60.0 * 24 * 7)) {
+  if (tAbsolute < simulationEnd) {
     Simulator::Schedule(upStep, &ScheduleLinkRecovery, linkOfInterest);
   }
   //Simulator::Schedule(Seconds(randVar.GetValue(180.0, 6000.0)), &ScheduleLinkRecovery, failedLink);
@@ -178,7 +178,6 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO("Creating point to point connections");
   PointToPointHelper pointToPoint;
-  pointToPoint.EnablePcapAll("DDCTest");
 
   std::vector<NetDeviceContainer> nodeDevices(NODES);
   std::vector<NetDeviceContainer> linkDevices;
@@ -195,6 +194,7 @@ main (int argc, char *argv[])
     }
   }
 
+  pointToPoint.EnablePcapAll("DDCTest");
   InternetStackHelper stack;
   stack.Install (nodes);
   Ipv4AddressHelper address;
@@ -205,6 +205,7 @@ main (int argc, char *argv[])
     stack.EnableAsciiIpv4(stream, current); 
     address.NewNetwork();
   }
+  Ipv4GlobalRoutingHelper::SetSimulationEndTime(simulationEnd);
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   // Simulate error
@@ -218,7 +219,7 @@ main (int argc, char *argv[])
 
   ApplicationContainer serverApps = echoServer.Install (nodes);
   serverApps.Start (Seconds (1.0));
-  serverApps.Stop (Seconds (60.0 * 60.0 * 24 * 7));
+  serverApps.Stop (simulationEnd);
   for (int i = 0; i < NODES; i++) {
     for (int j = 0; j < NODES; j++) {
       if (i == j) {
@@ -231,7 +232,7 @@ main (int argc, char *argv[])
       echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
       ApplicationContainer clientApps = echoClient.Install (nodes.Get (i));
       clientApps.Start (Seconds (randVar.GetValue(1.0, 120.0)));
-      clientApps.Stop (Seconds (60.0 * 60.0 * 24 * 7));
+      clientApps.Stop (simulationEnd);
     }
   }
 

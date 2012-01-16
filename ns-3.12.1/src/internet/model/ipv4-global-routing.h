@@ -231,6 +231,8 @@ public:
 
   void ClassifyInterfaces();
 
+  void SetStopTime(Time time);
+
 protected:
   void DoStart (void);
   void DoDispose (void);
@@ -326,6 +328,7 @@ private:
   static const uint16_t RAD_PORT = 698;
   uint16_t m_messageSequence;
   Timer m_reanimationTimer;
+  Time m_simulationEndTime;
 
   Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);
   Ptr<Ipv4Route> TryRouteThroughInterfaces (Interfaces interfaces, Ipv4Address address);
