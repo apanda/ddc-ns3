@@ -35,6 +35,7 @@
 #include "global-route-manager.h"
 #include "global-router-interface.h"
 
+#define ILLINOIS 1
 NS_LOG_COMPONENT_DEFINE ("Ipv4GlobalRouting");
 
 namespace ns3 {
@@ -98,9 +99,11 @@ Ipv4GlobalRouting::DoStart ()
     m_socketForInterface[i] = socket;
     m_interfaceForSocket[socket] = i;
   }
+  // For the Illinois algorithm we have no healing yet
+#ifndef ILLINOIS
   m_reanimationTimer.SetFunction(&Ipv4GlobalRouting::CheckIfLinksReanimated, this);
   m_reanimationTimer.Schedule (MilliSeconds(100)); 
-  
+#endif
 }
 
 void
@@ -405,7 +408,7 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
       m_stateMachines[dest][i] = None;
       m_originalStates[dest][i] = None;
-      m_remoteSeq[dest][i] = 0;
+      m_remoteSeq[dest][i] = 1;
       m_localSeq[dest][i] = 1;
     }
   }
@@ -434,7 +437,7 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
       m_stateMachines[dest][i] = None;
       m_originalStates[dest][i] = None;
       m_remoteSeq[dest][i] = 0;
-      m_localSeq[dest][i] = 1;
+      m_localSeq[dest][i] = 0;
     }
   }
   m_outputInterfaces[dest].push_back(interface);
@@ -824,6 +827,7 @@ Ipv4GlobalRouting::SendOnOutLink (uint32_t link, Ipv4Header &header)
   Ptr<NetDevice> device = m_ipv4->GetNetDevice (link);
   Ptr<Ipv4Route> rtentry = 0;
   if (device->IsLinkUp()) {
+    NS_LOG_LOGIC("Setting packet sequence number (hopefully) to " << pseq);
     header.SetDdcInformation(pseq);
     rtentry = Create<Ipv4Route> ();
     rtentry->SetDestination(destination);
@@ -1421,8 +1425,14 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice
 //
 // See if this is a unicast packet we have a route for.
 //
-  NS_LOG_LOGIC ("Unicast destination- looking up");
+#ifndef ILLINOIS
+  NS_LOG_LOGIC ("Unicast destination- looking up using DDC");
   Ptr<Ipv4Route> rtentry = LookupGlobal (header, oif);
+#else
+  NS_LOG_LOGIC("Unicast destination- looking up using PRVLDDC");
+  Ptr<Ipv4Route> rtentry = StandardReceive(header);
+#endif
+
   if (rtentry)
     {
       sockerr = Socket::ERROR_NOTERROR;
@@ -1510,13 +1520,41 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
                m_stateMachines[header.GetDestination()][iif] << 
                " dev = " << iif <<
                " dest = " << header.GetDestination());
+#ifndef ILLINOIS
   AdvanceStateMachine(header.GetDestination(), iif, Receive);
   // Next, try to find a route
-  NS_LOG_LOGIC ("Unicast destination- looking up global route");
+  NS_LOG_LOGIC ("Unicast destination- looking up global route using DDC");
   Ptr<Ipv4Route> rtentry = LookupGlobal (header, 0, idev);
+#else
+  NS_LOG_LOGIC ("Unicast destination- looking up global route using PRVLDDC");
+  Ipv4Address destination = header.GetDestination();
+  Ptr<Ipv4Route> rtentry = 0;
+  NS_ASSERT (m_stateMachines[destination][iif] == Dead ||
+            m_stateMachines[destination][iif] == Input ||
+            m_stateMachines[destination][iif] == Output); 
+  if (m_stateMachines[destination][iif] == Input) {
+    NS_LOG_LOGIC(" header information = " << header.GetDdcInformation() <<
+                 " m_remoteSeq information = " << (uint32_t)m_remoteSeq[destination][iif]);
+    NS_ASSERT((header.GetDdcInformation() & 0x1) == (m_remoteSeq[destination][iif] & 0x1));
+    rtentry = StandardReceive(header);
+  }
+  else if (m_stateMachines[destination][iif] == Output) {
+    if ((header.GetDdcInformation() & 0x1) == (m_remoteSeq[destination][iif] & 0x1)) {
+      rtentry = SendOnOutLink(iif, header);
+      if (rtentry == 0) {
+        rtentry = StandardReceive(header);
+      }
+    }
+    else {
+      ReverseOutToIn(destination, iif);
+      rtentry = StandardReceive(header);
+    }
+  }
+#endif
   if (rtentry != 0)
     {
       NS_LOG_LOGIC ("Found unicast destination- calling unicast callback, header.destination " << header.GetDestination());
+      NS_LOG_LOGIC("Current ddc information is " << header.GetDdcInformation());
       ucb (rtentry, p, header);
       return true;
     }
