@@ -241,6 +241,8 @@ Ipv4GlobalRouting::ClassifyInterfaces()
     Ipv4Address address = *it;
     address = VerifyAndUpdateAddress(address);
     NS_ASSERT((m_inputInterfaces[address].size() + m_outputInterfaces[address].size()) == m_ipv4->GetNInterfaces() - 1);
+    m_originalInputs[address].insert(m_originalInputs[address].begin(), m_inputInterfaces[address].begin(), m_inputInterfaces[address].end());
+    m_originalOutputs[address].insert(m_originalOutputs[address].begin(), m_outputInterfaces[address].begin(), m_outputInterfaces[address].end());
   }
   for (uint32_t j = 0; j < m_ipv4->GetNInterfaces (); j++)
   {
@@ -250,6 +252,25 @@ Ipv4GlobalRouting::ClassifyInterfaces()
       Ipv4Address addr = iaddr.GetLocal ();
       m_localAddresses[addr] = true;
     }
+  }
+}
+
+void
+Ipv4GlobalRouting::Reset()
+{
+  for (StateMachines::iterator it = m_originalStates.begin();
+       it != m_originalStates.end();
+       it++) {
+     m_stateMachines[it->first].clear();
+     m_stateMachines[it->first].insert(m_stateMachines[it->first].begin(), it->second.begin(), it->second.end());
+     m_inputInterfaces[it->first].clear();
+     m_inputInterfaces[it->first].insert(m_inputInterfaces[it->first].begin(), m_originalInputs[it->first].begin(), m_originalInputs[it->first].end());
+     m_outputInterfaces[it->first].clear();
+     m_outputInterfaces[it->first].insert(m_outputInterfaces[it->first].begin(), m_originalOutputs[it->first].begin(), m_originalOutputs[it->first].end());
+     for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
+       m_remoteSeq[it->first][i] = 0;
+       m_localSeq[it->first][i] = 0;
+     }
   }
 }
 
@@ -843,6 +864,7 @@ Ipv4GlobalRouting::PopulateGoodToReverse (Ipv4Address destination)
 Ptr<Ipv4Route> 
 Ipv4GlobalRouting::StandardReceive (Ipv4Header &header)
 {
+  NS_LOG_INFO("StandardReceive");
   Ipv4Address destination = VerifyAndUpdateAddress(header.GetDestination());
   Ptr<Ipv4Route> rtentry = 0;
   if (m_outputInterfaces[destination].empty()) {
@@ -1544,6 +1566,7 @@ bool
 Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<const NetDevice> idev, UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                                 LocalDeliverCallback lcb, ErrorCallback ecb)
 { 
+  lcb = MakeNullCallback<void, Ptr<const Packet>, const Ipv4Header&, uint32_t>();
   NS_LOG_FUNCTION (this << p << header << header.GetSource () << header.GetDestination () << idev);
   // Check if input device supports IP
   if (header.GetTtl() == 1) {

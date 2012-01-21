@@ -123,10 +123,19 @@ UdpEchoServer::HandleRead (Ptr<Socket> socket)
           packet->RemoveAllPacketTags ();
           packet->RemoveAllByteTags ();
 
+          if (!m_receive.IsNull()) {
+            m_receive(GetNode()->GetId());
+          }
           NS_LOG_LOGIC ("Echoing packet");
-          socket->SendTo (packet, 0, from);
+          // socket->SendTo (packet, 0, from);
         }
     }
+}
+
+void
+UdpEchoServer::SetReceivedCallback(ReceivedCallback callback) 
+{
+  m_receive = callback;
 }
 
 } // Namespace ns3

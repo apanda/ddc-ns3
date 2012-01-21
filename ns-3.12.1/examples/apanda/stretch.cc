@@ -43,6 +43,11 @@ struct Simulation : public Object {
   uint32_t m_nodeSrc;
   uint32_t m_nodeDst;
   NodeContainer m_nodes;
+  std::list<uint32_t> m_path;
+  std::list<uint32_t> m_fullPath;
+  int32_t m_failedLink;
+  uint32_t m_iterations;
+  Ptr<OutputStreamWrapper> m_output;
   Simulation()
   {
       m_simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
@@ -183,6 +188,61 @@ struct Simulation : public Object {
     m_channels[linkOfInterest]->SetLinkDown();
     NS_LOG_INFO("Taking " << linkOfInterest << " down");
   }
+
+  enum State {
+      ExploreFull,
+      ExploreFailed1,
+      ExploreFailed2
+  };
+  State m_state;
+  uint32_t m_fullLength;
+  uint32_t m_failedLength;
+  uint32_t m_secondFailedLength;
+  
+  void UnfailLink(int32_t link) {
+    uint32_t nodeA = m_channels[link]->GetDevice(0)->GetNode()->GetId();
+    uint32_t nodeB = m_channels[link]->GetDevice(1)->GetNode()->GetId();
+    uint32_t nodeSrc = (nodeA < nodeB ? nodeA : nodeB);
+    uint32_t nodeDest = (nodeA > nodeB ? nodeA : nodeB);
+    NS_ASSERT(0 <= nodeSrc && nodeSrc < (uint32_t)m_numNodes);
+    NS_ASSERT(0 <= nodeDest && nodeDest < (uint32_t)m_numNodes);
+    m_connectivityGraph[nodeSrc]->push_back(nodeDest);
+    m_channels[link]->SetLinkUp();
+    ResetState();
+  }
+
+  int32_t FailLink(uint32_t nodeA, uint32_t nodeB) 
+  {
+    int32_t link = -1;
+    for (uint32_t linkOfInterest = 0; linkOfInterest < m_channels.size(); linkOfInterest++) {
+      uint32_t devA = m_channels[linkOfInterest]->GetDevice(0)->GetNode()->GetId();
+      uint32_t devB = m_channels[linkOfInterest]->GetDevice(1)->GetNode()->GetId();
+      if ((devA == nodeA && devB== nodeB) ||
+           (devA == nodeB && devB == nodeA)) {
+        link = linkOfInterest;
+        break;
+      }
+    }
+    uint32_t nodeSrc = (nodeA < nodeB ? nodeA : nodeB);
+    uint32_t nodeDest = (nodeA > nodeB ? nodeA : nodeB);
+    NS_ASSERT(0 <= nodeSrc && nodeSrc < (uint32_t)m_numNodes);
+    NS_ASSERT(0 <= nodeDest && nodeDest < (uint32_t)m_numNodes);
+    for (std::list<uint32_t>::iterator it = m_connectivityGraph[nodeSrc]->begin();
+         it != m_connectivityGraph[nodeSrc]->end();
+         it++) {
+      NS_ASSERT(0 <= *it && *it < (uint32_t)m_numNodes);
+      NS_ASSERT(0 <= *it && *it < (uint32_t)m_numNodes);
+      if (*it == nodeDest) {
+        m_connectivityGraph[nodeSrc]->erase(it);
+        break;
+      }
+    }
+    IsGraphConnected(m_nodeSrc);
+    if (link != -1) {
+      m_channels[link]->SetLinkDown();
+    }
+    return link;
+  }
   
   static void OutputTtlInformation(uint8_t oldTtl, uint8_t newTtl)
   {
@@ -191,31 +251,115 @@ struct Simulation : public Object {
 
   void DroppedPacket()
   {
-      NS_LOG_INFO("Dropped packet");
+    NS_ASSERT(m_state == ExploreFailed1 || m_state == ExploreFull);
+    if (m_state == ExploreFailed1) {
+      UnfailLink(m_failedLink);
+      if (FindAndFailLink()) {
+        NS_ASSERT(m_failedLink != -1);
+        m_clients[m_nodeSrc]->ManualSend();
+        m_state = ExploreFailed1;
+      }
+      else {
+        Step();
+      }
+    }
+    else {
+      Step();
+    }
   }
-
+  
+  void ResetState()
+  {
+    for (int i = 0; i < m_numNodes; i++) {
+      Ptr<Node> node = m_nodes.Get(i);
+      Ptr<GlobalRouter> router = node->GetObject<GlobalRouter>();
+      if (router == 0) {
+        continue;
+      }
+      Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
+      gr->Reset();
+    }
+  }
+  
+  bool FindAndFailLink() {
+      if (m_fullPath.size() <= 1) {
+        return false;
+      }
+      uint32_t nodeA = m_fullPath.front();
+      m_fullPath.pop_front();
+      uint32_t nodeB = m_fullPath.front();
+      m_failedLink = FailLink(nodeA, nodeB);
+      while (!IsGraphConnected(m_nodeSrc) && (m_fullPath.size() > 1)) {
+        UnfailLink(m_failedLink);
+        nodeA = m_fullPath.front();
+        m_fullPath.pop_front();
+        nodeB = m_fullPath.front();
+        m_failedLink = FailLink(nodeA, nodeB);
+      }
+      bool ret = IsGraphConnected(m_nodeSrc);
+      if (!ret && m_failedLink != -1) {
+        UnfailLink(m_failedLink);
+      }
+      return ret;
+  }
+  
   void ReceivedPacket(uint32_t node)
   {
-      NS_LOG_INFO("Received packet " << node);
+      m_path.push_back(node);
+      NS_LOG_INFO("Path length = " << m_path.size());
+      if (m_state == ExploreFull) {
+        m_fullLength = m_path.size();
+        m_fullPath.clear();
+        m_fullPath.insert(m_fullPath.begin(), m_path.begin(), m_path.end());
+        m_path.clear();
+        if (FindAndFailLink()) {
+          m_state = ExploreFailed1;
+          m_clients[m_nodeSrc]->ManualSend();
+        }
+        else {
+          Step();
+        }
+      }
+      else if (m_state==ExploreFailed1) {
+        m_failedLength = m_path.size();
+        m_path.clear();
+        m_clients[m_nodeSrc]->ManualSend();
+        m_state = ExploreFailed2;
+      }
+      else if (m_state == ExploreFailed2) {
+        m_secondFailedLength = m_path.size();
+        m_path.clear();
+        (*m_output->GetStream()) << m_nodeSrc << ","<<m_nodeDst<<","<<m_fullLength<<","<<m_failedLength<<","<<m_secondFailedLength<<std::endl;
+        UnfailLink(m_failedLink);
+        if (FindAndFailLink()) {
+          NS_ASSERT(m_failedLink != -1);
+          m_clients[m_nodeSrc]->ManualSend();
+          m_state = ExploreFailed1;
+        }
+        else {
+          Step();
+        }
+      }
+
   }
 
   void Visited(uint32_t node)
   {
-      NS_LOG_INFO("Visited packet " << node);
-  }
-
-  void Transmit()
-  {
-    NS_LOG_INFO("Transmitting from " << m_nodeSrc << " to " << m_nodeDst);
-    std::cerr << "Transmit" << std::endl;
+      m_path.push_back(node);
   }
 
   void Step()
   {
-    m_nodeSrc = m_randVar.GetInteger(0, m_numNodes);
-    m_nodeDst = m_randVar.GetInteger(0, m_numNodes);
+    m_iterations--;
+    if (m_iterations == 0) {
+      Simulator::Stop();
+    }
+    m_path.clear();
+    m_state = ExploreFull;
+    m_nodeSrc = m_randVar.GetInteger(0, m_numNodes - 1);
+    m_nodeDst = m_randVar.GetInteger(0, m_numNodes - 1);
     while (m_nodeDst == m_nodeSrc) {
-        m_nodeDst = m_randVar.GetInteger(0, m_numNodes);
+        m_nodeDst = m_randVar.GetInteger(0, m_numNodes - 1);
     }
     m_clients[m_nodeSrc]->ChangeDestination(m_nodes.Get(m_nodeDst)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
                                       9);
@@ -223,7 +367,9 @@ struct Simulation : public Object {
     
   }
 
-  void Simulate(std::string filename, bool simulateError) {
+  void Simulate(std::string filename, Ptr<OutputStreamWrapper> output, bool simulateError, uint32_t iterations) {
+    m_output = output;
+    m_iterations = iterations;
     NS_LOG_INFO("Loading");
     NS_ASSERT(!filename.empty());
     PopulateGraph(filename);
@@ -294,11 +440,16 @@ struct Simulation : public Object {
     m_clients.resize(m_numNodes);
     for (int i = 0; i < m_numNodes; i++) {
         m_clients[i] = (UdpEchoClient*)(PeekPointer(clients.Get(i)));
+        m_clients[i]->SetReceivedCallback(MakeCallback(&Simulation::ReceivedPacket, this));
     }
     
     ApplicationContainer serverApps = echoServer.Install (m_nodes);
     serverApps.Start (Seconds (0.0));
     serverApps.Stop (m_simulationEnd);
+    for (int i = 0; i <m_numNodes;i++) {
+      ((UdpEchoServer*)PeekPointer(serverApps.Get(i)))->SetReceivedCallback(MakeCallback(&Simulation::ReceivedPacket, this));
+    }
+
     Simulator::Schedule(Seconds(2.0), &Simulation::Step, this);
     Ptr<Ipv4RoutingProtocol> gr = m_nodes.Get(m_nodeDst)->GetObject<Ipv4>()->GetRoutingProtocol();
     Ipv4GlobalRouting* route = (Ipv4GlobalRouting*)PeekPointer(gr);
@@ -315,13 +466,18 @@ main (int argc, char *argv[])
   bool simulateError;
   CommandLine cmd;
   std::string filename;
+  std::string output;
+  uint32_t iterations = 500;
   cmd.AddValue("packets", "Number of packets to echo", packets);
   cmd.AddValue("error", "Simulate error", simulateError);
   cmd.AddValue("topo", "Topology file", filename);
+  cmd.AddValue("output", "Output file", output);
+  cmd.AddValue("iter", "Iterations", iterations);
   cmd.Parse(argc, argv);
   NS_LOG_INFO("Running simulation");
   Ptr<Simulation> sim = ns3::Create<Simulation>();
-  sim->Simulate(filename, simulateError);
+  NS_ASSERT(!output.empty());
+  sim->Simulate(filename, asciiHelper.CreateFileStream(output), simulateError, iterations);
   Simulator::Run ();
   Simulator::Destroy ();
   return 0;

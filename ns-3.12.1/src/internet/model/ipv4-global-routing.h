@@ -243,6 +243,7 @@ public:
   typedef Callback<void, uint32_t> VisitedCallback;
   void SetReceivedCallback(ReceivedCallback receive);
   void SetVisitedCallback(VisitedCallback visited);
+  void Reset();
 protected:
   void DoStart (void);
   void DoDispose (void);
@@ -303,6 +304,8 @@ private:
   ReceivedCallback m_receivedCallback;
   VisitedCallback m_visitedCallback;
   StateMachines m_originalStates;
+  Interfaces m_originalInputs;
+  Interfaces m_originalOutputs;
   Interfaces m_inputInterfaces;
   Interfaces m_reverseInputInterfaces;
   Interfaces m_outputInterfaces;

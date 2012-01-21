@@ -310,6 +310,12 @@ UdpEchoClient::Send (void)
 }
 
 void
+UdpEchoClient::SetReceivedCallback(ReceivedCallback callback) 
+{
+  m_receive = callback;
+}
+
+void
 UdpEchoClient::HandleRead (Ptr<Socket> socket)
 {
   NS_LOG_FUNCTION (this << socket);
@@ -319,6 +325,9 @@ UdpEchoClient::HandleRead (Ptr<Socket> socket)
     {
       if (InetSocketAddress::IsMatchingType (from))
         {
+          if (!m_receive.IsNull()) {
+            m_receive(GetNode()->GetId());
+          }
           NS_LOG_INFO ("Received " << packet->GetSize () << " bytes from " <<
                        InetSocketAddress::ConvertFrom (from).GetIpv4 ());
         }

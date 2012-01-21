@@ -46,7 +46,8 @@ public:
   static TypeId GetTypeId (void);
   UdpEchoServer ();
   virtual ~UdpEchoServer ();
-
+  typedef Callback<void, uint32_t> ReceivedCallback; 
+  void SetReceivedCallback(ReceivedCallback receive); 
 protected:
   virtual void DoDispose (void);
 
@@ -57,6 +58,7 @@ private:
 
   void HandleRead (Ptr<Socket> socket);
 
+  ReceivedCallback m_receive;
   uint16_t m_port;
   Ptr<Socket> m_socket;
   Address m_local;
