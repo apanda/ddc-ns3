@@ -1698,6 +1698,9 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
   if (destination == Ipv4Address()) {
     return rtentry;
   }
+  if (m_stateMachines[destination].size() < m_ipv4->GetNInterfaces()) {
+    return rtentry;
+  }
   NS_ASSERT (m_stateMachines[destination][iif] == Dead ||
             m_stateMachines[destination][iif] == Input ||
             m_stateMachines[destination][iif] == Output); 
