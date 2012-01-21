@@ -207,24 +207,26 @@ Ipv4GlobalRouting::ClassifyInterfaces()
     for (std::vector<Ipv4Address>::iterator it = addresses.begin();
               it != addresses.end();
               it++) {
-      if (m_stateMachines[*it][i] != None) {
-        continue;
-      }
       uint32_t distance = GetDistance(*it);
       uint32_t otherDistance = otherIpv4->GetDistance(*it);
+      Ipv4Address address = *it;
+      address = VerifyAndUpdateAddress(address);
+      if (m_stateMachines[address][i] != None) {
+        continue;
+      }
       if (distance < otherDistance) {
-        SetIfaceToInput(*it, i);
+        SetIfaceToInput(address, i);
       }
       else if (distance > otherDistance) {
-        SetIfaceToOutput(*it, i);
+        SetIfaceToOutput(address, i);
       }
       else {
         if (us->GetId() < them->GetId()) {
-          SetIfaceToInput(*it, i);
+          SetIfaceToInput(address, i);
         }
         else {
           NS_ASSERT(us->GetId() > them->GetId());
-          SetIfaceToOutput(*it, i);
+          SetIfaceToOutput(address, i);
         }
       }
     }
@@ -233,7 +235,9 @@ Ipv4GlobalRouting::ClassifyInterfaces()
   for (std::vector<Ipv4Address>::iterator it = addresses.begin();
             it != addresses.end();
             it++) {
-    NS_ASSERT((m_inputInterfaces[*it].size() + m_outputInterfaces[*it].size()) == m_ipv4->GetNInterfaces() - 1);
+    Ipv4Address address = *it;
+    address = VerifyAndUpdateAddress(address);
+    NS_ASSERT((m_inputInterfaces[address].size() + m_outputInterfaces[address].size()) == m_ipv4->GetNInterfaces() - 1);
   }
   for (uint32_t j = 0; j < m_ipv4->GetNInterfaces (); j++)
   {
@@ -244,6 +248,29 @@ Ipv4GlobalRouting::ClassifyInterfaces()
       m_localAddresses[addr] = true;
     }
   }
+}
+
+Ipv4Address
+Ipv4GlobalRouting::VerifyAndUpdateAddress (Ipv4Address address)
+{
+  if (m_stateMachines.find(address) != m_stateMachines.end()) {
+     return address;
+  }
+  for (NetworkRoutesI j = m_networkRoutes.begin (); 
+       j != m_networkRoutes.end (); 
+       j++) 
+    {
+      Ipv4Mask mask = (*j)->GetDestNetworkMask ();
+      Ipv4Address entry = (*j)->GetDestNetwork ();
+      if (mask.IsMatch (address, entry)) 
+        {
+          NS_LOG_INFO("Updating address for network destination");
+          return entry;
+        }
+    }
+  // What address?
+  NS_ASSERT(false);
+  return Ipv4Address();
 }
 
 void
@@ -458,6 +485,22 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                                         networkMask,
                                                         nextHop,
                                                         interface);
+  if (m_stateMachines.find(network) == m_stateMachines.end()) {
+    m_stateMachines[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    m_originalStates[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    m_goodToReverse[network] = std::list<uint32_t>();
+    m_remoteSeq[network] = std::vector<uint8_t>(m_ipv4->GetNInterfaces());
+    m_localSeq[network] = std::vector<uint8_t>(m_ipv4->GetNInterfaces());
+    for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
+      m_stateMachines[network][i] = None;
+      m_originalStates[network][i] = None;
+      m_remoteSeq[network][i] = 0;
+      m_localSeq[network][i] = 0;
+    }
+  }
+  m_outputInterfaces[network].push_back(interface);
+  m_stateMachines[network][interface] = Output;
+  m_originalStates[network][interface] = Output;
   m_networkRoutes.push_back (route);
 }
 
@@ -471,6 +514,22 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
   *route = Ipv4RoutingTableEntry::CreateNetworkRouteTo (network,
                                                         networkMask,
                                                         interface);
+  if (m_stateMachines.find(network) == m_stateMachines.end()) {
+    m_stateMachines[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    m_originalStates[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+    m_goodToReverse[network] = std::list<uint32_t>();
+    m_remoteSeq[network] = std::vector<uint8_t>(m_ipv4->GetNInterfaces());
+    m_localSeq[network] = std::vector<uint8_t>(m_ipv4->GetNInterfaces());
+    for (int i = 0; i < (int)m_ipv4->GetNInterfaces(); i++) {
+      m_stateMachines[network][i] = None;
+      m_originalStates[network][i] = None;
+      m_remoteSeq[network][i] = 0;
+      m_localSeq[network][i] = 0;
+    }
+  }
+  m_outputInterfaces[network].push_back(interface);
+  m_stateMachines[network][interface] = Output;
+  m_originalStates[network][interface] = Output;
   m_networkRoutes.push_back (route);
 }
 
@@ -782,7 +841,7 @@ Ipv4GlobalRouting::PopulateGoodToReverse (Ipv4Address destination)
 Ptr<Ipv4Route> 
 Ipv4GlobalRouting::StandardReceive (Ipv4Header &header)
 {
-  Ipv4Address destination = header.GetDestination();
+  Ipv4Address destination = VerifyAndUpdateAddress(header.GetDestination());
   Ptr<Ipv4Route> rtentry = 0;
   if (m_outputInterfaces[destination].empty()) {
     if (m_goodToReverse[destination].empty()) {
@@ -807,7 +866,7 @@ Ptr<Ipv4Route>
 Ipv4GlobalRouting::TryRouteThroughOutputInterfaces (Ipv4Header &header)
 {
   Ptr<Ipv4Route> rtentry = 0;
-  Ipv4Address destination = header.GetDestination();
+  Ipv4Address destination = VerifyAndUpdateAddress(header.GetDestination());
   while (rtentry == 0 && !m_outputInterfaces[destination].empty()) {
     rtentry = SendOnOutLink(m_outputInterfaces[destination].front(), header);
     if (rtentry == 0) {
@@ -822,7 +881,7 @@ Ipv4GlobalRouting::TryRouteThroughOutputInterfaces (Ipv4Header &header)
 Ptr<Ipv4Route> 
 Ipv4GlobalRouting::SendOnOutLink (uint32_t link, Ipv4Header &header)
 {
-  Ipv4Address destination = header.GetDestination();
+  Ipv4Address destination = VerifyAndUpdateAddress(header.GetDestination());
   uint32_t pseq = (uint32_t)m_localSeq[destination][link];
   Ptr<NetDevice> device = m_ipv4->GetNetDevice (link);
   Ptr<Ipv4Route> rtentry = 0;
@@ -830,7 +889,7 @@ Ipv4GlobalRouting::SendOnOutLink (uint32_t link, Ipv4Header &header)
     NS_LOG_LOGIC("Setting packet sequence number (hopefully) to " << pseq);
     header.SetDdcInformation(pseq);
     rtentry = Create<Ipv4Route> ();
-    rtentry->SetDestination(destination);
+    rtentry->SetDestination(header.GetDestination());
     rtentry->SetGateway(destination);
     rtentry->SetOutputDevice(device);
     rtentry->SetSource (m_ipv4->GetAddress(link, 0).GetLocal());
@@ -1119,7 +1178,7 @@ Ptr<Ipv4Route>
 Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev)
 {
   Ipv4RoutingTableEntry* route;
-  Ipv4Address dest = header.GetDestination();
+  Ipv4Address dest = VerifyAndUpdateAddress(header.GetDestination());
   uint32_t iif = 0;
   Ptr<Ipv4Route> rtentry = 0;
   if (idev != 0) {
@@ -1515,11 +1574,11 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
       ecb (p, header, Socket::ERROR_NOROUTETOHOST);
       return false;
     }
-
+  
   //CheckIfLinksReanimated(header.GetDestination());
   NS_LOG_LOGIC("node = " << m_ipv4->GetAddress(iif, 0).GetLocal() <<
                "state machine = " << 
-               m_stateMachines[header.GetDestination()][iif] << 
+               m_stateMachines[VerifyAndUpdateAddress(header.GetDestination())][iif] << 
                " dev = " << iif <<
                " dest = " << header.GetDestination());
 #ifndef ILLINOIS
@@ -1529,7 +1588,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
   Ptr<Ipv4Route> rtentry = LookupGlobal (header, 0, idev);
 #else
   NS_LOG_LOGIC ("Unicast destination- looking up global route using PRVLDDC");
-  Ipv4Address destination = header.GetDestination();
+  Ipv4Address destination = VerifyAndUpdateAddress(header.GetDestination());
   Ptr<Ipv4Route> rtentry = 0;
   NS_ASSERT (m_stateMachines[destination][iif] == Dead ||
             m_stateMachines[destination][iif] == Input ||

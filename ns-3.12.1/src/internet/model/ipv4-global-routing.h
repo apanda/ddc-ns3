@@ -323,6 +323,8 @@ private:
   void SetAllLinksGoodToReverse (Ipv4Address destination);
   void PopulateGoodToReverse (Ipv4Address destination);
   Ptr<Ipv4Route> TryRouteThroughOutputInterfaces (Ipv4Header &header);
+  
+  Ipv4Address VerifyAndUpdateAddress (Ipv4Address address);
 
   /// Send a message along
   void SendMessage (Ptr<Socket>& socket, MessageHeader& message);
