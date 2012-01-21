@@ -1472,6 +1472,9 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice
               rtentry->SetGateway(header.GetDestination());
               rtentry->SetOutputDevice(device);
               rtentry->SetSource (m_ipv4->GetAddress (1, 0).GetLocal ());
+              if (!m_receivedCallback.IsNull()) {
+                m_receivedCallback(device->GetNode()->GetId());
+              }
               return rtentry;
             }
         }
@@ -1492,6 +1495,9 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice
   NS_LOG_LOGIC ("Unicast destination- looking up using DDC");
   Ptr<Ipv4Route> rtentry = LookupGlobal (header, oif);
 #else
+  if (!m_visitedCallback.IsNull()) {
+    m_visitedCallback(m_ipv4->GetNetDevice(1)->GetNode()->GetId());
+  }
   NS_LOG_LOGIC("Unicast destination- looking up using PRVLDDC");
   Ptr<Ipv4Route> rtentry = StandardReceive(header);
 #endif
@@ -1509,8 +1515,29 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice
       for (uint32_t iif = 0; iif < m_stateMachines[header.GetDestination()].size(); iif++) {
         NS_LOG_ERROR("State for " << iif << " = " << m_stateMachines[header.GetDestination()][iif]);
       }
+      if (!m_packetDropped.IsNull()) {
+        m_packetDropped();
+      }
     }
   return rtentry;
+}
+
+void 
+Ipv4GlobalRouting::SetPacketDroppedCallback(Ipv4GlobalRouting::PacketDropped callback)
+{
+  m_packetDropped = callback;
+}
+
+void 
+Ipv4GlobalRouting::SetReceivedCallback(ReceivedCallback receive)
+{
+  m_receivedCallback = receive;
+}
+
+void 
+Ipv4GlobalRouting::SetVisitedCallback(VisitedCallback visited)
+{
+  m_visitedCallback = visited;
 }
 
 bool 
@@ -1521,6 +1548,12 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
   // Check if input device supports IP
   if (header.GetTtl() == 1) {
     NS_LOG_WARN("About to drop because of TTL");
+    if (!m_packetDropped.IsNull()) {
+      m_packetDropped();
+    }
+    else {
+        std::cout << "Dropping no way to report"<<std::endl;
+    }
   }
   else {
       NS_LOG_WARN("TTL = " << (uint32_t)header.GetTtl());
@@ -1565,6 +1598,9 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
                 }
               lcb (p, header, iif);
               m_receivedTtl = header.GetTtl();
+              if (!m_receivedCallback.IsNull()) {
+                m_receivedCallback(idev->GetNode()->GetId());
+              }
               return true;
             }
           if (header.GetDestination ().IsEqual (iaddr.GetBroadcast ()))
@@ -1596,6 +1632,10 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
   NS_LOG_LOGIC ("Unicast destination- looking up global route using DDC");
   Ptr<Ipv4Route> rtentry = LookupGlobal (header, 0, idev);
 #else
+
+  if (!m_visitedCallback.IsNull()) {
+    m_visitedCallback(idev->GetNode()->GetId());
+  }
   NS_LOG_LOGIC ("Unicast destination- looking up global route using PRVLDDC");
   Ipv4Address destination = VerifyAndUpdateAddress(header.GetDestination());
   Ptr<Ipv4Route> rtentry = 0;
@@ -1631,6 +1671,9 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
   else
     {
       NS_LOG_ERROR ("IP dropping packet no route found to " << header.GetDestination());
+      if (!m_packetDropped.IsNull()) {
+        m_packetDropped();
+      }
       return false; // Let other routing protocols try to handle this
                     // route request.
     }

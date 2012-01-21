@@ -26,7 +26,7 @@
 NS_LOG_COMPONENT_DEFINE ("GlobalRoutingHelper");
 
 namespace ns3 {
-
+class Ipv4Address;
 Ipv4GlobalRoutingHelper::Ipv4GlobalRoutingHelper ()
 {
 }
@@ -77,5 +77,22 @@ Ipv4GlobalRoutingHelper::RecomputeRoutingTables (void)
   GlobalRouteManager::InitializeRoutes ();
 }
 
+void 
+Ipv4GlobalRoutingHelper::SetPacketDropped (Callback<void> dropped)
+{
+  GlobalRouteManager::SetPacketDropped(dropped);
+}
+
+void 
+Ipv4GlobalRoutingHelper::SetReceived (Callback<void, uint32_t> received)
+{
+  GlobalRouteManager::SetReceived(received);
+}
+
+void 
+Ipv4GlobalRoutingHelper::SetVisited (Callback<void, uint32_t> visited)
+{
+  GlobalRouteManager::SetVisited(visited);
+}
 
 } // namespace ns3

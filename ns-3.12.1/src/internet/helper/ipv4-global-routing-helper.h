@@ -25,6 +25,7 @@
 
 namespace ns3 {
 
+class Ipv4Address;
 /**
  * \brief Helper class that adds ns3::Ipv4GlobalRouting objects
  */
@@ -85,6 +86,9 @@ public:
   static void RecomputeRoutingTables (void);
 
   static void SetSimulationEndTime (Time time);
+  static void SetPacketDropped (Callback<void> dropped);
+  static void SetVisited (Callback<void, uint32_t> visited);
+  static void SetReceived (Callback<void, uint32_t> received);
 private:
   /**
    * \internal

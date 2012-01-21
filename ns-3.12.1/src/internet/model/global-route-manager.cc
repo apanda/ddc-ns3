@@ -60,6 +60,27 @@ GlobalRouteManager::SetSimulationEndTime (Time time)
   SimulationSingleton<GlobalRouteManagerImpl>::Get ()->
   SetSimulationEndTime (time);
 }
+  
+void 
+GlobalRouteManager::SetPacketDropped (Callback<void> packetDropped)
+{
+  SimulationSingleton<GlobalRouteManagerImpl>::Get ()->
+  SetPacketDropped (packetDropped);
+}
+
+void 
+GlobalRouteManager::SetVisited (Callback<void, uint32_t> packetDropped)
+{
+  SimulationSingleton<GlobalRouteManagerImpl>::Get ()->
+  SetVisited (packetDropped);
+}
+
+void 
+GlobalRouteManager::SetReceived (Callback<void, uint32_t> packetDropped)
+{
+  SimulationSingleton<GlobalRouteManagerImpl>::Get ()->
+  SetReceived (packetDropped);
+}
 
 uint32_t
 GlobalRouteManager::AllocateRouterId (void)

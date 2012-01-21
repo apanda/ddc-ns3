@@ -23,6 +23,7 @@
 #define GLOBAL_ROUTE_MANAGER_H
 
 #include "ns3/deprecated.h"
+#include "ns3/ipv4-address.h"
 
 namespace ns3 {
 
@@ -68,6 +69,10 @@ public:
   static void InitializeRoutes ();
 
   static void SetSimulationEndTime (Time time);
+
+  static void SetPacketDropped (Callback<void> packetDropped);
+  static void SetReceived (Callback<void, uint32_t> packetDropped);
+  static void SetVisited (Callback<void, uint32_t> packetDropped);
 private:
 /**
  * @brief Global Route Manager copy construction is disallowed.  There's no 

@@ -189,6 +189,21 @@ struct Simulation : public Object {
       std::cout << "Received packet with TTL = " << newTtl << std::endl;
   }
 
+  void DroppedPacket()
+  {
+      NS_LOG_INFO("Dropped packet");
+  }
+
+  void ReceivedPacket(uint32_t node)
+  {
+      NS_LOG_INFO("Received packet " << node);
+  }
+
+  void Visited(uint32_t node)
+  {
+      NS_LOG_INFO("Visited packet " << node);
+  }
+
   void Transmit()
   {
     NS_LOG_INFO("Transmitting from " << m_nodeSrc << " to " << m_nodeDst);
@@ -254,6 +269,9 @@ struct Simulation : public Object {
     NS_LOG_INFO("Done assigning address");
     NS_LOG_INFO("Populating routing tables");
     Ipv4GlobalRoutingHelper::SetSimulationEndTime(m_simulationEnd);
+    Ipv4GlobalRoutingHelper::SetPacketDropped(MakeCallback(&Simulation::DroppedPacket, this));
+    Ipv4GlobalRoutingHelper::SetVisited(MakeCallback(&Simulation::Visited, this));
+    Ipv4GlobalRoutingHelper::SetReceived(MakeCallback(&Simulation::ReceivedPacket, this));
     Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
     NS_LOG_INFO("Done populating routing tables");

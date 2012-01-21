@@ -736,6 +736,9 @@ GlobalRouteManagerImpl::InitializeRoutes ()
         Ptr<Ipv4GlobalRouting> gr = rtr->GetRoutingProtocol();
         gr->ClassifyInterfaces();
         gr->SetStopTime(m_simulationEndTime);
+        gr->SetPacketDroppedCallback(m_packetDropped);
+        gr->SetVisitedCallback(m_visited);
+        gr->SetReceivedCallback(m_received);
         NS_LOG_LOGIC("Running classify interfaces\n");
       }
     }
@@ -2218,6 +2221,21 @@ GlobalRouteManagerImpl::SetSimulationEndTime (Time time)
 {
   NS_LOG_FUNCTION_NOARGS();
   m_simulationEndTime = time;
+}
+void 
+GlobalRouteManagerImpl::SetPacketDropped (Callback<void> packetDropped)
+{
+  m_packetDropped = packetDropped;
+}
+void 
+GlobalRouteManagerImpl::SetReceived (Callback<void, uint32_t> received)
+{
+  m_received = received;
+}
+void 
+GlobalRouteManagerImpl::SetVisited (Callback<void, uint32_t> visited)
+{
+  m_visited = visited;
 }
 } // namespace ns3
 

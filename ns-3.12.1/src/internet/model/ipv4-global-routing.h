@@ -35,6 +35,7 @@
 #include "ns3/timer.h"
 #include "ns3/traced-value.h"
 #include "ddc-headers.h"
+#include "ns3/callback.h"
 
 namespace ns3 {
 
@@ -234,6 +235,14 @@ public:
 
   void SetStopTime(Time time);
 
+  typedef Callback<void> PacketDropped;
+  void SetPacketDroppedCallback(PacketDropped callback);
+
+  typedef Callback<void, uint32_t> ReceivedCallback;
+
+  typedef Callback<void, uint32_t> VisitedCallback;
+  void SetReceivedCallback(ReceivedCallback receive);
+  void SetVisitedCallback(VisitedCallback visited);
 protected:
   void DoStart (void);
   void DoDispose (void);
@@ -290,6 +299,9 @@ private:
   typedef sgi::hash_map<uint32_t, Ptr<Socket> > InterfaceToSocket;
   typedef sgi::hash_map<uint32_t, bool> InterfaceStates;
   
+  PacketDropped m_packetDropped;
+  ReceivedCallback m_receivedCallback;
+  VisitedCallback m_visitedCallback;
   StateMachines m_originalStates;
   Interfaces m_inputInterfaces;
   Interfaces m_reverseInputInterfaces;
