@@ -296,7 +296,7 @@ struct Simulation : public Object {
         nodeB = m_fullPath.front();
         m_failedLink = FailLink(nodeA, nodeB);
       }
-      bool ret = IsGraphConnected(m_nodeSrc);
+      bool ret = IsGraphConnected(m_nodeSrc) && (m_failedLink != -1);
       if (!ret && m_failedLink != -1) {
         UnfailLink(m_failedLink);
       }
@@ -313,8 +313,10 @@ struct Simulation : public Object {
         m_fullPath.insert(m_fullPath.begin(), m_path.begin(), m_path.end());
         m_path.clear();
         if (FindAndFailLink()) {
+          NS_ASSERT(m_failedLink != -1);
           m_state = ExploreFailed1;
           m_clients[m_nodeSrc]->ManualSend();
+          m_iterations--;
         }
         else {
           Step();
@@ -350,7 +352,6 @@ struct Simulation : public Object {
 
   void Step()
   {
-    m_iterations--;
     if (m_iterations == 0) {
       Simulator::Stop();
     }
@@ -421,12 +422,6 @@ struct Simulation : public Object {
     Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
     NS_LOG_INFO("Done populating routing tables");
-    // Simulate error
-    if (simulateError) {
-      for (int i = 0 ; i < 5; i++) {
-        //ScheduleLinkFailure();
-      }
-    }
     m_clients.resize(m_numNodes);
     UdpEchoClientHelper echoClientA (m_nodes.Get(0)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
                                       9);
@@ -467,7 +462,7 @@ main (int argc, char *argv[])
   CommandLine cmd;
   std::string filename;
   std::string output;
-  uint32_t iterations = 500;
+  uint32_t iterations = 10000;
   cmd.AddValue("packets", "Number of packets to echo", packets);
   cmd.AddValue("error", "Simulate error", simulateError);
   cmd.AddValue("topo", "Topology file", filename);
