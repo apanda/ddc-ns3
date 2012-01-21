@@ -348,7 +348,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port)
   else if (m_ipTtl != 0 && !dest.IsMulticast () && !dest.IsBroadcast ())
     {
       SocketIpTtlTag tag;
-      tag.SetTtl (m_ipTtl);
+      tag.SetTtl (255);
       p->AddPacketTag (tag);
     }
   {

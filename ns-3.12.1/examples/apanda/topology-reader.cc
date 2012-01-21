@@ -303,7 +303,7 @@ main (int argc, char *argv[])
       }
       UdpEchoClientHelper echoClient (nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
                                         9);
-      echoClient.SetAttribute ("MaxPackets", UintegerValue (0));
+      echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
       echoClient.SetAttribute ("Interval", TimeValue (Seconds (randVar.GetValue(1.0, 3000.0))));
       echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
       ApplicationContainer clientApps = echoClient.Install (nodes.Get (i));
@@ -313,21 +313,22 @@ main (int argc, char *argv[])
   }
 
   Ptr<OutputStreamWrapper> out = asciiHelper.CreateFileStream("route.table");
-  NS_LOG_INFO("Node interface list");
-  for (int i = 0; i < NODES; i++) {
-      Ptr<Ipv4> ipv4 = nodes.Get(i)->GetObject<Ipv4>();
-      NS_ASSERT(ipv4 != NULL);
-      for (int j = 0; j < (int)ipv4->GetNInterfaces(); j++) {
-          for (int k = 0; k < (int)ipv4->GetNAddresses(j); k++) {
-            Ipv4InterfaceAddress iaddr = ipv4->GetAddress (j, k);
-            Ipv4Address addr = iaddr.GetLocal ();
-            (*out->GetStream()) << i << "\t" << j << "\t" << addr << "\n";
-          }
-      }
-  }
-  for (int i = 0; i < NODES; i++) {
-    nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
-  }
+  //NS_LOG_INFO("Node interface list");
+  //for (int i = 0; i < NODES; i++) {
+  //    Ptr<Ipv4> ipv4 = nodes.Get(i)->GetObject<Ipv4>();
+  //    NS_ASSERT(ipv4 != NULL);
+  //    for (int j = 0; j < (int)ipv4->GetNInterfaces(); j++) {
+  //        for (int k = 0; k < (int)ipv4->GetNAddresses(j); k++) {
+  //          Ipv4InterfaceAddress iaddr = ipv4->GetAddress (j, k);
+  //          Ipv4Address addr = iaddr.GetLocal ();
+  //          (*out->GetStream()) << i << "\t" << j << "\t" << addr << "\n";
+  //        }
+  //    }
+  //}
+  //for (int i = 0; i < NODES; i++) {
+  //  nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
+  //}
+  NS_LOG_INFO("Running simulation");
   Simulator::Run ();
   Simulator::Destroy ();
 

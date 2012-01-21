@@ -33,6 +33,7 @@
 #include "ns3/random-variable.h"
 #include "ns3/socket.h"
 #include "ns3/timer.h"
+#include "ns3/traced-value.h"
 #include "ddc-headers.h"
 
 namespace ns3 {
@@ -244,6 +245,8 @@ private:
   bool m_respondToInterfaceEvents;
   /// A uniform random number generator for randomly routing packets among ECMP 
   UniformVariable m_rand;
+
+  TracedValue<uint8_t> m_receivedTtl;
 
   enum DdcState
   {

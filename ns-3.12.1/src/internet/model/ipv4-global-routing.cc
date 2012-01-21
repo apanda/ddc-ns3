@@ -57,6 +57,9 @@ Ipv4GlobalRouting::GetTypeId (void)
                    BooleanValue (false),
                    MakeBooleanAccessor (&Ipv4GlobalRouting::m_respondToInterfaceEvents),
                    MakeBooleanChecker ())
+    .AddTraceSource("ReceivedTtl",
+                    "TTL of packets destined for this node",
+                    MakeTraceSourceAccessor (&Ipv4GlobalRouting::m_receivedTtl))
   ;
   return tid;
 }
@@ -264,7 +267,6 @@ Ipv4GlobalRouting::VerifyAndUpdateAddress (Ipv4Address address)
       Ipv4Address entry = (*j)->GetDestNetwork ();
       if (mask.IsMatch (address, entry)) 
         {
-          NS_LOG_INFO("Updating address for network destination");
           return entry;
         }
     }
@@ -1517,6 +1519,12 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
 { 
   NS_LOG_FUNCTION (this << p << header << header.GetSource () << header.GetDestination () << idev);
   // Check if input device supports IP
+  if (header.GetTtl() == 1) {
+    NS_LOG_WARN("About to drop because of TTL");
+  }
+  else {
+      NS_LOG_WARN("TTL = " << (uint32_t)header.GetTtl());
+  }
   NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
   uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
   if (header.GetDestination ().IsMulticast ())
@@ -1556,6 +1564,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
                   NS_LOG_LOGIC ("For me (destination " << addr << " match) on another interface " << header.GetDestination ());
                 }
               lcb (p, header, iif);
+              m_receivedTtl = header.GetTtl();
               return true;
             }
           if (header.GetDestination ().IsEqual (iaddr.GetBroadcast ()))

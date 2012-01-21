@@ -119,6 +119,8 @@ public:
    * \param dataSize The desired size of the final echo data.
    */
   void SetFill (uint8_t *fill, uint32_t fillSize, uint32_t dataSize);
+  void ManualSend(void);
+  void ChangeDestination (Ipv4Address addr, uint16_t port);
 
 protected:
   virtual void DoDispose (void);

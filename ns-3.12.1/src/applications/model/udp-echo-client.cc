@@ -118,7 +118,23 @@ UdpEchoClient::StartApplication (void)
 
   m_socket->SetRecvCallback (MakeCallback (&UdpEchoClient::HandleRead, this));
 
-  ScheduleTransmit (Seconds (0.));
+  //ScheduleTransmit (Seconds (0.));
+}
+
+void 
+UdpEchoClient::ChangeDestination (Ipv4Address addr, uint16_t port)
+{
+    if (m_socket != 0) {
+      m_socket->Close ();
+      m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket> > ());
+      m_socket = 0;
+    }
+
+    TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
+    m_socket = Socket::CreateSocket (GetNode (), tid);
+    m_socket->Bind ();
+    m_socket->Connect (InetSocketAddress (addr, port));
+    m_socket->SetRecvCallback (MakeCallback (&UdpEchoClient::HandleRead, this));
 }
 
 void 
@@ -243,12 +259,16 @@ UdpEchoClient::ScheduleTransmit (Time dt)
   m_sendEvent = Simulator::Schedule (dt, &UdpEchoClient::Send, this);
 }
 
+void
+UdpEchoClient::ManualSend(void)
+{
+    Send();
+}
+
 void 
 UdpEchoClient::Send (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-
-  NS_ASSERT (m_sendEvent.IsExpired ());
 
   Ptr<Packet> p;
   if (m_dataSize)
@@ -285,7 +305,7 @@ UdpEchoClient::Send (void)
 
   if (m_count == 0 || m_sent < m_count) 
     {
-      ScheduleTransmit (m_interval);
+      //ScheduleTransmit (m_interval);
     }
 }
 
