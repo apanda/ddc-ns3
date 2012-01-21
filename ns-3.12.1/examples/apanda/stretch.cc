@@ -256,7 +256,9 @@ struct Simulation : public Object {
       UnfailLink(m_failedLink);
       if (FindAndFailLink()) {
         NS_ASSERT(m_failedLink != -1);
-        m_clients[m_nodeSrc]->ManualSend();
+        if (!m_clients[m_nodeSrc]->ManualSend()) {
+          Step();
+        }
         m_state = ExploreFailed1;
       }
       else {
@@ -302,7 +304,7 @@ struct Simulation : public Object {
       }
       return ret;
   }
-  
+  bool m_newIter; 
   void ReceivedPacket(uint32_t node)
   {
       m_path.push_back(node);
@@ -315,8 +317,9 @@ struct Simulation : public Object {
         if (FindAndFailLink()) {
           NS_ASSERT(m_failedLink != -1);
           m_state = ExploreFailed1;
-          m_clients[m_nodeSrc]->ManualSend();
-          m_iterations--;
+          if (!m_clients[m_nodeSrc]->ManualSend()) {
+            return DroppedPacket();
+          }
         }
         else {
           Step();
@@ -325,8 +328,14 @@ struct Simulation : public Object {
       else if (m_state==ExploreFailed1) {
         m_failedLength = m_path.size();
         m_path.clear();
-        m_clients[m_nodeSrc]->ManualSend();
+        if (!m_clients[m_nodeSrc]->ManualSend()) {
+          return DroppedPacket();
+        }
         m_state = ExploreFailed2;
+        if (m_newIter) {
+          m_iterations--;
+          m_newIter = false;
+        }
       }
       else if (m_state == ExploreFailed2) {
         m_secondFailedLength = m_path.size();
@@ -335,8 +344,10 @@ struct Simulation : public Object {
         UnfailLink(m_failedLink);
         if (FindAndFailLink()) {
           NS_ASSERT(m_failedLink != -1);
-          m_clients[m_nodeSrc]->ManualSend();
           m_state = ExploreFailed1;
+          if (!m_clients[m_nodeSrc]->ManualSend()) {
+            return DroppedPacket();
+          }
         }
         else {
           Step();
@@ -353,8 +364,10 @@ struct Simulation : public Object {
   void Step()
   {
     if (m_iterations == 0) {
+      std::cerr << "Stopping" << std::endl;
       Simulator::Stop();
     }
+    m_newIter = true;
     m_path.clear();
     m_state = ExploreFull;
     m_nodeSrc = m_randVar.GetInteger(0, m_numNodes - 1);
@@ -364,7 +377,9 @@ struct Simulation : public Object {
     }
     m_clients[m_nodeSrc]->ChangeDestination(m_nodes.Get(m_nodeDst)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
                                       9);
-    m_clients[m_nodeSrc]->ManualSend();
+    if (!m_clients[m_nodeSrc]->ManualSend()) {
+      return DroppedPacket();
+    }
     
   }
 

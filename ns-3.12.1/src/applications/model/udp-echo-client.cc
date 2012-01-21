@@ -259,10 +259,49 @@ UdpEchoClient::ScheduleTransmit (Time dt)
   m_sendEvent = Simulator::Schedule (dt, &UdpEchoClient::Send, this);
 }
 
-void
+bool
 UdpEchoClient::ManualSend(void)
 {
-    Send();
+  NS_LOG_FUNCTION_NOARGS ();
+
+  Ptr<Packet> p;
+  if (m_dataSize)
+    {
+      //
+      // If m_dataSize is non-zero, we have a data buffer of the same size that we
+      // are expected to copy and send.  This state of affairs is created if one of
+      // the Fill functions is called.  In this case, m_size must have been set
+      // to agree with m_dataSize
+      //
+      NS_ASSERT_MSG (m_dataSize == m_size, "UdpEchoClient::Send(): m_size and m_dataSize inconsistent");
+      NS_ASSERT_MSG (m_data, "UdpEchoClient::Send(): m_dataSize but no m_data");
+      p = Create<Packet> (m_data, m_dataSize);
+    }
+  else
+    {
+      //
+      // If m_dataSize is zero, the client has indicated that she doesn't care 
+      // about the data itself either by specifying the data size by setting
+      // the corresponding atribute or by not calling a SetFill function.  In 
+      // this case, we don't worry about it either.  But we do allow m_size
+      // to have a value different from the (zero) m_dataSize.
+      //
+      p = Create<Packet> (m_size);
+    }
+  // call to the trace sinks before the packet is actually sent,
+  // so that tags added to the packet can be sent as well
+  m_txTrace (p);
+  int ret = m_socket->Send (p);
+
+  ++m_sent;
+
+  NS_LOG_INFO ("Sent " << m_size << " bytes to " << m_peerAddress);
+
+  if (m_count == 0 || m_sent < m_count) 
+    {
+      //ScheduleTransmit (m_interval);
+    }
+  return (ret != -1);
 }
 
 void 
