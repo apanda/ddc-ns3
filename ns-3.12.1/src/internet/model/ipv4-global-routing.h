@@ -241,8 +241,11 @@ public:
   typedef Callback<void, uint32_t> ReceivedCallback;
 
   typedef Callback<void, uint32_t> VisitedCallback;
+
+  typedef Callback<void, uint32_t, const Ipv4Address&, uint8_t> ReversedCallback;
   void SetReceivedCallback(ReceivedCallback receive);
   void SetVisitedCallback(VisitedCallback visited);
+  void SetReversedCallback(ReversedCallback reversed);
   void Reset();
 protected:
   void DoStart (void);
@@ -303,6 +306,7 @@ private:
   PacketDropped m_packetDropped;
   ReceivedCallback m_receivedCallback;
   VisitedCallback m_visitedCallback;
+  ReversedCallback m_reversedCallback;
   StateMachines m_originalStates;
   Interfaces m_originalInputs;
   Interfaces m_originalOutputs;

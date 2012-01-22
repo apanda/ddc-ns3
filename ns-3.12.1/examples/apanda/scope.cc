@@ -51,6 +51,11 @@ struct Simulation : public Object {
   uint32_t m_iterations;
   Ptr<OutputStreamWrapper> m_output;
   uint32_t m_packets;
+  uint64_t m_reversals;
+  std::map<uint32_t, uint32_t> m_reversalsPerNode;
+  std::list<uint32_t> m_nodesReversed;
+  std::list<uint64_t> m_cummulativeReversals;
+  std::list<uint32_t> m_cummulativeNodesReversed;
   Simulation()
   {
       m_simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
@@ -264,9 +269,14 @@ struct Simulation : public Object {
         if (!m_clients[m_nodeSrc]->ManualSend()) {
           Step();
         }
-        m_state = ExploreFailed1;
         m_packetCount = m_packets;
         m_failedLengths.clear();
+        m_reversals = 0;
+        m_reversalsPerNode.clear();
+        m_nodesReversed.clear();
+        m_cummulativeNodesReversed.clear();
+        m_cummulativeReversals.clear();
+        m_state = ExploreFailed1;
       }
       else {
         Step();
@@ -276,7 +286,15 @@ struct Simulation : public Object {
       Step();
     }
   }
-  
+  void ReversalCallback(uint32_t node, const Ipv4Address& dest, uint8_t direction)
+  {
+    m_reversals++;
+    if (m_reversalsPerNode.find(node) == m_reversalsPerNode.end()) {
+        m_reversalsPerNode[node] = 0;
+        m_nodesReversed.push_back(node);
+    }
+    m_reversalsPerNode[node]++;
+  }
   void ResetState()
   {
     for (int i = 0; i < m_numNodes; i++) {
@@ -290,6 +308,18 @@ struct Simulation : public Object {
     }
   }
   
+  void RegisterReverseCallback()
+  {
+    for (int i = 0; i < m_numNodes; i++) {
+      Ptr<Node> node = m_nodes.Get(i);
+      Ptr<GlobalRouter> router = node->GetObject<GlobalRouter>();
+      if (router == 0) {
+        continue;
+      }
+      Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
+      gr->SetReversedCallback(MakeCallback(&Simulation::ReversalCallback, this));
+    }
+  }
   bool FindAndFailLink() {
       if (m_fullPath.size() <= 1) {
         return false;
@@ -317,6 +347,11 @@ struct Simulation : public Object {
       m_path.push_back(node);
       NS_LOG_INFO("Path length = " << m_path.size());
       if (m_state == ExploreFull) {
+        m_reversals = 0;
+        m_reversalsPerNode.clear();
+        m_nodesReversed.clear();
+        m_cummulativeNodesReversed.clear();
+        m_cummulativeReversals.clear();
         m_fullLength = m_path.size();
         m_fullPath.clear();
         m_fullPath.insert(m_fullPath.begin(), m_path.begin(), m_path.end());
@@ -342,6 +377,8 @@ struct Simulation : public Object {
         }
         m_packetCount--;
         m_failedLengths.push_back(m_failedLength);
+        m_cummulativeReversals.push_back(m_reversals);
+        m_cummulativeNodesReversed.push_back(m_nodesReversed.size());
         if (m_packetCount == 0) {
           m_state = ExploreFailed2;
         }
@@ -353,19 +390,31 @@ struct Simulation : public Object {
       else if (m_state == ExploreFailed2) {
         m_secondFailedLength = m_path.size();
         m_path.clear();
+        m_cummulativeReversals.push_back(m_reversals);
+        m_cummulativeNodesReversed.push_back(m_nodesReversed.size());
         std::stringstream lengths;
-        for (std::list<uint32_t>::iterator it = m_failedLengths.begin(); 
-             it != m_failedLengths.end();
+        for (std::list<uint64_t>::iterator it = m_cummulativeReversals.begin(); 
+             it != m_cummulativeReversals.end();
              it++) {
           lengths << *it << ",";
         }
-        (*m_output->GetStream()) << m_nodeSrc << ","<<m_nodeDst<<","<<m_fullLength<<","<<lengths.str()<<m_secondFailedLength<<std::endl;
+        for (std::list<uint32_t>::iterator it = m_cummulativeNodesReversed.begin(); 
+             it != m_cummulativeNodesReversed.end();
+             it++) {
+          lengths << *it << ",";
+        }
+        (*m_output->GetStream()) << m_nodeSrc << ","<<m_nodeDst<<","<<","<<lengths.str()<<std::endl;
         UnfailLink(m_failedLink);
         if (FindAndFailLink()) {
           NS_ASSERT(m_failedLink != -1);
           m_state = ExploreFailed1;
           m_packetCount = m_packets;
           m_failedLengths.clear();
+          m_reversals = 0;
+          m_reversalsPerNode.clear();
+          m_nodesReversed.clear();
+          m_cummulativeNodesReversed.clear();
+          m_cummulativeReversals.clear();
           if (!m_clients[m_nodeSrc]->ManualSend()) {
             return DroppedPacket();
           }
@@ -389,7 +438,6 @@ struct Simulation : public Object {
     if (m_failedLink != -1) {
       UnfailLink(m_failedLink);
     }
-    std::cerr << m_iterations << std::endl;
     if (m_iterations == 0) {
       std::cerr << "Stopping" << std::endl;
       Simulator::Stop();
@@ -464,8 +512,8 @@ struct Simulation : public Object {
     Ipv4GlobalRoutingHelper::SetVisited(MakeCallback(&Simulation::Visited, this));
     Ipv4GlobalRoutingHelper::SetReceived(MakeCallback(&Simulation::ReceivedPacket, this));
     Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-
     NS_LOG_INFO("Done populating routing tables");
+    RegisterReverseCallback();
     m_clients.resize(m_numNodes);
     UdpEchoClientHelper echoClientA (m_nodes.Get(0)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
                                       9);
