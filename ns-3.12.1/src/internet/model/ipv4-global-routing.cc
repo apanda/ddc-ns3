@@ -492,7 +492,6 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   m_outputInterfaces[dest].push_back(interface);
   m_stateMachines[dest][interface] = Output;
   m_originalStates[dest][interface] = Output;
-  NS_LOG_INFO ("Setting state for " << dest << " interface " << interface << " to output");
 }
 
 
@@ -520,7 +519,6 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   m_outputInterfaces[dest].push_back(interface);
   m_stateMachines[dest][interface] = Output;
   m_originalStates[dest][interface] = Output;
-  NS_LOG_INFO ("Setting state for " << dest << " interface " << interface << " to output");
 }
 
 void 
@@ -535,7 +533,6 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                                         networkMask,
                                                         nextHop,
                                                         interface);
-  NS_LOG_WARN("Network route " << network << networkMask << nextHop << interface);
   if (m_stateMachines.find(network) == m_stateMachines.end()) {
     m_stateMachines[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     m_originalStates[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
@@ -565,7 +562,6 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
   *route = Ipv4RoutingTableEntry::CreateNetworkRouteTo (network,
                                                         networkMask,
                                                         interface);
-  NS_LOG_WARN("Network route " << network << networkMask << interface);
   if (m_stateMachines.find(network) == m_stateMachines.end()) {
     m_stateMachines[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
     m_originalStates[network] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
@@ -893,13 +889,14 @@ Ipv4GlobalRouting::PopulateGoodToReverse (Ipv4Address destination)
 Ptr<Ipv4Route> 
 Ipv4GlobalRouting::StandardReceive (Ipv4Header &header)
 {
-  NS_LOG_INFO("StandardReceive");
   Ipv4Address destination = VerifyAndUpdateAddress(header.GetDestination());
+  NS_LOG_INFO("StandardReceive, destination = " << header.GetDestination());
   if (destination == Ipv4Address()) {
     return NULL;
   }
   Ptr<Ipv4Route> rtentry = 0;
   if (m_outputInterfaces[destination].empty()) {
+    NS_LOG_LOGIC("Reversing because of lack of output ports");
     if (m_goodToReverse[destination].empty()) {
       SetAllLinksGoodToReverse(destination);
     }
@@ -1616,9 +1613,6 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
         std::cout << "Dropping no way to report"<<std::endl;
     }
   }
-  else {
-      NS_LOG_WARN("TTL = " << (uint32_t)header.GetTtl());
-  }
   NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
   uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
   if (header.GetDestination ().IsMulticast ())
@@ -1718,6 +1712,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
       }
     }
     else {
+      NS_LOG_LOGIC("Reversing because of input on out port");
       ReverseOutToIn(destination, iif);
       rtentry = StandardReceive(header);
     }

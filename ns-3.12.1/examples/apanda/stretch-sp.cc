@@ -46,6 +46,9 @@ struct Simulation : public Object {
   uint32_t m_nodeDst;
   NodeContainer m_nodes;
   std::list<uint32_t> m_path;
+  std::list<uint32_t> m_firstpath;
+  std::list<uint32_t> m_secondpath;
+  std::list<uint32_t> m_zeroethpath;
   std::list<uint32_t> m_fullPath;
   int32_t m_failedLink;
   uint32_t m_iterations;
@@ -317,16 +320,18 @@ struct Simulation : public Object {
       if (m_state == ExploreFull) {
         m_fullLength = m_path.size();
         m_fullPath.clear();
+        m_zeroethpath.insert(m_zeroethpath.begin(), m_path.begin(), m_path.end());
         m_fullPath.insert(m_fullPath.begin(), m_path.begin(), m_path.end());
         m_path.clear();
         if (FindAndFailLink()) {
           NS_ASSERT(m_failedLink != -1);
+          m_packetCount = m_packets;
+          m_failedLengths.clear();
           m_state = ExploreFailed1;
+          NS_LOG_INFO("Sent first packet");
           if (!m_clients[m_nodeSrc]->ManualSend()) {
             return DroppedPacket();
           }
-          m_packetCount = m_packets;
-          m_failedLengths.clear();
         }
         else {
           Step();
@@ -334,12 +339,15 @@ struct Simulation : public Object {
       }
       else if (m_state==ExploreFailed1) {
         m_failedLength = m_path.size();
+        m_firstpath.clear();
+        m_firstpath.insert(m_firstpath.begin(), m_path.begin(), m_path.end());
         m_path.clear();
+        m_failedLengths.push_back(m_failedLength);
+        m_packetCount--;
         if (!m_clients[m_nodeSrc]->ManualSend()) {
           return DroppedPacket();
         }
-        m_packetCount--;
-        m_failedLengths.push_back(m_failedLength);
+        NS_LOG_INFO("Sent nth packet");
         if (m_packetCount == 0) {
           m_state = ExploreFailed2;
         }
@@ -350,6 +358,8 @@ struct Simulation : public Object {
       }
       else if (m_state == ExploreFailed2) {
         m_secondFailedLength = m_path.size();
+        m_secondpath.clear();
+        m_secondpath.insert(m_secondpath.begin(), m_path.begin(), m_path.end());
         m_path.clear();
         std::stringstream lengths;
         for (std::list<uint32_t>::iterator it = m_failedLengths.begin(); 
@@ -357,16 +367,35 @@ struct Simulation : public Object {
              it++) {
           lengths << *it << ",";
         }
-        (*m_output->GetStream()) << m_nodeSrc << ","<<m_nodeDst<<","<<m_fullLength<<","<<lengths.str()<<m_secondFailedLength<<std::endl;
+        //if (m_failedLength < m_secondFailedLength) {
+        //  
+        //  std::cerr << "Link = " << m_channels[m_failedLink]->GetDevice(0)->GetNode()->GetId() << " " << m_channels[m_failedLink]->GetDevice(1)->GetNode()->GetId()<< std::endl;
+        //  for (std::list<uint32_t>::iterator it = m_zeroethpath.begin(); it != m_zeroethpath.end(); it++) {
+        //    std::cerr << *it << " ";
+        //  }
+        //  std::cerr <<std::endl;
+        //  for (std::list<uint32_t>::iterator it = m_firstpath.begin(); it != m_firstpath.end(); it++) {
+        //    std::cerr << *it << " ";
+        //  }
+        //  std::cerr <<std::endl;
+        //  for (std::list<uint32_t>::iterator it = m_secondpath.begin(); it != m_secondpath.end(); it++) {
+        //    std::cerr << *it << " ";
+        //  }
+        //  std::cerr <<std::endl;
+        //  NS_ASSERT(m_failedLength >= m_secondFailedLength);
+        //}
+        (*m_output->GetStream()) << m_nodeSrc << ","<<m_nodeDst<<","<<m_fullLength<<","<<lengths.str()<<","<<m_secondFailedLength<<std::endl;
+        std::cerr << m_nodeSrc << ","<<m_nodeDst<<","<<m_fullLength<<","<<lengths.str()<<","<<m_secondFailedLength<<std::endl;
         UnfailLink(m_failedLink);
         if (FindAndFailLink()) {
           NS_ASSERT(m_failedLink != -1);
           m_state = ExploreFailed1;
-          m_packetCount = m_packets;
-          m_failedLengths.clear();
+          NS_LOG_INFO("Sent first packet");
           if (!m_clients[m_nodeSrc]->ManualSend()) {
             return DroppedPacket();
           }
+          m_packetCount = m_packets;
+          m_failedLengths.clear();
         }
         else {
           Step();
@@ -390,8 +419,10 @@ struct Simulation : public Object {
     m_newIter = true;
     m_path.clear();
     m_state = ExploreFull;
-    m_nodeSrc = m_randVar.GetInteger(0, m_numNodes - 1);
-    m_nodeDst = m_randVar.GetInteger(0, m_numNodes - 1);
+    //m_nodeSrc = m_randVar.GetInteger(0, m_numNodes - 1);
+    //m_nodeDst = m_randVar.GetInteger(0, m_numNodes - 1);
+    m_nodeSrc = 25;
+    m_nodeDst = 76;
     while (m_nodeDst == m_nodeSrc) {
         m_nodeDst = m_randVar.GetInteger(0, m_numNodes - 1);
     }
@@ -404,9 +435,9 @@ struct Simulation : public Object {
   }
 
   void Simulate(std::string filename, Ptr<OutputStreamWrapper> output, bool simulateError, uint32_t iterations, uint32_t packets) {
-    m_packets = packets;
     m_output = output;
-    m_iterations = iterations;
+    m_iterations = 1;
+    m_packets = packets;
     NS_LOG_INFO("Loading");
     NS_ASSERT(!filename.empty());
     PopulateGraph(filename);
