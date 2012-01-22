@@ -1389,12 +1389,12 @@ GlobalRouteManagerImpl::SPFCalculate (Ipv4Address root)
 // reached.  Instead, short-circuit this computation and just install
 // a default route in the CheckForStubNode() method.
 //
-  if (NodeList::GetNNodes () > 0 && CheckForStubNode (root))
-    {
-      NS_LOG_LOGIC ("SPFCalculate truncated for stub node " << root);
-      delete m_spfroot;
-      return;
-    }
+  //if (NodeList::GetNNodes () > 0 && CheckForStubNode (root))
+  //  {
+  //    NS_LOG_LOGIC ("SPFCalculate truncated for stub node " << root);
+  //    delete m_spfroot;
+  //    return;
+  //  }
 
   for (;;)
     {
