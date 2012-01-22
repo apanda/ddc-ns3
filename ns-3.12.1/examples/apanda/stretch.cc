@@ -379,9 +379,14 @@ struct Simulation : public Object {
   {
       m_path.push_back(node);
   }
-
+  EventId m_stepEvent;
   void Step()
   {
+    Simulator::Cancel(m_stepEvent);
+    m_stepEvent = Simulator::Schedule(Seconds(10), &Simulation::Step, this);
+    if (m_failedLink != -1) {
+      UnfailLink(m_failedLink);
+    }
     std::cerr << m_iterations << std::endl;
     if (m_iterations == 0) {
       std::cerr << "Stopping" << std::endl;
@@ -404,6 +409,7 @@ struct Simulation : public Object {
   }
 
   void Simulate(std::string filename, Ptr<OutputStreamWrapper> output, bool simulateError, uint32_t iterations, uint32_t packets) {
+    m_failedLink = -1;
     m_packets = packets;
     m_output = output;
     m_iterations = iterations;
