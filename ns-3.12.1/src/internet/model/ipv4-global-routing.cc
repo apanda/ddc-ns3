@@ -278,6 +278,7 @@ Ipv4GlobalRouting::ClassifyInterfaces()
 void
 Ipv4GlobalRouting::Reset()
 {
+  NS_LOG_INFO(m_ipv4->GetNetDevice(1)->GetNode()->GetId() << " resetting ");
   for (StateMachines::iterator it = m_originalStates.begin();
        it != m_originalStates.end();
        it++) {
@@ -1545,7 +1546,11 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice
     m_visitedCallback(m_ipv4->GetNetDevice(1)->GetNode()->GetId());
   }
   NS_LOG_LOGIC("Unicast destination- looking up using PRVLDDC");
-  Ptr<Ipv4Route> rtentry = StandardReceive(header);
+  Ipv4Address addr = VerifyAndUpdateAddress(header.GetDestination());
+  Ptr<Ipv4Route> rtentry;
+  if (addr != Ipv4Address()) {
+     rtentry = StandardReceive(header);
+  }
 #endif
 
   if (rtentry)
@@ -1603,6 +1608,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
     NS_LOG_WARN("About to drop because of TTL");
     if (!m_packetDropped.IsNull()) {
       m_packetDropped();
+      return false;
     }
     else {
         std::cout << "Dropping no way to report"<<std::endl;
@@ -1696,10 +1702,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
   if (m_stateMachines[destination][iif] == Input) {
     NS_LOG_LOGIC(" header information = " << header.GetDdcInformation() <<
                  " m_remoteSeq information = " << (uint32_t)m_remoteSeq[destination][iif]);
-    if ((header.GetDdcInformation() & 0x1) != (m_remoteSeq[destination][iif] & 0x1)) {
-      // This is a timing issue, we reset, and just after the reset had a packet arrive
-      return rtentry;
-    }
+    NS_ASSERT((header.GetDdcInformation() & 0x1) == (m_remoteSeq[destination][iif] & 0x1));
     rtentry = StandardReceive(header);
   }
   else if (m_stateMachines[destination][iif] == Output) {
