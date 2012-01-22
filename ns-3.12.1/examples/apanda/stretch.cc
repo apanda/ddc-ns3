@@ -207,6 +207,9 @@ struct Simulation : public Object {
   void UnfailLink(int32_t link) {
     NS_LOG_INFO("UnfailLink");
     Simulator::Stop();
+    if (link == -1) {
+      return;
+    }
     UnfailLinkInternal(link);
     ResetState();
   }
