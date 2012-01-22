@@ -174,6 +174,12 @@ void
 DefaultSimulatorImpl::Stop (void)
 {
   m_stop = true;
+  while (!m_events->IsEmpty ())
+    {
+      Scheduler::Event next = m_events->RemoveNext ();
+      next.impl->Unref ();
+      m_unscheduledEvents--;
+    }
 }
 
 void 

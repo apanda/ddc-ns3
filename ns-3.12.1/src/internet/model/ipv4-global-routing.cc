@@ -302,38 +302,7 @@ Ipv4GlobalRouting::VerifyAndUpdateAddress (Ipv4Address address)
   if (m_stateMachines.find(address) != m_stateMachines.end()) {
      return address;
   }
-  
-  NS_LOG_LOGIC (" Number of m_networkRoutes" << m_networkRoutes.size ());
-  for (NetworkRoutesI j = m_networkRoutes.begin (); 
-       j != m_networkRoutes.end (); 
-       j++) 
-    {
-      Ipv4Mask mask = (*j)->GetDestNetworkMask ();
-      Ipv4Address entry = (*j)->GetDestNetwork ();
-     
-      if (mask.IsMatch (address, entry)) 
-        {
-          if (entry == Ipv4Address("0.0.0.0")) {
-            if((*j)->GetGateway() != Ipv4Address() && (*j)->GetGateway() != Ipv4Address("0.0.0.0")) {
-                if (m_stateMachines.find((*j)->GetGateway()) != m_stateMachines.end()) {
-                  return address;
-                }
-                else {
-                  return Ipv4Address();
-                }
-            }
-            else {
-              return Ipv4Address();
-            }
-          }
-          else {
-            NS_LOG_WARN("Returning address " << entry);
-            return entry;
-          }
-       }
-    }
-  // What address?
-  NS_ASSERT(false);
+  // Don't route things that require invoking the network thing
   return Ipv4Address();
 }
 
@@ -1727,7 +1696,10 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
   if (m_stateMachines[destination][iif] == Input) {
     NS_LOG_LOGIC(" header information = " << header.GetDdcInformation() <<
                  " m_remoteSeq information = " << (uint32_t)m_remoteSeq[destination][iif]);
-    NS_ASSERT((header.GetDdcInformation() & 0x1) == (m_remoteSeq[destination][iif] & 0x1));
+    if ((header.GetDdcInformation() & 0x1) != (m_remoteSeq[destination][iif] & 0x1)) {
+      // This is a timing issue, we reset, and just after the reset had a packet arrive
+      return rtentry;
+    }
     rtentry = StandardReceive(header);
   }
   else if (m_stateMachines[destination][iif] == Output) {

@@ -430,11 +430,16 @@ struct Simulation : public Object {
   {
       m_path.push_back(node);
   }
-  EventId m_stepEvent;
   void Step()
   {
+    Simulator::Stop();
+  }
+
+  EventId m_stepEvent;
+  void StepInternal()
+  {
     Simulator::Cancel(m_stepEvent);
-    m_stepEvent = Simulator::Schedule(Seconds(10), &Simulation::Step, this);
+    m_stepEvent = Simulator::Schedule(Seconds(240), &Simulation::Step, this);
     if (m_failedLink != -1) {
       UnfailLink(m_failedLink);
     }
@@ -537,10 +542,13 @@ struct Simulation : public Object {
       ((UdpEchoServer*)PeekPointer(serverApps.Get(i)))->SetReceivedCallback(MakeCallback(&Simulation::ReceivedPacket, this));
     }
 
-    Simulator::Schedule(Seconds(2.0), &Simulation::Step, this);
     Ptr<Ipv4RoutingProtocol> gr = m_nodes.Get(m_nodeDst)->GetObject<Ipv4>()->GetRoutingProtocol();
     Ipv4GlobalRouting* route = (Ipv4GlobalRouting*)PeekPointer(gr);
     route->TraceConnectWithoutContext("ReceivedTtl", MakeCallback(&Simulation::OutputTtlInformation));
+    while (m_iterations > 0) {
+      Simulator::Schedule(Seconds(2.0), &Simulation::StepInternal, this);
+      Simulator::Run ();
+    }
   }
 };
 
@@ -565,7 +573,6 @@ main (int argc, char *argv[])
   Ptr<Simulation> sim = ns3::Create<Simulation>();
   NS_ASSERT(!output.empty());
   sim->Simulate(filename, asciiHelper.CreateFileStream(output), simulateError, iterations, packets);
-  Simulator::Run ();
   Simulator::Destroy ();
   return 0;
 }

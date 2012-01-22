@@ -314,6 +314,9 @@ struct Simulation : public Object {
   bool m_newIter; 
   void ReceivedPacket(uint32_t node)
   {
+      if (node != m_nodeDst) {
+        return;
+      }
       m_path.push_back(node);
       NS_LOG_INFO("Path length = " << m_path.size());
       if (m_state == ExploreFull) {
@@ -381,11 +384,19 @@ struct Simulation : public Object {
   {
       m_path.push_back(node);
   }
-  EventId m_stepEvent;
-  void Step()
+  void Step() 
   {
-    Simulator::Cancel(m_stepEvent);
-    m_stepEvent = Simulator::Schedule(Seconds(10), &Simulation::Step, this);
+    std::cerr << "Stopping" << std::endl;
+    Simulator::Stop();
+    if (m_failedLink != -1) {
+      UnfailLink(m_failedLink);
+      m_failedLink = -1;
+    }
+  }
+  EventId m_stepEvent;
+  void StepInternal()
+  {
+    m_stepEvent = Simulator::Schedule(Seconds(240), &Simulation::Step, this);
     if (m_failedLink != -1) {
       UnfailLink(m_failedLink);
     }
@@ -402,6 +413,7 @@ struct Simulation : public Object {
     while (m_nodeDst == m_nodeSrc) {
         m_nodeDst = m_randVar.GetInteger(0, m_numNodes - 1);
     }
+    NS_LOG_INFO("Step picking src = " << m_nodeSrc << " dst = " << m_nodeDst);
     m_clients[m_nodeSrc]->ChangeDestination(m_nodes.Get(m_nodeDst)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
                                       9);
     if (!m_clients[m_nodeSrc]->ManualSend()) {
@@ -489,10 +501,14 @@ struct Simulation : public Object {
       ((UdpEchoServer*)PeekPointer(serverApps.Get(i)))->SetReceivedCallback(MakeCallback(&Simulation::ReceivedPacket, this));
     }
 
-    Simulator::Schedule(Seconds(2.0), &Simulation::Step, this);
     Ptr<Ipv4RoutingProtocol> gr = m_nodes.Get(m_nodeDst)->GetObject<Ipv4>()->GetRoutingProtocol();
     Ipv4GlobalRouting* route = (Ipv4GlobalRouting*)PeekPointer(gr);
     route->TraceConnectWithoutContext("ReceivedTtl", MakeCallback(&Simulation::OutputTtlInformation));
+    while (m_iterations > 0) {
+      Simulator::Schedule(Seconds(2.0), &Simulation::StepInternal, this);
+      Simulator::Run ();
+    }
+    Simulator::Destroy ();
   }
 };
 
@@ -517,7 +533,5 @@ main (int argc, char *argv[])
   Ptr<Simulation> sim = ns3::Create<Simulation>();
   NS_ASSERT(!output.empty());
   sim->Simulate(filename, asciiHelper.CreateFileStream(output), simulateError, iterations, packets);
-  Simulator::Run ();
-  Simulator::Destroy ();
   return 0;
 }
