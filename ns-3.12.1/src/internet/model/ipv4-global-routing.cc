@@ -213,9 +213,23 @@ Ipv4GlobalRouting::ClassifyInterfaces()
       uint32_t distance = GetDistance(*it);
       uint32_t otherDistance = otherIpv4->GetDistance(*it);
       Ipv4Address address = *it;
-      address = VerifyAndUpdateAddress(address);
-      if (address == Ipv4Address()) {
-        continue;
+      //address = VerifyAndUpdateAddress(address);
+      //if (address == Ipv4Address()) {
+      //  continue;
+      //}
+      if (m_stateMachines.find(address) == m_stateMachines.end() ||
+          m_stateMachines[address].size() < m_ipv4->GetNInterfaces()) {
+        m_stateMachines[address] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+        m_originalStates[address] = std::vector<DdcState>(m_ipv4->GetNInterfaces());
+        m_goodToReverse[address] = std::list<uint32_t>();
+        m_remoteSeq[address] = std::vector<uint8_t>(m_ipv4->GetNInterfaces());
+        m_localSeq[address] = std::vector<uint8_t>(m_ipv4->GetNInterfaces());
+        for (int ii = 0; ii < (int)m_ipv4->GetNInterfaces(); ii++) {
+          m_stateMachines[address][ii] = None;
+          m_originalStates[address][ii] = None;
+          m_remoteSeq[address][ii] = 0;
+          m_localSeq[address][ii] = 0;
+        }
       }
       if (m_stateMachines[address][i] != None) {
         continue;
