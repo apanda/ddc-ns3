@@ -32,7 +32,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("Stretch");
+NS_LOG_COMPONENT_DEFINE ("Scope");
 
 struct Simulation : public Object {
   std::vector<PointToPointChannel* > m_channels;
@@ -292,6 +292,12 @@ struct Simulation : public Object {
   {
     NS_LOG_INFO("Packet dropped");
     Simulator::Cancel(m_stepEvent);
+    m_path.clear();
+    m_reversals = 0;
+    m_reversalsPerNode.clear();
+    m_nodesReversed.clear();
+    m_cummulativeNodesReversed.clear();
+    m_cummulativeReversals.clear();
     NS_ASSERT(m_state == ExploreFailed1 || m_state == ExploreFull);
     if (m_state == ExploreFailed1) {
       UnfailLink(m_failedLink);
@@ -391,6 +397,8 @@ struct Simulation : public Object {
         }
         m_stepEvent = Simulator::Schedule(Seconds(240), &Simulation::Step, this);
         m_packetCount--;
+        m_cummulativeReversals.push_back(m_reversals);
+        m_cummulativeNodesReversed.push_back(m_nodesReversed.size());
         m_failedLengths.push_back(m_failedLength);
         if (m_packetCount == 0) {
           m_state = ExploreFailed2;
@@ -455,7 +463,6 @@ struct Simulation : public Object {
 
   void StepActual()
   {
-    std::cerr << "Stopping" << std::endl;
     Simulator::Stop();
     Simulator::Schedule(Seconds(2.0), &Simulation::StepInternal, this);
     if (m_failedLink != -1) {
@@ -472,7 +479,6 @@ struct Simulation : public Object {
     }
     std::cerr << m_iterations << std::endl;
     if (m_iterations == 0) {
-      std::cerr << "Stopping" << std::endl;
       Simulator::Stop();
     }
     m_newIter = true;
@@ -579,6 +585,8 @@ struct Simulation : public Object {
     Ptr<Ipv4RoutingProtocol> gr = m_nodes.Get(m_nodeDst)->GetObject<Ipv4>()->GetRoutingProtocol();
     Ipv4GlobalRouting* route = (Ipv4GlobalRouting*)PeekPointer(gr);
     route->TraceConnectWithoutContext("ReceivedTtl", MakeCallback(&Simulation::OutputTtlInformation));
+    
+    RegisterReverseCallback();
     Simulator::Schedule(Seconds(2.0), &Simulation::StepInternal, this);
     while (m_iterations > 0) {
       ResetState();
