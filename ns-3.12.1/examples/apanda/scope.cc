@@ -240,6 +240,9 @@ struct Simulation : public Object {
   }
 
   void UnfailLinkInternal(int32_t link) {
+    if (link == -1) {
+      return;
+    }
     uint32_t nodeA = m_channels[link]->GetDevice(0)->GetNode()->GetId();
     uint32_t nodeB = m_channels[link]->GetDevice(1)->GetNode()->GetId();
     uint32_t nodeSrc = (nodeA < nodeB ? nodeA : nodeB);
