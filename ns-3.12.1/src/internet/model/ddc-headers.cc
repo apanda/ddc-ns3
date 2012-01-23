@@ -208,8 +208,6 @@ MessageHeader::Deserialize (Buffer::Iterator start)
       m_metrics.push_back(MetricListEntry(addresses[ii], metric[ii]));
     }
   }
-  int endMarker = i.ReadNtohU32();
-  NS_ASSERT(endMarker == 0);
   return GetSerializedSize ();
 }
 }

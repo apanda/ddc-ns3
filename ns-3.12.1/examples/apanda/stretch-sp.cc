@@ -205,6 +205,16 @@ struct Simulation : public Object {
   uint32_t m_secondFailedLength;
   
   void UnfailLink(int32_t link) {
+    NS_LOG_INFO("UnfailLink");
+    Simulator::Stop();
+    if (link == -1) {
+      return;
+    }
+    UnfailLinkInternal(link);
+    ResetState();
+  }
+
+  void UnfailLinkInternal(int32_t link) {
     uint32_t nodeA = m_channels[link]->GetDevice(0)->GetNode()->GetId();
     uint32_t nodeB = m_channels[link]->GetDevice(1)->GetNode()->GetId();
     uint32_t nodeSrc = (nodeA < nodeB ? nodeA : nodeB);
@@ -213,7 +223,6 @@ struct Simulation : public Object {
     NS_ASSERT(0 <= nodeDest && nodeDest < (uint32_t)m_numNodes);
     m_connectivityGraph[nodeSrc]->push_back(nodeDest);
     m_channels[link]->SetLinkUp();
-    ResetState();
   }
 
   int32_t FailLink(uint32_t nodeA, uint32_t nodeB) 
@@ -256,29 +265,33 @@ struct Simulation : public Object {
 
   void DroppedPacket()
   {
+    NS_LOG_INFO("Packet dropped");
+    Simulator::Cancel(m_stepEvent);
     NS_ASSERT(m_state == ExploreFailed1 || m_state == ExploreFull);
     if (m_state == ExploreFailed1) {
       UnfailLink(m_failedLink);
       if (FindAndFailLink()) {
         NS_ASSERT(m_failedLink != -1);
         if (!m_clients[m_nodeSrc]->ManualSend()) {
-          Step();
+          return StepActual();
         }
+        m_stepEvent = Simulator::Schedule(Seconds(240), &Simulation::Step, this);
         m_state = ExploreFailed1;
         m_packetCount = m_packets;
         m_failedLengths.clear();
       }
       else {
-        Step();
+        StepActual();
       }
     }
     else {
-      Step();
+      StepActual();
     }
   }
   
   void ResetState()
   {
+    NS_LOG_INFO("ResetState");
     for (int i = 0; i < m_numNodes; i++) {
       Ptr<Node> node = m_nodes.Get(i);
       Ptr<GlobalRouter> router = node->GetObject<GlobalRouter>();
@@ -314,6 +327,8 @@ struct Simulation : public Object {
   bool m_newIter; 
   void ReceivedPacket(uint32_t node)
   {
+      NS_LOG_INFO("Received packet");
+      Simulator::Cancel(m_stepEvent);
       if (node != m_nodeDst) {
         return;
       }
@@ -330,11 +345,12 @@ struct Simulation : public Object {
           if (!m_clients[m_nodeSrc]->ManualSend()) {
             return DroppedPacket();
           }
+          m_stepEvent = Simulator::Schedule(Seconds(240), &Simulation::Step, this);
           m_packetCount = m_packets;
           m_failedLengths.clear();
         }
         else {
-          Step();
+          StepActual();
         }
       }
       else if (m_state==ExploreFailed1) {
@@ -343,6 +359,7 @@ struct Simulation : public Object {
         if (!m_clients[m_nodeSrc]->ManualSend()) {
           return DroppedPacket();
         }
+        m_stepEvent = Simulator::Schedule(Seconds(240), &Simulation::Step, this);
         m_packetCount--;
         m_failedLengths.push_back(m_failedLength);
         if (m_packetCount == 0) {
@@ -372,9 +389,10 @@ struct Simulation : public Object {
           if (!m_clients[m_nodeSrc]->ManualSend()) {
             return DroppedPacket();
           }
+          m_stepEvent = Simulator::Schedule(Seconds(240), &Simulation::Step, this);
         }
         else {
-          Step();
+          StepActual();
         }
       }
 
@@ -382,14 +400,24 @@ struct Simulation : public Object {
 
   void Visited(uint32_t node)
   {
+      Simulator::Cancel(m_stepEvent);
+      m_stepEvent = Simulator::Schedule(Seconds(240), &Simulation::Step, this);
+      NS_LOG_INFO("Visited");
       m_path.push_back(node);
   }
   void Step() 
   {
+     NS_LOG_INFO("Stepping because of timer");
+      StepActual();
+  }
+
+  void StepActual()
+  {
     std::cerr << "Stopping" << std::endl;
     Simulator::Stop();
+    Simulator::Schedule(Seconds(2.0), &Simulation::StepInternal, this);
     if (m_failedLink != -1) {
-      UnfailLink(m_failedLink);
+      UnfailLinkInternal(m_failedLink);
       m_failedLink = -1;
     }
   }
@@ -408,8 +436,8 @@ struct Simulation : public Object {
     m_newIter = true;
     m_path.clear();
     m_state = ExploreFull;
-    m_nodeSrc = 14;//m_randVar.GetInteger(0, m_numNodes - 1);
-    m_nodeDst = 12;//m_randVar.GetInteger(0, m_numNodes - 1);
+    m_nodeSrc = 61;//m_randVar.GetInteger(0, m_numNodes - 1);
+    m_nodeDst = 11;//m_randVar.GetInteger(0, m_numNodes - 1);
     while (m_nodeDst == m_nodeSrc) {
         m_nodeDst = m_randVar.GetInteger(0, m_numNodes - 1);
     }
@@ -504,8 +532,9 @@ struct Simulation : public Object {
     Ptr<Ipv4RoutingProtocol> gr = m_nodes.Get(m_nodeDst)->GetObject<Ipv4>()->GetRoutingProtocol();
     Ipv4GlobalRouting* route = (Ipv4GlobalRouting*)PeekPointer(gr);
     route->TraceConnectWithoutContext("ReceivedTtl", MakeCallback(&Simulation::OutputTtlInformation));
+    Simulator::Schedule(Seconds(2.0), &Simulation::StepInternal, this);
     while (m_iterations > 0) {
-      Simulator::Schedule(Seconds(2.0), &Simulation::StepInternal, this);
+      ResetState();
       Simulator::Run ();
     }
     Simulator::Destroy ();

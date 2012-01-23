@@ -268,6 +268,7 @@ struct Simulation : public Object {
     NS_LOG_INFO("Packet dropped");
     Simulator::Cancel(m_stepEvent);
     NS_ASSERT(m_state == ExploreFailed1 || m_state == ExploreFull);
+    m_path.clear();
     if (m_state == ExploreFailed1) {
       UnfailLink(m_failedLink);
       if (FindAndFailLink()) {
@@ -355,6 +356,7 @@ struct Simulation : public Object {
       }
       else if (m_state==ExploreFailed1) {
         m_failedLength = m_path.size();
+        NS_LOG_INFO("Distance = " << m_failedLength);
         m_path.clear();
         if (!m_clients[m_nodeSrc]->ManualSend()) {
           return DroppedPacket();
@@ -372,6 +374,7 @@ struct Simulation : public Object {
       }
       else if (m_state == ExploreFailed2) {
         m_secondFailedLength = m_path.size();
+        NS_LOG_INFO("Distance = " << m_secondFailedLength);
         m_path.clear();
         std::stringstream lengths;
         for (std::list<uint32_t>::iterator it = m_failedLengths.begin(); 

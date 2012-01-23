@@ -1608,11 +1608,11 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
     NS_LOG_WARN("About to drop because of TTL");
     if (!m_packetDropped.IsNull()) {
       m_packetDropped();
-      return false;
     }
     else {
         std::cout << "Dropping no way to report"<<std::endl;
     }
+    return false;
   }
   NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
   uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
