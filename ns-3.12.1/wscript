@@ -302,6 +302,7 @@ def configure(conf):
     env['PLATFORM'] = sys.platform
 
     if conf.env['CXX_NAME'] in ['gcc', 'icc']:
+        env.append_value('CXXFLAGS', '-Wno-narrowing')
         if Options.options.build_profile == 'release': 
             env.append_value('CXXFLAGS', '-fomit-frame-pointer') 
             if conf.check_compilation_flag('-march=native'):

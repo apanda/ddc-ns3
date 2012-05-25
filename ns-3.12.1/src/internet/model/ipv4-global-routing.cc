@@ -109,8 +109,8 @@ Ipv4GlobalRouting::RecvDdcHealing (Ptr<Socket> socket)
   Address sourceAddress;
   receivedPacket = socket->RecvFrom(sourceAddress);
   
-  InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
-  Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
+  //InetSocketAddress inetSourceAddr = InetSocketAddress::ConvertFrom (sourceAddress);
+  //Ipv4Address senderIfaceAddr = inetSourceAddr.GetIpv4 ();
   Ipv4Address receiverIfaceAddr = m_addressForSocket[socket].GetLocal();
   uint32_t iface = m_interfaceForSocket[socket];
   NS_ASSERT (receiverIfaceAddr != Ipv4Address ());
