@@ -47,6 +47,7 @@
 #else
 #include <fcntl.h>
 #endif
+#include <unistd.h>
 
 NS_LOG_COMPONENT_DEFINE ("AnimationInterface");
 
