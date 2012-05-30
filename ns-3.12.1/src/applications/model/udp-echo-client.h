@@ -119,12 +119,15 @@ public:
    * \param dataSize The desired size of the final echo data.
    */
   void SetFill (uint8_t *fill, uint32_t fillSize, uint32_t dataSize);
-
+  bool ManualSend(void);
+  void ChangeDestination (Ipv4Address addr, uint16_t port);
+  typedef Callback<void, uint32_t> ReceivedCallback; 
+  void SetReceivedCallback(ReceivedCallback receive); 
 protected:
   virtual void DoDispose (void);
 
 private:
-
+  ReceivedCallback m_receive;
   virtual void StartApplication (void);
   virtual void StopApplication (void);
 

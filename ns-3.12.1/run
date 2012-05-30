@@ -1,5 +1,0 @@
-Waf: Entering directory `/home/apanda/code/ns-allinone-3.12.1/ns-3.12.1/build'
-[ 134/1376] install-ns3-header: src/internet/model/ipv4-global-routing.h -> build/debug/ns3/ipv4-global-routing.h
-[ 849/1376] cxx: src/internet/model/global-router-interface.cc -> build/debug/src/internet/model/global-router-interface_281.o
-Waf: Leaving directory `/home/apanda/code/ns-allinone-3.12.1/ns-3.12.1/build'
-Interrupted 

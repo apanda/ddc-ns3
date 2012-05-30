@@ -118,7 +118,23 @@ UdpEchoClient::StartApplication (void)
 
   m_socket->SetRecvCallback (MakeCallback (&UdpEchoClient::HandleRead, this));
 
-  ScheduleTransmit (Seconds (0.));
+  //ScheduleTransmit (Seconds (0.));
+}
+
+void 
+UdpEchoClient::ChangeDestination (Ipv4Address addr, uint16_t port)
+{
+    if (m_socket != 0) {
+      m_socket->Close ();
+      m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket> > ());
+      m_socket = 0;
+    }
+
+    TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
+    m_socket = Socket::CreateSocket (GetNode (), tid);
+    m_socket->Bind ();
+    m_socket->Connect (InetSocketAddress (addr, port));
+    m_socket->SetRecvCallback (MakeCallback (&UdpEchoClient::HandleRead, this));
 }
 
 void 
@@ -243,12 +259,55 @@ UdpEchoClient::ScheduleTransmit (Time dt)
   m_sendEvent = Simulator::Schedule (dt, &UdpEchoClient::Send, this);
 }
 
+bool
+UdpEchoClient::ManualSend(void)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  Ptr<Packet> p;
+  if (m_dataSize)
+    {
+      //
+      // If m_dataSize is non-zero, we have a data buffer of the same size that we
+      // are expected to copy and send.  This state of affairs is created if one of
+      // the Fill functions is called.  In this case, m_size must have been set
+      // to agree with m_dataSize
+      //
+      NS_ASSERT_MSG (m_dataSize == m_size, "UdpEchoClient::Send(): m_size and m_dataSize inconsistent");
+      NS_ASSERT_MSG (m_data, "UdpEchoClient::Send(): m_dataSize but no m_data");
+      p = Create<Packet> (m_data, m_dataSize);
+    }
+  else
+    {
+      //
+      // If m_dataSize is zero, the client has indicated that she doesn't care 
+      // about the data itself either by specifying the data size by setting
+      // the corresponding atribute or by not calling a SetFill function.  In 
+      // this case, we don't worry about it either.  But we do allow m_size
+      // to have a value different from the (zero) m_dataSize.
+      //
+      p = Create<Packet> (m_size);
+    }
+  // call to the trace sinks before the packet is actually sent,
+  // so that tags added to the packet can be sent as well
+  m_txTrace (p);
+  int ret = m_socket->Send (p);
+
+  ++m_sent;
+
+  NS_LOG_INFO ("Sent " << m_size << " bytes to " << m_peerAddress);
+
+  if (m_count == 0 || m_sent < m_count) 
+    {
+      //ScheduleTransmit (m_interval);
+    }
+  return (ret != -1);
+}
+
 void 
 UdpEchoClient::Send (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
-
-  NS_ASSERT (m_sendEvent.IsExpired ());
 
   Ptr<Packet> p;
   if (m_dataSize)
@@ -285,8 +344,14 @@ UdpEchoClient::Send (void)
 
   if (m_count == 0 || m_sent < m_count) 
     {
-      ScheduleTransmit (m_interval);
+      //ScheduleTransmit (m_interval);
     }
+}
+
+void
+UdpEchoClient::SetReceivedCallback(ReceivedCallback callback) 
+{
+  m_receive = callback;
 }
 
 void
@@ -299,6 +364,9 @@ UdpEchoClient::HandleRead (Ptr<Socket> socket)
     {
       if (InetSocketAddress::IsMatchingType (from))
         {
+          if (!m_receive.IsNull()) {
+            m_receive(GetNode()->GetId());
+          }
           NS_LOG_INFO ("Received " << packet->GetSize () << " bytes from " <<
                        InetSocketAddress::ConvertFrom (from).GetIpv4 ());
         }

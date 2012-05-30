@@ -1140,7 +1140,7 @@ GlobalRouter::ProcessPointToPointLink (Ptr<NetDevice> ndLocal, GlobalRoutingLSA 
   plr->SetLinkId (addrRemote);
   plr->SetLinkData (Ipv4Address (maskRemote.Get ()));  // Frown
   plr->SetMetric (metricLocal);
-  pLSA->AddLinkRecord (plr);
+  //pLSA->AddLinkRecord (plr);
   plr = 0;
 }
 

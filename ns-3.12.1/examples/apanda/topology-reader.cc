@@ -22,21 +22,76 @@
 #include "ns3/random-variable.h"
 #include <list>
 #include <vector>
+#include <map>
 #include <stack>
 #include <algorithm>
+#include <fstream>
+#include <cstdlib>
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("DataDrivenConnectivity1");
+NS_LOG_COMPONENT_DEFINE ("DataDrivenConnectivityTopologyReader");
 
 std::vector<PointToPointChannel* > channels;
 UniformVariable randVar;
-const int32_t NODES = 12;
-std::vector<std::list<uint32_t>*> connectivityGraph(NODES);
+int32_t NODES = -1;
+std::vector<std::list<uint32_t>*> connectivityGraph;
+std::vector<uint32_t> nodeTranslate;
 Time simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
+void PopulateGraph(std::string& filename)
+{
+  std::map<uint32_t, std::list<uint32_t>*> tempConnectivityGraph;
+  NS_LOG_INFO("Entering PopulateGraph with file " << filename);
+  std::ifstream topology(filename.c_str());
+  NS_ASSERT(topology.is_open());
+
+  while (topology.good()) {
+    std::string input;
+    getline(topology, input);
+    size_t found = input.find(" ");
+    if (found == std::string::npos) {
+      continue;
+    }
+    std::string node1s = input.substr(0, int(found));
+    std::string node2s = input.substr(int(found) + 1, input.length() - (int(found) + 1));
+    uint32_t node1 = std::atoi(node1s.c_str()) ;
+    uint32_t node2 = std::atoi(node2s.c_str());
+    if (!tempConnectivityGraph[node1]) {
+      tempConnectivityGraph[node1] = new std::list<uint32_t>;
+    }
+    if (!tempConnectivityGraph[node2]) {
+      tempConnectivityGraph[node2] = new std::list<uint32_t>;
+    }
+    tempConnectivityGraph[node1]->push_back(node2);
+  }
+
+  NODES = tempConnectivityGraph.size();
+  std::map<uint32_t, uint32_t> translationMap;
+  uint32_t last = 0;
+  connectivityGraph.resize(NODES);
+
+  for (std::map<uint32_t, std::list<uint32_t>*>::iterator it = tempConnectivityGraph.begin();
+      it != tempConnectivityGraph.end();
+      it++) {
+      nodeTranslate.push_back(it->first);
+      translationMap[it->first] = last;
+      last++;
+  }
+  for (int i = 0; i < NODES; i++) {
+    connectivityGraph[i] = new std::list<uint32_t>;
+    for (std::list<uint32_t>::iterator it = tempConnectivityGraph[nodeTranslate[i]]->begin();
+         it != tempConnectivityGraph[nodeTranslate[i]]->end();
+         it++) {
+      connectivityGraph[i]->push_back(translationMap[*it]);
+    }
+  }
+}
+
 bool IsGraphConnected(int start) 
 {
-  bool visited[NODES] = {false};
+  NS_LOG_INFO("IsGraphConnected called, size " << NODES);
+
+  std::vector<bool> visited(NODES, false);// = {false};
   std::stack<uint32_t> nodes;
   nodes.push(start);
   while (!nodes.empty()) {
@@ -46,6 +101,9 @@ bool IsGraphConnected(int start)
       continue;
     }
     visited[node] = true;
+    if (!connectivityGraph[node]) {
+        continue;
+    }
     for ( std::list<uint32_t>::iterator iterator = connectivityGraph[node]->begin(); 
     iterator != connectivityGraph[node]->end();
     iterator++) {
@@ -55,6 +113,9 @@ bool IsGraphConnected(int start)
       if (i == node) {
         continue;
       }
+      if (!connectivityGraph[i]) {
+          continue;
+      }
       if (std::find(connectivityGraph[i]->begin(), connectivityGraph[i]->end(), node) !=
                connectivityGraph[i]->end()) {
         nodes.push(i);
@@ -62,8 +123,12 @@ bool IsGraphConnected(int start)
     }
   }
   for (int i = 0; i < NODES; i++) {
+    bool discon = false;
     if (!visited[i]) {
-      NS_LOG_ERROR("Found disconnect " << i);
+      NS_LOG_ERROR("Found disconnect " << i << " ("<< nodeTranslate[i] << ")");
+      discon = true;
+    }
+    if (discon) {
       return false;
     }
   }
@@ -129,47 +194,51 @@ main (int argc, char *argv[])
   uint32_t packets = 1;
   bool simulateError;
   CommandLine cmd;
+  std::string filename;
   cmd.AddValue("packets", "Number of packets to echo", packets);
   cmd.AddValue("error", "Simulate error", simulateError);
+  cmd.AddValue("topo", "Topology file", filename);
   cmd.Parse(argc, argv);
+  NS_ASSERT(!filename.empty());
+  PopulateGraph(filename);
   //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
-  for (int i = 0; i < NODES; i++) {
-      connectivityGraph[i] = new std::list<uint32_t>;
-  }
+  //for (int i = 0; i < NODES; i++) {
+  //    connectivityGraph[i] = new std::list<uint32_t>;
+  //}
 
-  // Graph
-  // 0 -> 1, 2
-  // 1 -> 0, 3
-  // 2->  0, 3, 4
-  // 3 -> 1, 2, 4
-  // 4 -> 2, 3
-  connectivityGraph[0]->push_back(1);
-  connectivityGraph[0]->push_back(6);
-  connectivityGraph[0]->push_back(7);
-  connectivityGraph[0]->push_back(5);
-  connectivityGraph[1]->push_back(6);
-  connectivityGraph[1]->push_back(7);
-  connectivityGraph[1]->push_back(8);
-  connectivityGraph[2]->push_back(7);
-  connectivityGraph[2]->push_back(8);
-  connectivityGraph[2]->push_back(9);
-  connectivityGraph[2]->push_back(3);
-  connectivityGraph[2]->push_back(5);
-  connectivityGraph[3]->push_back(8);
-  connectivityGraph[3]->push_back(9);
-  connectivityGraph[3]->push_back(10);
-  connectivityGraph[4]->push_back(9);
-  connectivityGraph[4]->push_back(10);
-  connectivityGraph[4]->push_back(11);
-  connectivityGraph[4]->push_back(5);
-  connectivityGraph[4]->push_back(5);
-  connectivityGraph[6]->push_back(11);
-  connectivityGraph[7]->push_back(8);
-  connectivityGraph[8]->push_back(11);
-  connectivityGraph[9]->push_back(10);
-  connectivityGraph[10]->push_back(11);
+  //// Graph
+  //// 0 -> 1, 2
+  //// 1 -> 0, 3
+  //// 2->  0, 3, 4
+  //// 3 -> 1, 2, 4
+  //// 4 -> 2, 3
+  //connectivityGraph[0]->push_back(1);
+  //connectivityGraph[0]->push_back(6);
+  //connectivityGraph[0]->push_back(7);
+  //connectivityGraph[0]->push_back(5);
+  //connectivityGraph[1]->push_back(6);
+  //connectivityGraph[1]->push_back(7);
+  //connectivityGraph[1]->push_back(8);
+  //connectivityGraph[2]->push_back(7);
+  //connectivityGraph[2]->push_back(8);
+  //connectivityGraph[2]->push_back(9);
+  //connectivityGraph[2]->push_back(3);
+  //connectivityGraph[2]->push_back(5);
+  //connectivityGraph[3]->push_back(8);
+  //connectivityGraph[3]->push_back(9);
+  //connectivityGraph[3]->push_back(10);
+  //connectivityGraph[4]->push_back(9);
+  //connectivityGraph[4]->push_back(10);
+  //connectivityGraph[4]->push_back(11);
+  //connectivityGraph[4]->push_back(5);
+  //connectivityGraph[4]->push_back(5);
+  //connectivityGraph[6]->push_back(11);
+  //connectivityGraph[7]->push_back(8);
+  //connectivityGraph[8]->push_back(11);
+  //connectivityGraph[9]->push_back(10);
+  //connectivityGraph[10]->push_back(11);
   NS_ASSERT(IsGraphConnected(0));
 
   NS_LOG_INFO("Creating nodes");
@@ -182,6 +251,10 @@ main (int argc, char *argv[])
   std::vector<NetDeviceContainer> nodeDevices(NODES);
   std::vector<NetDeviceContainer> linkDevices;
   for (int i = 0; i < NODES; i++) {
+    if (connectivityGraph[i] == NULL) {
+        continue;
+    }
+
     for ( std::list<uint32_t>::iterator iterator = connectivityGraph[i]->begin(); 
     iterator != connectivityGraph[i]->end();
     iterator++) {
@@ -194,7 +267,7 @@ main (int argc, char *argv[])
     }
   }
 
-  pointToPoint.EnablePcapAll("DDCTest");
+  //pointToPoint.EnablePcapAll("DDCTest");
   InternetStackHelper stack;
   stack.Install (nodes);
   Ipv4AddressHelper address;
@@ -205,9 +278,12 @@ main (int argc, char *argv[])
     stack.EnableAsciiIpv4(stream, current); 
     address.NewNetwork();
   }
+  NS_LOG_INFO("Done assigning address");
+  NS_LOG_INFO("Populating routing tables");
   Ipv4GlobalRoutingHelper::SetSimulationEndTime(simulationEnd);
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
+  NS_LOG_INFO("Done populating routing tables");
   // Simulate error
   if (simulateError) {
     for (int i = 0 ; i < 5; i++) {
@@ -227,7 +303,7 @@ main (int argc, char *argv[])
       }
       UdpEchoClientHelper echoClient (nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
                                         9);
-      echoClient.SetAttribute ("MaxPackets", UintegerValue (0));
+      echoClient.SetAttribute ("MaxPackets", UintegerValue (1));
       echoClient.SetAttribute ("Interval", TimeValue (Seconds (randVar.GetValue(1.0, 3000.0))));
       echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
       ApplicationContainer clientApps = echoClient.Install (nodes.Get (i));
@@ -237,21 +313,22 @@ main (int argc, char *argv[])
   }
 
   Ptr<OutputStreamWrapper> out = asciiHelper.CreateFileStream("route.table");
-  NS_LOG_INFO("Node interface list");
-  for (int i = 0; i < NODES; i++) {
-      Ptr<Ipv4> ipv4 = nodes.Get(i)->GetObject<Ipv4>();
-      NS_ASSERT(ipv4 != NULL);
-      for (int j = 0; j < (int)ipv4->GetNInterfaces(); j++) {
-          for (int k = 0; k < (int)ipv4->GetNAddresses(j); k++) {
-            Ipv4InterfaceAddress iaddr = ipv4->GetAddress (j, k);
-            Ipv4Address addr = iaddr.GetLocal ();
-            (*out->GetStream()) << i << "\t" << j << "\t" << addr << "\n";
-          }
-      }
-  }
-  for (int i = 0; i < NODES; i++) {
-    nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
-  }
+  //NS_LOG_INFO("Node interface list");
+  //for (int i = 0; i < NODES; i++) {
+  //    Ptr<Ipv4> ipv4 = nodes.Get(i)->GetObject<Ipv4>();
+  //    NS_ASSERT(ipv4 != NULL);
+  //    for (int j = 0; j < (int)ipv4->GetNInterfaces(); j++) {
+  //        for (int k = 0; k < (int)ipv4->GetNAddresses(j); k++) {
+  //          Ipv4InterfaceAddress iaddr = ipv4->GetAddress (j, k);
+  //          Ipv4Address addr = iaddr.GetLocal ();
+  //          (*out->GetStream()) << i << "\t" << j << "\t" << addr << "\n";
+  //        }
+  //    }
+  //}
+  //for (int i = 0; i < NODES; i++) {
+  //  nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
+  //}
+  NS_LOG_INFO("Running simulation");
   Simulator::Run ();
   Simulator::Destroy ();
 

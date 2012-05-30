@@ -741,6 +741,12 @@ public:
  */
   void DebugSPFCalculate (Ipv4Address root);
 
+  void SetSimulationEndTime (Time time);
+
+  void SetPacketDropped (Callback<void> packetDropped);
+  void SetReceived (Callback<void, uint32_t> received);
+  void SetVisited (Callback<void, uint32_t> visited);
+
 private:
 /**
  * @brief GlobalRouteManagerImpl copy construction is disallowed.
@@ -774,6 +780,10 @@ private:
   void SPFAddASExternal (GlobalRoutingLSA *extlsa, SPFVertex *v);
   int32_t FindOutgoingInterfaceId (Ipv4Address a, 
                                    Ipv4Mask amask = Ipv4Mask ("255.255.255.255"));
+  Time m_simulationEndTime;
+  Callback<void> m_packetDropped;
+  Callback<void, uint32_t> m_received;
+  Callback<void, uint32_t> m_visited;
 };
 
 } // namespace ns3

@@ -481,7 +481,7 @@ Ipv4NixVectorRouting::FindNetDeviceForNixIndex (uint32_t nodeIndex, Ipv4Address 
 }
 
 Ptr<Ipv4Route> 
-Ipv4NixVectorRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
+Ipv4NixVectorRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
 {
   NS_LOG_FUNCTION_NOARGS ();
   Ptr<Ipv4Route> rtentry;
@@ -602,7 +602,7 @@ Ipv4NixVectorRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<
 }
 
 bool 
-Ipv4NixVectorRouting::RouteInput (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const NetDevice> idev,
+Ipv4NixVectorRouting::RouteInput (Ptr<const Packet> p, Ipv4Header &header, Ptr<const NetDevice> idev,
                                   UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                                   LocalDeliverCallback lcb, ErrorCallback ecb)
 {

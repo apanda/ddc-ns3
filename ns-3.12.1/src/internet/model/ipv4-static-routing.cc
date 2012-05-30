@@ -452,7 +452,7 @@ Ipv4StaticRouting::RemoveRoute (uint32_t index)
 }
 
 Ptr<Ipv4Route> 
-Ipv4StaticRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
+Ipv4StaticRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
 {
   NS_LOG_FUNCTION (this << header << oif);
   Ipv4Address destination = header.GetDestination ();
@@ -482,7 +482,7 @@ Ipv4StaticRouting::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<Net
 }
 
 bool 
-Ipv4StaticRouting::RouteInput  (Ptr<const Packet> p, const Ipv4Header &ipHeader, Ptr<const NetDevice> idev,
+Ipv4StaticRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &ipHeader, Ptr<const NetDevice> idev,
                                 UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                                 LocalDeliverCallback lcb, ErrorCallback ecb)
 {

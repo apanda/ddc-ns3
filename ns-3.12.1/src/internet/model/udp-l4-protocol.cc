@@ -261,6 +261,8 @@ UdpL4Protocol::Send (Ptr<Packet> packet,
   NS_LOG_FUNCTION (this << packet << saddr << daddr << sport << dport);
 
   UdpHeader udpHeader;
+  Ptr<Ipv4L3Protocol> ipv4 = this->GetObject<Ipv4L3Protocol> ();
+  NS_ASSERT(ipv4 != 0);
   if(Node::ChecksumEnabled ())
     {
       udpHeader.EnableChecksums ();
@@ -272,18 +274,20 @@ UdpL4Protocol::Send (Ptr<Packet> packet,
   udpHeader.SetSourcePort (sport);
 
   packet->AddHeader (udpHeader);
-
-  m_downTarget (packet, saddr, daddr, PROT_NUMBER, 0);
+  
+  ipv4->SendDdc (packet, saddr, daddr, PROT_NUMBER, 0, 0);
+  //m_downTarget (packet, saddr, daddr, PROT_NUMBER, 0);
 }
 
 void
 UdpL4Protocol::Send (Ptr<Packet> packet, 
                      Ipv4Address saddr, Ipv4Address daddr, 
-                     uint16_t sport, uint16_t dport, Ptr<Ipv4Route> route)
+                     uint16_t sport, uint16_t dport, uint32_t ddcInformation, Ptr<Ipv4Route> route)
 {
   NS_LOG_FUNCTION (this << packet << saddr << daddr << sport << dport << route);
 
   UdpHeader udpHeader;
+  Ptr<Ipv4L3Protocol> ipv4 = this->GetObject<Ipv4L3Protocol> ();
   if(Node::ChecksumEnabled ())
     {
       udpHeader.EnableChecksums ();
@@ -295,8 +299,8 @@ UdpL4Protocol::Send (Ptr<Packet> packet,
   udpHeader.SetSourcePort (sport);
 
   packet->AddHeader (udpHeader);
-
-  m_downTarget (packet, saddr, daddr, PROT_NUMBER, route);
+  ipv4->SendDdc (packet, saddr, daddr, PROT_NUMBER, ddcInformation, route); 
+  //m_downTarget (packet, saddr, daddr, PROT_NUMBER, route);
 }
 
 void

@@ -2,3 +2,7 @@ syntax: glob
 *.swo
 *.sw*
 *.swp
+*.pcap
+*.tr
+.lock-wscript
+.waf-*

@@ -56,7 +56,7 @@ Ipv4L3Protocol::GetTypeId (void)
     .SetParent<Ipv4> ()
     .AddConstructor<Ipv4L3Protocol> ()
     .AddAttribute ("DefaultTtl", "The TTL value set by default on all outgoing packets generated on this node.",
-                   UintegerValue (64),
+                   UintegerValue (255),
                    MakeUintegerAccessor (&Ipv4L3Protocol::m_defaultTtl),
                    MakeUintegerChecker<uint8_t> ())
     .AddAttribute ("FragmentExpirationTimeout",
@@ -536,6 +536,130 @@ Ipv4L3Protocol::SendWithHeader (Ptr<Packet> packet,
 {
   NS_LOG_FUNCTION (this << packet << ipHeader << route);
   SendRealOut (route, packet, ipHeader);
+}
+
+void 
+Ipv4L3Protocol::SendDdc (Ptr<Packet> packet, 
+                      Ipv4Address source,
+                      Ipv4Address destination,
+                      uint8_t protocol,
+                      uint32_t ddcInformation,
+                      Ptr<Ipv4Route> route)
+{
+  NS_LOG_FUNCTION (this << packet << source << destination << uint32_t (protocol) << route);
+
+  Ipv4Header ipHeader;
+  bool mayFragment = true;
+  uint8_t ttl = m_defaultTtl;
+  SocketIpTtlTag tag;
+  bool found = packet->RemovePacketTag (tag);
+  if (found)
+    {
+      ttl = tag.GetTtl ();
+    }
+
+  // Handle a few cases:
+  // 1) packet is destined to limited broadcast address
+  // 2) packet is destined to a subnet-directed broadcast address
+  // 3) packet is not broadcast, and is passed in with a route entry
+  // 4) packet is not broadcast, and is passed in with a route entry but route->GetGateway is not set (e.g., on-demand)
+  // 5) packet is not broadcast, and route is NULL (e.g., a raw socket call, or ICMP)
+
+  // 1) packet is destined to limited broadcast address or link-local multicast address
+  if (destination.IsBroadcast () || destination.IsLocalMulticast ())
+    {
+      NS_LOG_LOGIC ("Ipv4L3Protocol::Send case 1:  limited broadcast");
+      ipHeader = BuildHeader (source, destination, protocol, packet->GetSize (), ttl, mayFragment);
+      ipHeader.SetDdcInformation(ddcInformation);
+      uint32_t ifaceIndex = 0;
+      for (Ipv4InterfaceList::iterator ifaceIter = m_interfaces.begin ();
+           ifaceIter != m_interfaces.end (); ifaceIter++, ifaceIndex++)
+        {
+          Ptr<Ipv4Interface> outInterface = *ifaceIter;
+          Ptr<Packet> packetCopy = packet->Copy ();
+
+          NS_ASSERT (packetCopy->GetSize () <= outInterface->GetDevice ()->GetMtu ());
+
+          m_sendOutgoingTrace (ipHeader, packetCopy, ifaceIndex);
+          packetCopy->AddHeader (ipHeader);
+          m_txTrace (packetCopy, m_node->GetObject<Ipv4> (), ifaceIndex);
+          outInterface->Send (packetCopy, destination);
+        }
+      return;
+    }
+
+  // 2) check: packet is destined to a subnet-directed broadcast address
+  uint32_t ifaceIndex = 0;
+  for (Ipv4InterfaceList::iterator ifaceIter = m_interfaces.begin ();
+       ifaceIter != m_interfaces.end (); ifaceIter++, ifaceIndex++)
+    {
+      Ptr<Ipv4Interface> outInterface = *ifaceIter;
+      for (uint32_t j = 0; j < GetNAddresses (ifaceIndex); j++)
+        {
+          Ipv4InterfaceAddress ifAddr = GetAddress (ifaceIndex, j);
+          NS_LOG_LOGIC ("Testing address " << ifAddr.GetLocal () << " with mask " << ifAddr.GetMask ());
+          if (destination.IsSubnetDirectedBroadcast (ifAddr.GetMask ()) && 
+              destination.CombineMask (ifAddr.GetMask ()) == ifAddr.GetLocal ().CombineMask (ifAddr.GetMask ())   )
+            {
+              NS_LOG_LOGIC ("Ipv4L3Protocol::Send case 2:  subnet directed bcast to " << ifAddr.GetLocal ());
+              ipHeader = BuildHeader (source, destination, protocol, packet->GetSize (), ttl, mayFragment);
+              ipHeader.SetDdcInformation(ddcInformation);
+              Ptr<Packet> packetCopy = packet->Copy ();
+              m_sendOutgoingTrace (ipHeader, packetCopy, ifaceIndex);
+              packetCopy->AddHeader (ipHeader);
+              m_txTrace (packetCopy, m_node->GetObject<Ipv4> (), ifaceIndex);
+              outInterface->Send (packetCopy, destination);
+              return;
+            }
+        }
+    }
+
+  // 3) packet is not broadcast, and is passed in with a route entry
+  //    with a valid Ipv4Address as the gateway
+  if (route && route->GetGateway () != Ipv4Address ())
+    {
+      NS_LOG_LOGIC ("Ipv4L3Protocol::Send case 3:  passed in with route");
+      ipHeader = BuildHeader (source, destination, protocol, packet->GetSize (), ttl, mayFragment);
+      ipHeader.SetDdcInformation(ddcInformation);
+      int32_t interface = GetInterfaceForDevice (route->GetOutputDevice ());
+      m_sendOutgoingTrace (ipHeader, packet, interface);
+      SendRealOut (route, packet->Copy (), ipHeader);
+      return; 
+    } 
+  // 4) packet is not broadcast, and is passed in with a route entry but route->GetGateway is not set (e.g., on-demand)
+  if (route && route->GetGateway () == Ipv4Address ())
+    {
+      // This could arise because the synchronous RouteOutput() call
+      // returned to the transport protocol with a source address but
+      // there was no next hop available yet (since a route may need
+      // to be queried).
+      NS_FATAL_ERROR ("Ipv4L3Protocol::Send case 4: This case not yet implemented");
+    }
+  // 5) packet is not broadcast, and route is NULL (e.g., a raw socket call)
+  NS_LOG_LOGIC ("Ipv4L3Protocol::Send case 5:  passed in with no route " << destination);
+  Socket::SocketErrno errno_; 
+  Ptr<NetDevice> oif (0); // unused for now
+  ipHeader = BuildHeader (source, destination, protocol, packet->GetSize (), ttl, mayFragment);
+  Ptr<Ipv4Route> newRoute;
+  if (m_routingProtocol != 0)
+    {
+      newRoute = m_routingProtocol->RouteOutput (packet, ipHeader, oif, errno_);
+    }
+  else
+    {
+      NS_LOG_ERROR ("Ipv4L3Protocol::Send: m_routingProtocol == 0");
+    }
+  if (newRoute)
+    {
+      int32_t interface = GetInterfaceForDevice (newRoute->GetOutputDevice ());
+      m_sendOutgoingTrace (ipHeader, packet, interface);
+      SendRealOut (newRoute, packet->Copy (), ipHeader);
+    }
+  else
+    {
+      NS_LOG_WARN ("No route to host.  Drop.");
+      m_dropTrace (ipHeader, packet, DROP_NO_ROUTE, m_node->GetObject<Ipv4> (), 0);
+    }
 }
 
 void 

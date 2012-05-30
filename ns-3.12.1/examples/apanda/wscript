@@ -4,3 +4,15 @@ def build(bld):
         
     obj = bld.create_ns3_program('test', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
     obj.source = 'test.cc'
+
+    obj = bld.create_ns3_program('topology-reader', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
+    obj.source = 'topology-reader.cc'
+
+    obj = bld.create_ns3_program('stretch', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
+    obj.source = 'stretch.cc'
+
+    obj = bld.create_ns3_program('stretch-sp', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
+    obj.source = 'stretch-sp.cc'
+
+    obj = bld.create_ns3_program('scope', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
+    obj.source = 'scope.cc'

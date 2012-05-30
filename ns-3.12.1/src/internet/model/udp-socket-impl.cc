@@ -348,7 +348,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port)
   else if (m_ipTtl != 0 && !dest.IsMulticast () && !dest.IsBroadcast ())
     {
       SocketIpTtlTag tag;
-      tag.SetTtl (m_ipTtl);
+      tag.SetTtl (255);
       p->AddPacketTag (tag);
     }
   {
@@ -426,7 +426,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port)
   else if (m_endPoint->GetLocalAddress () != Ipv4Address::GetAny ())
     {
       m_udp->Send (p->Copy (), m_endPoint->GetLocalAddress (), dest,
-                   m_endPoint->GetLocalPort (), port, 0);
+                   m_endPoint->GetLocalPort (), port);
       NotifyDataSent (p->GetSize ());
       NotifySend (GetTxAvailable ());
       return p->GetSize ();
@@ -461,7 +461,7 @@ UdpSocketImpl::DoSendTo (Ptr<Packet> p, Ipv4Address dest, uint16_t port)
 
           header.SetSource (route->GetSource ());
           m_udp->Send (p->Copy (), header.GetSource (), header.GetDestination (),
-                       m_endPoint->GetLocalPort (), port, route);
+                       m_endPoint->GetLocalPort (), port, header.GetDdcInformation(), route);
           NotifyDataSent (p->GetSize ());
           return p->GetSize ();
         }

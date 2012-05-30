@@ -182,6 +182,21 @@ public:
    */
   void SendWithHeader (Ptr<Packet> packet, Ipv4Header ipHeader, Ptr<Ipv4Route> route);
 
+
+  /**
+   * \param packet packet to send
+   * \param source source address of packet
+   * \param destination address of packet
+   * \param protocol number of packet
+   * \param ddcInformation DDC information for the packet
+   * \param route route entry
+   *
+   * Higher-level layers call this method to send a packet
+   * down the stack to the MAC and PHY layers.
+   */
+  void SendDdc (Ptr<Packet> packet, Ipv4Address source, 
+             Ipv4Address destination, uint8_t protocol, uint32_t ddcInformation, Ptr<Ipv4Route> route);
+
   uint32_t AddInterface (Ptr<NetDevice> device);
   Ptr<Ipv4Interface> GetInterface (uint32_t i) const;
   uint32_t GetNInterfaces (void) const;

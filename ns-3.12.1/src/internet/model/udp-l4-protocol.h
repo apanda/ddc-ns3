@@ -81,7 +81,7 @@ public:
              uint16_t sport, uint16_t dport);
   void Send (Ptr<Packet> packet,
              Ipv4Address saddr, Ipv4Address daddr, 
-             uint16_t sport, uint16_t dport, Ptr<Ipv4Route> route);
+             uint16_t sport, uint16_t dport, uint32_t ddcInformation ,Ptr<Ipv4Route> route);
   /**
    * \brief Receive a packet up the protocol stack
    * \param p The Packet to dump the contents into

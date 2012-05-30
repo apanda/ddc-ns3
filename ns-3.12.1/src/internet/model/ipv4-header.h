@@ -93,6 +93,11 @@ public:
    */
   void SetDestination (Ipv4Address destination);
   /**
+   *\ param ddcInformation the information associated with this
+   *  packet due to ddc
+   */
+  void SetDdcInformation (uint32_t ddcInformation);
+  /**
    * \returns the size of the payload in bytes
    */
   uint16_t GetPayloadSize (void) const;
@@ -132,6 +137,10 @@ public:
    * \returns the destination address of this packet
    */
   Ipv4Address GetDestination (void) const;
+  /**
+   * \returns the DDC infirmation associated with this packet
+   */
+  uint32_t GetDdcInformation (void) const;
 
   /**
    * \returns true if the ipv4 checksum is correct, false otherwise.
@@ -148,6 +157,8 @@ public:
   virtual void Serialize (Buffer::Iterator start) const;
   virtual uint32_t Deserialize (Buffer::Iterator start);
 private:
+  
+  static const size_t IPV4_HEADER_LENGTH = 6; // Header length in 4 byte increments
 
   enum FlagsE {
     DONT_FRAGMENT = (1<<0),
@@ -167,6 +178,7 @@ private:
   Ipv4Address m_destination;
   uint16_t m_checksum;
   bool m_goodChecksum;
+  uint32_t m_ddcInformation;
 };
 
 } // namespace ns3

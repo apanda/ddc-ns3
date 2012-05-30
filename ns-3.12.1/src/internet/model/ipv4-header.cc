@@ -40,7 +40,8 @@ Ipv4Header::Ipv4Header ()
     m_flags (0),
     m_fragmentOffset (0),
     m_checksum (0),
-    m_goodChecksum (true)
+    m_goodChecksum (true),
+    m_ddcInformation (0)
 {
 }
 
@@ -124,7 +125,7 @@ Ipv4Header::SetFragmentOffset (uint16_t offsetBytes)
 uint16_t 
 Ipv4Header::GetFragmentOffset (void) const
 {
-  if ((m_fragmentOffset+m_payloadSize+5*4) > 65535)
+  if ((m_fragmentOffset+m_payloadSize+IPV4_HEADER_LENGTH*4) > 65535)
     {
       NS_LOG_WARN("Fragment will exceed the maximum packet size once reassembled");
     }
@@ -229,7 +230,7 @@ Ipv4Header::Print (std::ostream &os) const
      << "protocol " << m_protocol << " "
      << "offset (bytes) " << m_fragmentOffset << " "
      << "flags [" << flags << "] "
-     << "length: " << (m_payloadSize + 5 * 4)
+     << "length: " << (m_payloadSize + IPV4_HEADER_LENGTH * 4)
      << " " 
      << m_source << " > " << m_destination
   ;
@@ -237,7 +238,7 @@ Ipv4Header::Print (std::ostream &os) const
 uint32_t 
 Ipv4Header::GetSerializedSize (void) const
 {
-  return 5 * 4;
+  return IPV4_HEADER_LENGTH * 4;
 }
 
 void
@@ -245,10 +246,10 @@ Ipv4Header::Serialize (Buffer::Iterator start) const
 {
   Buffer::Iterator i = start;
 
-  uint8_t verIhl = (4 << 4) | (5);
+  uint8_t verIhl = (4 << 4) | (IPV4_HEADER_LENGTH);
   i.WriteU8 (verIhl);
   i.WriteU8 (m_tos);
-  i.WriteHtonU16 (m_payloadSize + 5*4);
+  i.WriteHtonU16 (m_payloadSize + IPV4_HEADER_LENGTH*4);
   i.WriteHtonU16 (m_identification);
   uint32_t fragmentOffset = m_fragmentOffset / 8;
   uint8_t flagsFrag = (fragmentOffset >> 8) & 0x1f;
@@ -268,6 +269,7 @@ Ipv4Header::Serialize (Buffer::Iterator start) const
   i.WriteHtonU16 (0);
   i.WriteHtonU32 (m_source.Get ());
   i.WriteHtonU32 (m_destination.Get ());
+  i.WriteHtonU32 (m_ddcInformation);
 
   if (m_calcChecksum) 
     {
@@ -312,7 +314,7 @@ Ipv4Header::Deserialize (Buffer::Iterator start)
   /* i.Next (2); // checksum */
   m_source.Set (i.ReadNtohU32 ());
   m_destination.Set (i.ReadNtohU32 ());
-
+  m_ddcInformation = i.ReadNtohU32();
   if (m_calcChecksum) 
     {
       i = start;
@@ -322,6 +324,18 @@ Ipv4Header::Deserialize (Buffer::Iterator start)
       m_goodChecksum = (checksum == 0);
     }
   return GetSerializedSize ();
+}
+
+uint32_t
+Ipv4Header::GetDdcInformation () const
+{
+    return m_ddcInformation;
+}
+
+void
+Ipv4Header::SetDdcInformation (uint32_t ddcInformation)
+{
+    m_ddcInformation = ddcInformation;
 }
 
 } // namespace ns3
