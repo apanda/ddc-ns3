@@ -307,20 +307,17 @@ private:
   ReceivedCallback m_receivedCallback;
   VisitedCallback m_visitedCallback;
   ReversedCallback m_reversedCallback;
+
   StateMachines m_originalStates;
   Interfaces m_originalInputs;
   Interfaces m_originalOutputs;
+
   Interfaces m_inputInterfaces;
-  Interfaces m_reverseInputInterfaces;
   Interfaces m_outputInterfaces;
-  Interfaces m_reverseOutputInterfaces;
   Interfaces m_deadInterfaces;
   StateMachines m_stateMachines;
   DistanceMetric m_distances;
-  SocketToAddress m_addressForSocket;
-  AddressToSocket m_socketForAddress;
-  InterfaceToSocket m_socketForInterface;
-  SocketToInterface m_interfaceForSocket;
+
   LocalAddress m_localAddresses;
   InterfaceStates m_isInterfaceDead;
   SequenceNumbers m_remoteSeq;
@@ -348,31 +345,9 @@ private:
   
   Ipv4Address VerifyAndUpdateAddress (Ipv4Address address);
 
-  /// Send a message along
-  void SendMessage (Ptr<Socket>& socket, MessageHeader& message);
-  /// Receive a request for metric
-  void ReceiveHealingRequest (uint32_t iface, MessageHeader& message);
-  /// Receive a response to a previous request
-  void ReceiveHealingResponse (uint32_t iface, MessageHeader& message);
-  /// Given a message header, initialize the metric correctly
-  void FillInMetric (MessageHeader& message);
-  /// Common handling for packets
-  void CommonBuildPacket (uint32_t iface, MessageHeader& message);
-  /// Original routing methods for the Berkeley algorithm
-  void RecvDdcHealing (Ptr<Socket> socket);
-
   void CheckIfLinksReanimated();
-  void AdvanceStateMachine(Ipv4Address dest, uint32_t iface, DdcAction action);
-  Ptr<Ipv4Route> RouteThroughDdc(const Ipv4Header &header, Ptr<NetDevice> oif, Ptr<const NetDevice> idev);
   Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);
-  Ptr<Ipv4Route> TryRouteThroughInterfaces (Interfaces interfaces, Ipv4Address address);
 
-  /// Something happened to trigger the need to heal, request metrics from our neighbor, while simultaneously
-  /// sending them ours. I am mostly planning on using this sending of the metrics as a way to get both sides on
-  /// the same idea about I and O. This isn't essential, but why not do it.
-  void SendMetricRequest (uint32_t iface);
-  // Send a response in response to a request for our metrics
-  void SendMetricResponse (uint32_t iface);
 };
 
 } // Namespace ns3

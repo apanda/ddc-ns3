@@ -119,6 +119,9 @@ void ScheduleLinkFailure()
   }*/
   //Simulator::Schedule(Seconds(randVar.GetValue(180.0, 6000.0)), &ScheduleLinkRecovery, failedLink);
 }
+void SendToClient(UdpEchoClient* client) {
+    client->ManualSend();
+}
 
 int
 main (int argc, char *argv[])
@@ -128,6 +131,7 @@ main (int argc, char *argv[])
   Ptr<OutputStreamWrapper> stream = asciiHelper.CreateFileStream ("tcp-trace.tr");
   uint32_t packets = 1;
   bool simulateError;
+  std::vector<UdpEchoClient*> clients;
   CommandLine cmd;
   cmd.AddValue("packets", "Number of packets to echo", packets);
   cmd.AddValue("error", "Simulate error", simulateError);
@@ -220,20 +224,20 @@ main (int argc, char *argv[])
   ApplicationContainer serverApps = echoServer.Install (nodes);
   serverApps.Start (Seconds (1.0));
   serverApps.Stop (simulationEnd);
+  clients.resize(NODES);
   for (int i = 0; i < NODES; i++) {
-    for (int j = 0; j < NODES; j++) {
-      if (i == j) {
-        continue;
-      }
-      UdpEchoClientHelper echoClient (nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
-                                        9);
-      echoClient.SetAttribute ("MaxPackets", UintegerValue (0));
-      echoClient.SetAttribute ("Interval", TimeValue (Seconds (randVar.GetValue(1.0, 3000.0))));
-      echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
-      ApplicationContainer clientApps = echoClient.Install (nodes.Get (i));
-      clientApps.Start (Seconds (randVar.GetValue(1.0, 120.0)));
-      clientApps.Stop (simulationEnd);
-    }
+    int j = 0;
+    UdpEchoClientHelper echoClient (nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
+                                      9);
+    echoClient.SetAttribute ("MaxPackets", UintegerValue (0));
+    echoClient.SetAttribute ("Interval", TimeValue (Seconds (randVar.GetValue(1.0, 3000.0))));
+    echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+    ApplicationContainer clientApps = echoClient.Install (nodes.Get (i));
+    clientApps.Start (Seconds (1.0));
+    clientApps.Stop (simulationEnd);
+    clients[i] = (UdpEchoClient*)(PeekPointer(clientApps.Get(0)));
+    clients[i]->ChangeDestination(nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(), 9);
+    Simulator::Schedule(Seconds(1.0), &SendToClient, clients[i]);
   }
 
   Ptr<OutputStreamWrapper> out = asciiHelper.CreateFileStream("route.table");
