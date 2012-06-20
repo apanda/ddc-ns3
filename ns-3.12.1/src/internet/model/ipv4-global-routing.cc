@@ -1,4 +1,5 @@
 // -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*-
+// vim:set ts=2:expandtab:
 //
 // Copyright (c) 2008 University of Washington
 //
@@ -80,9 +81,44 @@ Ipv4GlobalRouting::~Ipv4GlobalRouting ()
 }
 
 void
+Ipv4GlobalRouting::RecvProactiveHealing (Ptr<Socket> socket)
+{
+  Ptr<Packet> receivedPacket;
+  Address sourceAddress;
+  receivedPacket = socket->RecvFrom(sourceAddress);
+  Ipv4Header header;
+  receivedPacket->RemoveHeader(header);
+  this->RouteInput(receivedPacket, 
+    header, 
+    m_ipv4->GetNetDevice(m_socketToInterface[socket]),
+    MakeCallback(&Ipv4GlobalRouting::DummyIpForward),
+    MakeCallback(&Ipv4GlobalRouting::DummyMulticastForward),
+    MakeCallback(&Ipv4GlobalRouting::DummyLocalDeliver),
+    MakeCallback(&Ipv4GlobalRouting::DummyRouteInputError));
+  return;
+}
+
+void
 Ipv4GlobalRouting::DoStart ()
 {
   static const Ipv4Address loopback ("127.0.0.1");
+  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
+    Ipv4Address address = m_ipv4->GetAddress(i, 0).GetLocal();
+    if (address == loopback) {
+      continue;
+    }
+    Ptr<Socket> socket = Socket::CreateSocket (m_ipv4->GetNetDevice(i)->GetNode(),
+                                               UdpSocketFactory::GetTypeId());
+    socket->SetAllowBroadcast(true);
+    socket->SetRecvCallback(MakeCallback(&Ipv4GlobalRouting::RecvProactiveHealing, this));
+    InetSocketAddress addr(address, RAD_PORT);
+    if (socket->Bind(addr)) {
+      NS_FATAL_ERROR("Could not bind socket to address");
+    }
+    socket->BindToNetDevice(m_ipv4->GetNetDevice(i));
+    m_interfaceToSocket[i] = socket;
+    m_socketToInterface[socket] = i;
+  }
 }
 
 void 

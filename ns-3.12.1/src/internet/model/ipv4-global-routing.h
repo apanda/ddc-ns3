@@ -302,7 +302,9 @@ private:
   typedef sgi::hash_map<Ipv4Address, Ptr<Socket>, Ipv4AddressHash> AddressToSocket;
   typedef sgi::hash_map<uint32_t, Ptr<Socket> > InterfaceToSocket;
   typedef sgi::hash_map<uint32_t, bool> InterfaceStates;
-  
+ 
+  SocketToInterface m_socketToInterface;
+  InterfaceToSocket m_interfaceToSocket;
   PacketDropped m_packetDropped;
   ReceivedCallback m_receivedCallback;
   VisitedCallback m_visitedCallback;
@@ -347,7 +349,11 @@ private:
 
   void CheckIfLinksReanimated();
   Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);
-
+  void RecvProactiveHealing (Ptr<Socket> socket);
+  static void DummyIpForward (Ptr<Ipv4Route> rtentry, Ptr<const Packet> p, const Ipv4Header &header) {}
+  static void DummyMulticastForward (Ptr<Ipv4MulticastRoute> mrtentry, Ptr<const Packet> p, const Ipv4Header &header) {}
+  static void DummyLocalDeliver (Ptr<const Packet> packet, Ipv4Header const&ip, uint32_t iif) {}
+  static void DummyRouteInputError (Ptr<const Packet> p, const Ipv4Header & ipHeader, Socket::SocketErrno sockErrno) {}
 };
 
 } // Namespace ns3
