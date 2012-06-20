@@ -81,6 +81,21 @@ Ipv4GlobalRouting::~Ipv4GlobalRouting ()
 }
 
 void
+Ipv4GlobalRouting::SendProactiveHealing (Ipv4Address destination, uint32_t iface)
+{
+  Ipv4Header header;
+  header.SetTtl(1);
+  header.SetDestination(destination);
+  Ptr<Socket> sock = m_interfaceToSocket[iface];
+  header.SetSource(m_ipv4->GetAddress(iface, 0).GetLocal());
+  SendOnOutLink(iface, header);
+  Ptr<Packet> packet = Create<Packet>();
+  packet->AddHeader(header);
+  Ipv4InterfaceAddress addr = m_ipv4->GetAddress(iface, 0);
+  sock->SendTo(packet, 0, InetSocketAddress(addr.GetLocal().GetSubnetDirectedBroadcast(addr.GetMask()),RAD_PORT));
+}
+
+void
 Ipv4GlobalRouting::RecvProactiveHealing (Ptr<Socket> socket)
 {
   Ptr<Packet> receivedPacket;

@@ -350,6 +350,7 @@ private:
   void CheckIfLinksReanimated();
   Ptr<Ipv4Route> LookupGlobal (const Ipv4Header &header, Ptr<NetDevice> oif = 0, Ptr<const NetDevice> idev = 0);
   void RecvProactiveHealing (Ptr<Socket> socket);
+  void SendProactiveHealing(Ipv4Address destination, uint32_t iface);
   static void DummyIpForward (Ptr<Ipv4Route> rtentry, Ptr<const Packet> p, const Ipv4Header &header) {}
   static void DummyMulticastForward (Ptr<Ipv4MulticastRoute> mrtentry, Ptr<const Packet> p, const Ipv4Header &header) {}
   static void DummyLocalDeliver (Ptr<const Packet> packet, Ipv4Header const&ip, uint32_t iif) {}
