@@ -662,7 +662,7 @@ Ipv4GlobalRouting::ReverseOutToIn (Ipv4Address dest, uint32_t link)
   if (!m_reversedCallback.IsNull()) {
       m_reversedCallback(m_ipv4->GetNetDevice(1)->GetNode()->GetId(), dest, (uint8_t)Input);
   }
-  SendProactiveHealing(dest, link);
+  //SendProactiveHealing(dest, link);
 }
 
 void 

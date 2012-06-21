@@ -39,3 +39,5 @@ repository, this directory only contains a few python scripts:
      This script will get all external components that need to be
      built, and then will build ns-3 using the downloaded components.
 
+/waf --run "examples/apanda/stretch --output=foo --topo=../../topos/1221.bb.new --packets=50 --error=1 --iter=10"
+./waf --run "examples/apanda/scope --output=foo --topo=../../topos/1221.bb.new --packets=50 --error=1 --iter=10"
