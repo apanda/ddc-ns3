@@ -592,6 +592,7 @@ Ipv4GlobalRouting::StandardReceive (Ipv4Header &header)
     }
     while (!m_goodToReverse[destination].empty()) {
       ReverseInToOut(destination, m_goodToReverse[destination].front()); 
+
       if (!m_reversedCallback.IsNull()) {
           m_reversedCallback(m_ipv4->GetNetDevice(1)->GetNode()->GetId(), destination, (uint8_t)Output);
       }
@@ -661,6 +662,7 @@ Ipv4GlobalRouting::ReverseOutToIn (Ipv4Address dest, uint32_t link)
   if (!m_reversedCallback.IsNull()) {
       m_reversedCallback(m_ipv4->GetNetDevice(1)->GetNode()->GetId(), dest, (uint8_t)Input);
   }
+  SendProactiveHealing(dest, link);
 }
 
 void 

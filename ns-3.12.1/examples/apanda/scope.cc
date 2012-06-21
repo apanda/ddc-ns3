@@ -616,6 +616,8 @@ main (int argc, char *argv[])
   cmd.AddValue("output", "Output file", output);
   cmd.AddValue("iter", "Iterations", iterations);
   cmd.Parse(argc, argv);
+  std::cout << packets << std::endl;
+  std::cout << "Topology" << filename << std::endl;
   NS_LOG_INFO("Running simulation");
   Ptr<Simulation> sim = ns3::Create<Simulation>();
   NS_ASSERT(!output.empty());
