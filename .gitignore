@@ -1,0 +1,22 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
+*.so
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# for projects that use Waf for building: http://code.google.com/p/waf/
+*/.waf-*
+*/.lock-*
+
+*.pyc
+
+*/build
+*.swp
+*.pcap
