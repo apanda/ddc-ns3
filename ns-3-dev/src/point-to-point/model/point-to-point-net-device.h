@@ -58,6 +58,14 @@ class ErrorModel;
 class PointToPointNetDevice : public NetDevice
 {
 public:
+  /**
+   * Enumeration of the types of packets supported in the class.
+   */
+  enum EncapsulationMode {
+    ILLEGAL,     /**< Encapsulation mode not set */
+    DIX,         /**< DIX II / Ethernet II packet */
+    LLC,         /**< 802.2 LLC/SNAP Packet*/
+  };
   static TypeId GetTypeId (void);
 
   /**
@@ -184,6 +192,10 @@ public:
 
   virtual void SetPromiscReceiveCallback (PromiscReceiveCallback cb);
   virtual bool SupportsSendFrom (void) const;
+
+  void SetLinkDown();
+
+  void SetLinkUp();
 
 protected:
   void DoMpiReceive (Ptr<Packet> p);
@@ -322,6 +334,13 @@ private:
    * \see class CallBackTraceSource
    */
   TracedCallback<Ptr<const Packet> > m_macPromiscRxTrace;
+
+  /**
+   * The type of packet that should be created by the AddHeader
+   * function and that should be processed by the ProcessHeader
+   * function.
+   */
+  EncapsulationMode m_encapMode;
 
   /**
    * The trace source fired for packets successfully received by the device

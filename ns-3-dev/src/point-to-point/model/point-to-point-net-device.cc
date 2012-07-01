@@ -29,6 +29,11 @@
 #include "point-to-point-net-device.h"
 #include "point-to-point-channel.h"
 #include "ppp-header.h"
+#include "ns3/ethernet-header.h"
+#include "ns3/ethernet-trailer.h"
+#include "ns3/llc-snap-header.h"
+
+#define DEFAULT_ENCAPMODE DIX
 
 NS_LOG_COMPONENT_DEFINE ("PointToPointNetDevice");
 
@@ -152,6 +157,7 @@ PointToPointNetDevice::PointToPointNetDevice ()
     m_currentPkt (0)
 {
   NS_LOG_FUNCTION (this);
+  m_encapMode = DEFAULT_ENCAPMODE;
 }
 
 PointToPointNetDevice::~PointToPointNetDevice ()
@@ -163,18 +169,123 @@ void
 PointToPointNetDevice::AddHeader (Ptr<Packet> p, uint16_t protocolNumber)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  PppHeader ppp;
-  ppp.SetProtocol (EtherToPpp (protocolNumber));
-  p->AddHeader (ppp);
+  
+  Mac48Address local = m_address;
+  Mac48Address remote = Mac48Address::ConvertFrom(GetRemote());  
+  EthernetHeader header(false);
+  header.SetSource(local);
+  header.SetDestination(remote);
+  
+  EthernetTrailer trailer;
+
+  NS_LOG_LOGIC ("p->GetSize () = " << p->GetSize ());
+  NS_LOG_LOGIC ("m_encapMode = " << m_encapMode);
+  NS_LOG_LOGIC ("m_mtu = " << m_mtu);
+
+  uint16_t lengthType = 0;
+  switch (m_encapMode) 
+    {
+    case DIX:
+      NS_LOG_LOGIC ("Encapsulating packet as DIX (type interpretation)");
+      //
+      // This corresponds to the type interpretation of the lengthType field as
+      // in the old Ethernet Blue Book.
+      //
+      lengthType = protocolNumber;
+
+      //
+      // All Ethernet frames must carry a minimum payload of 46 bytes.  We need
+      // to pad out if we don't have enough bytes.  These must be real bytes 
+      // since they will be written to pcap files and compared in regression 
+      // trace files.
+      //
+      if (p->GetSize () < 46)
+        {
+          uint8_t buffer[46];
+          memset (buffer, 0, 46);
+          Ptr<Packet> padd = Create<Packet> (buffer, 46 - p->GetSize ());
+          p->AddAtEnd (padd);
+        }
+      break;
+    case LLC: 
+      {
+        NS_LOG_LOGIC ("Encapsulating packet as LLC (length interpretation)");
+
+        LlcSnapHeader llc;
+        llc.SetType (protocolNumber);
+        p->AddHeader (llc);
+
+        //
+        // This corresponds to the length interpretation of the lengthType 
+        // field but with an LLC/SNAP header added to the payload as in 
+        // IEEE 802.2
+        //
+        lengthType = p->GetSize ();
+
+        //
+        // All Ethernet frames must carry a minimum payload of 46 bytes.  The 
+        // LLC SNAP header counts as part of this payload.  We need to padd out
+        // if we don't have enough bytes.  These must be real bytes since they 
+        // will be written to pcap files and compared in regression trace files.
+        //
+        if (p->GetSize () < 46)
+          {
+            uint8_t buffer[46];
+            memset (buffer, 0, 46);
+            Ptr<Packet> padd = Create<Packet> (buffer, 46 - p->GetSize ());
+            p->AddAtEnd (padd);
+          }
+
+        NS_ASSERT_MSG (p->GetSize () <= GetMtu (),
+                       "CsmaNetDevice::AddHeader(): 802.3 Length/Type field with LLC/SNAP: "
+                       "length interpretation must not exceed device frame size minus overhead");
+      }
+      break;
+    case ILLEGAL:
+    default:
+      NS_FATAL_ERROR ("CsmaNetDevice::AddHeader(): Unknown packet encapsulation mode");
+      break;
+    }
+
+  NS_LOG_LOGIC ("header.SetLengthType (" << lengthType << ")");
+  header.SetLengthType (lengthType);
+  p->AddHeader (header);
+
+  if (Node::ChecksumEnabled ())
+    {
+      trailer.EnableFcs (true);
+    }
+  trailer.CalcFcs (p);
+  p->AddTrailer (trailer);
 }
 
 bool
 PointToPointNetDevice::ProcessHeader (Ptr<Packet> p, uint16_t& param)
 {
   NS_LOG_FUNCTION_NOARGS ();
-  PppHeader ppp;
-  p->RemoveHeader (ppp);
-  param = PppToEther (ppp.GetProtocol ());
+  //PppHeader ppp;
+  //p->RemoveHeader (ppp);
+  //param = PppToEther (ppp.GetProtocol ());
+  EthernetTrailer trailer;
+  EthernetHeader header(false);
+  p->RemoveTrailer(trailer);
+  p->RemoveHeader(header);
+  switch (m_encapMode) {
+    case DIX:
+      param = header.GetLengthType ();
+      break;
+    case LLC: 
+      {
+        LlcSnapHeader llc;
+        p->RemoveHeader (llc);
+        param = llc.GetType ();
+      } 
+      break;
+    case ILLEGAL:
+    default:
+      NS_FATAL_ERROR ("CsmaNetDevice::ProcessHeader(): Unknown packet encapsulation mode");
+      break;
+  }
   return true;
 }
 
@@ -283,7 +394,7 @@ PointToPointNetDevice::Attach (Ptr<PointToPointChannel> ch)
   // would be to have the link come up when both devices are attached, but this
   // is not done for now.
   //
-  NotifyLinkUp ();
+  //NotifyLinkUp ();
   return true;
 }
 
@@ -356,6 +467,20 @@ void
 PointToPointNetDevice::NotifyLinkUp (void)
 {
   m_linkUp = true;
+  m_linkChangeCallbacks ();
+}
+
+void
+PointToPointNetDevice::SetLinkUp (void)
+{
+  m_linkUp = true;
+  m_linkChangeCallbacks ();
+}
+
+void
+PointToPointNetDevice::SetLinkDown (void)
+{
+  m_linkUp = false;
   m_linkChangeCallbacks ();
 }
 
