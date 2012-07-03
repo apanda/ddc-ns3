@@ -21,3 +21,4 @@
 *.swp
 *.pcap
 route.table
+*.tr

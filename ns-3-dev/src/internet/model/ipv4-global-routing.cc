@@ -76,6 +76,10 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, nextHop, interface);
   m_hostRoutes.push_back (route);
+  InitializeDestination(dest);
+  m_directions[dest][interface] = Out;
+  m_outputs[dest].push(PriorityInterface(m_priorities[dest][interface], interface));
+  
 }
 
 void 
@@ -86,6 +90,9 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, interface);
   m_hostRoutes.push_back (route);
+  InitializeDestination(dest);
+  m_directions[dest][interface] = Out;
+  m_outputs[dest].push(PriorityInterface(m_priorities[dest][interface], interface));
 }
 
 void 
@@ -101,6 +108,11 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                                         nextHop,
                                                         interface);
   m_networkRoutes.push_back (route);
+  if (networkMask == Ipv4Mask(0xffffffff)) {
+    InitializeDestination(network);
+    m_directions[network][interface] = Out;
+    m_outputs[network].push(PriorityInterface(m_priorities[network][interface], interface));
+  }
 }
 
 void 
@@ -114,6 +126,11 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                                         networkMask,
                                                         interface);
   m_networkRoutes.push_back (route);
+  if (networkMask == Ipv4Mask(0xffffffff)) {
+    InitializeDestination(network);
+    m_directions[network][interface] = Out;
+    m_outputs[network].push(PriorityInterface(m_priorities[network][interface], interface));
+  }
 }
 
 void 
@@ -129,116 +146,6 @@ Ipv4GlobalRouting::AddASExternalRouteTo (Ipv4Address network,
                                                         nextHop,
                                                         interface);
   m_ASexternalRoutes.push_back (route);
-}
-
-
-Ptr<Ipv4Route>
-Ipv4GlobalRouting::LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif)
-{
-  NS_LOG_FUNCTION_NOARGS ();
-  NS_LOG_LOGIC ("Looking for route for destination " << dest);
-  Ptr<Ipv4Route> rtentry = 0;
-  // store all available routes that bring packets to their destination
-  typedef std::vector<Ipv4RoutingTableEntry*> RouteVec_t;
-  RouteVec_t allRoutes;
-
-  NS_LOG_LOGIC ("Number of m_hostRoutes = " << m_hostRoutes.size ());
-  for (HostRoutesCI i = m_hostRoutes.begin (); 
-       i != m_hostRoutes.end (); 
-       i++) 
-    {
-      NS_ASSERT ((*i)->IsHost ());
-      if ((*i)->GetDest ().IsEqual (dest)) 
-        {
-          if (oif != 0)
-            {
-              if (oif != m_ipv4->GetNetDevice ((*i)->GetInterface ()))
-                {
-                  NS_LOG_LOGIC ("Not on requested interface, skipping");
-                  continue;
-                }
-            }
-          allRoutes.push_back (*i);
-          NS_LOG_LOGIC (allRoutes.size () << "Found global host route" << *i); 
-        }
-    }
-  if (allRoutes.size () == 0) // if no host route is found
-    {
-      NS_LOG_LOGIC ("Number of m_networkRoutes" << m_networkRoutes.size ());
-      for (NetworkRoutesI j = m_networkRoutes.begin (); 
-           j != m_networkRoutes.end (); 
-           j++) 
-        {
-          Ipv4Mask mask = (*j)->GetDestNetworkMask ();
-          Ipv4Address entry = (*j)->GetDestNetwork ();
-          if (mask.IsMatch (dest, entry)) 
-            {
-              if (oif != 0)
-                {
-                  if (oif != m_ipv4->GetNetDevice ((*j)->GetInterface ()))
-                    {
-                      NS_LOG_LOGIC ("Not on requested interface, skipping");
-                      continue;
-                    }
-                }
-              allRoutes.push_back (*j);
-              NS_LOG_LOGIC (allRoutes.size () << "Found global network route" << *j);
-            }
-        }
-    }
-  if (allRoutes.size () == 0)  // consider external if no host/network found
-    {
-      for (ASExternalRoutesI k = m_ASexternalRoutes.begin ();
-           k != m_ASexternalRoutes.end ();
-           k++)
-        {
-          Ipv4Mask mask = (*k)->GetDestNetworkMask ();
-          Ipv4Address entry = (*k)->GetDestNetwork ();
-          if (mask.IsMatch (dest, entry))
-            {
-              NS_LOG_LOGIC ("Found external route" << *k);
-              if (oif != 0)
-                {
-                  if (oif != m_ipv4->GetNetDevice ((*k)->GetInterface ()))
-                    {
-                      NS_LOG_LOGIC ("Not on requested interface, skipping");
-                      continue;
-                    }
-                }
-              allRoutes.push_back (*k);
-              break;
-            }
-        }
-    }
-  if (allRoutes.size () > 0 ) // if route(s) is found
-    {
-      // pick up one of the routes uniformly at random if random
-      // ECMP routing is enabled, or always select the first route
-      // consistently if random ECMP routing is disabled
-      uint32_t selectIndex;
-      if (m_randomEcmpRouting)
-        {
-          selectIndex = m_rand.GetInteger (0, allRoutes.size ()-1);
-        }
-      else 
-        {
-          selectIndex = 0;
-        }
-      Ipv4RoutingTableEntry* route = allRoutes.at (selectIndex); 
-      // create a Ipv4Route object from the selected routing table entry
-      rtentry = Create<Ipv4Route> ();
-      rtentry->SetDestination (route->GetDest ());
-      // XXX handle multi-address case
-      rtentry->SetSource (m_ipv4->GetAddress (route->GetInterface (), 0).GetLocal ());
-      rtentry->SetGateway (route->GetGateway ());
-      uint32_t interfaceIdx = route->GetInterface ();
-      rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
-      return rtentry;
-    }
-  else 
-    {
-      return 0;
-    }
 }
 
 uint32_t 
@@ -638,6 +545,7 @@ Ipv4GlobalRouting::PrimitiveAEO (Ipv4Address dest)
       if (m_directions[dest][i] != Dead) {  
         m_outputs[dest].push(PriorityInterface(m_priorities[dest][i], i));
         m_directions[dest][i] = Out;
+        m_localSeq[dest][i] = ((m_localSeq[dest][i] + 1) & 0x1);
         // Reset TTL during AEO operation, this makes sense since AEO is
         // primarily a control plane primitive, and is called in order, and
         // sets true directions
@@ -764,6 +672,7 @@ Ipv4GlobalRouting::CreateRoutingEntry (uint32_t link, Ipv4Address addr, Ipv4Head
   SendOnOutlink(addr, header, link);
   route = Create<Ipv4Route>();
   route->SetDestination(header.GetDestination());
+  route->SetGateway(header.GetDestination());
   Ptr<NetDevice> netdev = m_ipv4->GetNetDevice(link);
   route->SetOutputDevice(netdev);
   route->SetSource (m_ipv4->GetAddress (link, 0).GetLocal ());
@@ -774,6 +683,7 @@ void
 Ipv4GlobalRouting::StandardReceive (Ipv4Address addr, Ipv4Header& header, 
                                 Ptr<Ipv4Route> &route, Socket::SocketErrno &error)
 {
+  NS_LOG_FUNCTION (this << addr);
   route = 0;
   uint32_t link;
   do {

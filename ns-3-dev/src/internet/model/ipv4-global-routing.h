@@ -335,8 +335,6 @@ private:
   SequenceNumbers m_remoteSeq;
   /// end @apanda
 
-  Ptr<Ipv4Route> LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif = 0);
-
   HostRoutes m_hostRoutes;
   NetworkRoutes m_networkRoutes;
   ASExternalRoutes m_ASexternalRoutes; // External routes imported
