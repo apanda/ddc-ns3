@@ -429,4 +429,18 @@ Ipv4Header::Deserialize (Buffer::Iterator start)
   return GetSerializedSize ();
 }
 
+// @apanda
+void
+Ipv4Header::SetSeq (uint32_t seq)
+{
+  m_seq = (seq & 0x1);
+}
+
+//@apanda
+uint32_t
+Ipv4Header::GetSeq () const
+{
+  return (m_seq & 0x1);
+}
+
 } // namespace ns3

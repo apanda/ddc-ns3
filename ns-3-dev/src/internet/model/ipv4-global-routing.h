@@ -21,6 +21,11 @@
 #define IPV4_GLOBAL_ROUTING_H
 
 #include <list>
+#include <map>
+#include <vector>
+#include <utility>
+#include <functional>
+#include <queue>
 #include <stdint.h>
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv4-header.h"
@@ -82,9 +87,9 @@ public:
   virtual ~Ipv4GlobalRouting ();
 
   // These methods inherited from base class
-  virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr);
+  virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr);
 
-  virtual bool RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const NetDevice> idev,
+  virtual bool RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<const NetDevice> idev,
                             UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                             LocalDeliverCallback lcb, ErrorCallback ecb);
   virtual void NotifyInterfaceUp (uint32_t interface);
@@ -211,10 +216,84 @@ public:
  */
   void RemoveRoute (uint32_t i);
 
+/** 
+ * @apanda
+ * Primitive AEO operation, for control plane and such
+ */
+  void PrimitiveAEO(Ipv4Address dest);
+
+/**
+ * @apanda
+ * Set link priority, higher is better
+ */
+ void SetInterfacePriority(Ipv4Address dest, uint32_t interface, uint32_t priority);
+
 protected:
   void DoDispose (void);
 
+/**
+ * @apanda
+ * Find highest priority output port to send messages out of
+ */
+ bool FindOutputPort (Ipv4Address addr, uint32_t &link);  
+
+/**
+ * @apanda
+ * Find highest priority live link
+ */
+ bool FindHighPriorityLink (Ipv4Address address, uint32_t &link);
+
+/**
+ * @apanda
+ * Inititalize a bunch of data structures for a specific address
+ */
+ void InitializeDestination (Ipv4Address addr);
+
+/**
+ * @apanda
+ * Reverse input to output
+ */
+  void ReverseInputToOutput (Ipv4Address addr, uint32_t link); 
+
+/**
+ * @apanda
+ * Reverse output to input
+ */
+  void ReverseOutputToInput (Ipv4Address addr, uint32_t link); 
+
+/**
+ * @apanda
+ * Send on outlink
+ */
+ void SendOnOutlink (Ipv4Address addr, Ipv4Header& header, uint32_t link);
+
+/**
+ * @apanda
+ * Standard receive
+ */
+ void StandardReceive (Ipv4Address addr, Ipv4Header& header,
+                       Ptr<Ipv4Route>& route, Socket::SocketErrno& error);
+
+/**
+ * @apanda
+ * Create a generic routing entry, and prepare the header
+ */
+void CreateRoutingEntry (uint32_t link, Ipv4Address addr, Ipv4Header& header, Ptr<Ipv4Route> &route);
+
+/**
+ * @apanda
+ * Schedule reversals
+ */
+ void ScheduleReversals(Ipv4Address addr);
+
 private:
+  /// @apanda Link direction for DDC
+  enum LinkDirection {
+    In = 1,
+    Out = 2,
+    Dead = 255,
+    Unknown = 0
+  };
   /// Set to true if packets are randomly routed among ECMP; set to false for using only one route consistently
   bool m_randomEcmpRouting;
   /// Set to true if this interface should respond to interface events by globallly recomputing routes 
@@ -231,6 +310,30 @@ private:
   typedef std::list<Ipv4RoutingTableEntry *> ASExternalRoutes;
   typedef std::list<Ipv4RoutingTableEntry *>::const_iterator ASExternalRoutesCI;
   typedef std::list<Ipv4RoutingTableEntry *>::iterator ASExternalRoutesI;
+
+  // @apanda Types
+  typedef std::map<Ipv4Address, std::vector<LinkDirection> > InterfaceDirection;
+  typedef std::map<Ipv4Address, std::vector<uint32_t> > InterfacePriorities;
+  typedef std::pair<uint32_t, uint32_t> PriorityInterface;
+  typedef std::priority_queue<PriorityInterface, std::vector<PriorityInterface>, 
+            std::greater< std::vector<PriorityInterface>::value_type> > InterfaceQueue;
+  typedef std::map<Ipv4Address, InterfaceQueue> DestinationPriorityInterfaceQueues;
+  typedef std::map<Ipv4Address, std::list<uint32_t> > DestinationListInterfaceQueues;
+  typedef std::map<Ipv4Address, std::vector<uint32_t> > InterfaceReversalTTL;
+  typedef std::map<Ipv4Address, std::vector<uint8_t> > SequenceNumbers;
+
+  /// @apanda Direction vectors
+  InterfaceDirection m_directions;
+  /// @apanda Book keeping for the various interfaces
+  InterfacePriorities m_priorities;
+  DestinationListInterfaceQueues m_inputs;
+  DestinationListInterfaceQueues m_to_reverse;
+  DestinationPriorityInterfaceQueues m_outputs;
+  DestinationPriorityInterfaceQueues m_prioritized_links;
+  InterfaceReversalTTL m_ttl;
+  SequenceNumbers m_localSeq;
+  SequenceNumbers m_remoteSeq;
+  /// end @apanda
 
   Ptr<Ipv4Route> LookupGlobal (Ipv4Address dest, Ptr<NetDevice> oif = 0);
 

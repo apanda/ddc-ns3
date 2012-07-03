@@ -73,7 +73,7 @@ public:
    *
    * \returns a code that indicates what happened in the lookup
    */
-  virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr) = 0;
+  virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr) = 0;
 
   /**
    * \brief Route an input packet (to be forwarded or locally delivered)
@@ -96,7 +96,7 @@ public:
    * \returns true if the Ipv4RoutingProtocol takes responsibility for 
    *          forwarding or delivering the packet, false otherwise
    */ 
-  virtual bool RouteInput  (Ptr<const Packet> p, const Ipv4Header &header, Ptr<const NetDevice> idev, 
+  virtual bool RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<const NetDevice> idev, 
                             UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                             LocalDeliverCallback lcb, ErrorCallback ecb) = 0;
 

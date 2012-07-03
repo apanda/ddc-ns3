@@ -3042,7 +3042,7 @@ RoutingProtocol::FindSendEntry (RoutingTableEntry const &entry,
 }
 
 Ptr<Ipv4Route>
-RoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
+RoutingProtocol::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
 {
   NS_LOG_FUNCTION (this << " " << m_ipv4->GetObject<Node> ()->GetId () << " " << header.GetDestination () << " " << oif);
   Ptr<Ipv4Route> rtentry;
@@ -3117,7 +3117,7 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDe
 }
 
 bool RoutingProtocol::RouteInput  (Ptr<const Packet> p, 
-                                   const Ipv4Header &header, Ptr<const NetDevice> idev,
+                                   Ipv4Header &header, Ptr<const NetDevice> idev,
                                    UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                                    LocalDeliverCallback lcb, ErrorCallback ecb)
 {

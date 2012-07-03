@@ -1104,7 +1104,7 @@ GlobalRouter::ProcessPointToPointLink (Ptr<NetDevice> ndLocal, GlobalRoutingLSA 
       NS_LOG_WARN ("Warning, interface has multiple IP addresses; using only the primary one");
     }
   Ipv4Address addrRemote = ipv4Remote->GetAddress (interfaceRemote, 0).GetLocal ();
-  Ipv4Mask maskRemote = ipv4Remote->GetAddress (interfaceRemote, 0).GetMask ();
+  //Ipv4Mask maskRemote = ipv4Remote->GetAddress (interfaceRemote, 0).GetMask ();
   NS_LOG_LOGIC ("Working with remote address " << addrRemote);
 
   //
@@ -1132,7 +1132,7 @@ GlobalRouter::ProcessPointToPointLink (Ptr<NetDevice> ndLocal, GlobalRoutingLSA 
   NS_ABORT_MSG_IF (plr == 0, "GlobalRouter::ProcessPointToPointLink(): Can't alloc link record");
   plr->SetLinkType (GlobalRoutingLinkRecord::StubNetwork);
   plr->SetLinkId (addrRemote);
-  plr->SetLinkData (Ipv4Address (maskRemote.Get ()));  // Frown
+  plr->SetLinkData (Ipv4Address (0xffffffff));  // Frown
   plr->SetMetric (metricLocal);
   pLSA->AddLinkRecord (plr);
   plr = 0;
