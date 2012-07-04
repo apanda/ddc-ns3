@@ -432,6 +432,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
   if (m_directions[destination][iif] == In) {
     // This assertion is now approved
     NS_ASSERT(m_remoteSeq[destination][iif] == header.GetSeq());
+    NS_LOG_LOGIC ("Received along an input port");
     StandardReceive(destination, header, route, error);
     if (route != 0) {
       ucb(route, p, header);
@@ -444,13 +445,16 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
   }
   else {
     if (m_directions[destination][iif] == Out) {
+      NS_LOG_LOGIC ("Received on output port");
       if (header.GetSeq() == m_remoteSeq[destination][iif]) {
         // Send packet back (maybe)
+        NS_LOG_LOGIC ("Bouncing back");
         CreateRoutingEntry(iif, destination, header, route);
         ucb(route, p, header);
         return true;
       }
       else {
+        NS_LOG_LOGIC("Reversing output to input");
         // TODO Add delay here, it is pretty easy in this case
         ReverseOutputToInput(destination, iif);
         StandardReceive(destination, header, route, error);
@@ -466,6 +470,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
 
     }
     else {
+      NS_LOG_LOGIC ("Received on an uncategorized port");
       StandardReceive(destination, header, route, error);
       if (route != 0) {
         ucb(route, p, header);
@@ -688,12 +693,15 @@ Ipv4GlobalRouting::StandardReceive (Ipv4Address addr, Ipv4Header& header,
   uint32_t link;
   do {
     if (FindOutputPort(addr, link)) {
+      NS_LOG_LOGIC ("Choosing to use output port " << link);
       CreateRoutingEntry(link, addr, header, route);
       return;
     }
+    NS_LOG_LOGIC ("Reversing " << addr);
     ScheduleReversals(addr);
     
     if (m_outputs.empty()) {
+    NS_LOG_LOGIC ("Failed to find a link, so just using first high priority link " << addr);
       if (FindHighPriorityLink(addr, link)) {
         CreateRoutingEntry(link, addr, header, route);
         return;
@@ -710,6 +718,7 @@ Ipv4GlobalRouting::StandardReceive (Ipv4Address addr, Ipv4Header& header,
 void
 Ipv4GlobalRouting::ScheduleReversals (Ipv4Address addr)
 {
+  NS_LOG_FUNCTION (this << addr);
   if (m_to_reverse[addr].empty()) {
     m_to_reverse[addr].insert(m_to_reverse[addr].begin(), m_inputs[addr].begin(), m_inputs[addr].end()); 
   }
