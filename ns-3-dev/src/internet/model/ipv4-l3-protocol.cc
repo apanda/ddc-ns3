@@ -610,6 +610,7 @@ Ipv4L3Protocol::Send (Ptr<Packet> packet,
 
   // 3) packet is not broadcast, and is passed in with a route entry
   //    with a valid Ipv4Address as the gateway
+  /* @apanda
   if (route && route->GetGateway () != Ipv4Address ())
     {
       NS_LOG_LOGIC ("Ipv4L3Protocol::Send case 3:  passed in with route");
@@ -618,7 +619,7 @@ Ipv4L3Protocol::Send (Ptr<Packet> packet,
       m_sendOutgoingTrace (ipHeader, packet, interface);
       SendRealOut (route, packet->Copy (), ipHeader);
       return; 
-    } 
+    } */ 
   // 4) packet is not broadcast, and is passed in with a route entry but route->GetGateway is not set (e.g., on-demand)
   if (route && route->GetGateway () == Ipv4Address ())
     {

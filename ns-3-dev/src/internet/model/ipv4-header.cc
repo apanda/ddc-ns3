@@ -333,6 +333,7 @@ Ipv4Header::Print (std::ostream &os) const
      << "offset (bytes) " << m_fragmentOffset << " "
      << "flags [" << flags << "] "
      << "length: " << (m_payloadSize + 5 * 4)
+     << "DDC seq: " << (uint32_t)m_seq 
      << " " 
      << m_source << " > " << m_destination
   ;
@@ -369,7 +370,8 @@ Ipv4Header::Serialize (Buffer::Iterator start) const
   i.WriteU8 (frag);
   i.WriteU8 (m_ttl);
   i.WriteU8 (m_protocol);
-  i.WriteHtonU16 (0);
+  i.WriteU8 ((uint8_t)m_seq); 
+  i.WriteU8 (0);
   i.WriteHtonU32 (m_source.Get ());
   i.WriteHtonU32 (m_destination.Get ());
 
@@ -412,7 +414,8 @@ Ipv4Header::Deserialize (Buffer::Iterator start)
   m_fragmentOffset <<= 3;
   m_ttl = i.ReadU8 ();
   m_protocol = i.ReadU8 ();
-  m_checksum = i.ReadU16 ();
+  m_seq = i.ReadU8() & 0x1;
+  m_checksum = i.ReadU8 ();
   /* i.Next (2); // checksum */
   m_source.Set (i.ReadNtohU32 ());
   m_destination.Set (i.ReadNtohU32 ());

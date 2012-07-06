@@ -746,10 +746,12 @@ GlobalRouteManagerImpl::SPFNext (SPFVertex* v, CandidateQueue& candidate)
 //
   if (v->GetVertexType () == SPFVertex::VertexRouter)
     {
+      NS_LOG_LOGIC ("Vertex " << v << " is a vertex router");
       numRecordsInVertex = v->GetLSA ()->GetNLinkRecords (); 
     }
   if (v->GetVertexType () == SPFVertex::VertexNetwork)
     {
+      NS_LOG_LOGIC ("Vertex " << v << " is a vertex network");
       numRecordsInVertex = v->GetLSA ()->GetNAttachedRouters (); 
     }
 
@@ -2048,6 +2050,7 @@ GlobalRouteManagerImpl::SPFIntraAddRouter (SPFVertex* v)
                                     " since outgoing interface id is negative " << outIf);
                     }
                 } // for all routes from the root the vertex 'v'
+                gr->PrimitiveAEO (lr->GetLinkData ());
             }
 //
 // Done adding the routes for the selected node.

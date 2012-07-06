@@ -77,7 +77,7 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, nextHop, interface);
   m_hostRoutes.push_back (route);
   InitializeDestination(dest);
-  m_directions[dest][interface] = Out;
+  //m_directions[dest][interface] = Out;
   m_outputs[dest].push(PriorityInterface(m_priorities[dest][interface], interface));
   
 }
@@ -91,7 +91,7 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, interface);
   m_hostRoutes.push_back (route);
   InitializeDestination(dest);
-  m_directions[dest][interface] = Out;
+  //m_directions[dest][interface] = Out;
   m_outputs[dest].push(PriorityInterface(m_priorities[dest][interface], interface));
 }
 
@@ -110,7 +110,7 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
   m_networkRoutes.push_back (route);
   if (networkMask == Ipv4Mask(0xffffffff)) {
     InitializeDestination(network);
-    m_directions[network][interface] = Out;
+    //m_directions[network][interface] = Out;
     m_outputs[network].push(PriorityInterface(m_priorities[network][interface], interface));
   }
 }
@@ -128,7 +128,7 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
   m_networkRoutes.push_back (route);
   if (networkMask == Ipv4Mask(0xffffffff)) {
     InitializeDestination(network);
-    m_directions[network][interface] = Out;
+    //m_directions[network][interface] = Out;
     m_outputs[network].push(PriorityInterface(m_priorities[network][interface], interface));
   }
 }
@@ -351,6 +351,31 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice
       NS_LOG_LOGIC ("Multicast destination-- returning false");
       return 0; // Let other routing protocols try to handle this
     }
+  // TODO:  Configurable option to enable RFC 1222 Strong End System Model
+  // Right now, we will be permissive and allow a source to send us
+  // a packet to one of our other interface addresses; that is, the
+  // destination unicast address does not match one of the iif addresses,
+  // but we check our other interfaces.  This could be an option
+  // (to remove the outer loop immediately below and just check iif).
+  for (uint32_t j = 0; j < m_ipv4->GetNInterfaces (); j++)
+    {
+      for (uint32_t i = 0; i < m_ipv4->GetNAddresses (j); i++)
+        {
+          Ipv4InterfaceAddress iaddr = m_ipv4->GetAddress (j, i);
+          Ipv4Address addr = iaddr.GetLocal ();
+          if (addr.IsEqual (header.GetDestination ()))
+            {
+              Ptr<Ipv4Route> route;
+              route = Create<Ipv4Route>();
+              route->SetDestination(header.GetDestination());
+              route->SetGateway(header.GetDestination());
+              Ptr<NetDevice> netdev = m_ipv4->GetNetDevice(0);
+              route->SetOutputDevice(netdev);
+              route->SetSource (m_ipv4->GetAddress (0, 0).GetLocal ());
+              return route;
+            }
+        }
+    }
 //
 // See if this is a unicast packet we have a route for.
 //
@@ -448,7 +473,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
       NS_LOG_LOGIC ("Received on output port");
       if (header.GetSeq() == m_remoteSeq[destination][iif]) {
         // Send packet back (maybe)
-        NS_LOG_LOGIC ("Bouncing back");
+        NS_LOG_LOGIC ("Bouncing back, header seq = "<<header.GetSeq() << " Remote = " << (uint32_t)m_remoteSeq[destination][iif] << " local = " << (uint32_t)m_localSeq[destination][iif]);
         CreateRoutingEntry(iif, destination, header, route);
         ucb(route, p, header);
         return true;
@@ -545,7 +570,7 @@ void
 Ipv4GlobalRouting::PrimitiveAEO (Ipv4Address dest)
 {
   NS_LOG_FUNCTION (this << dest);
-  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
+  for (uint32_t i = 1; i < m_ipv4->GetNInterfaces(); i++) {
     if (m_directions[dest][i] != Out) { 
       if (m_directions[dest][i] != Dead) {  
         m_outputs[dest].push(PriorityInterface(m_priorities[dest][i], i));
@@ -667,7 +692,10 @@ Ipv4GlobalRouting::ReverseOutputToInput (Ipv4Address addr, uint32_t link)
 void
 Ipv4GlobalRouting::SendOnOutlink (Ipv4Address addr, Ipv4Header& header, uint32_t link)
 {
+  NS_LOG_FUNCTION (this << addr);
+  NS_LOG_LOGIC("Setting sequence number to " << m_localSeq[addr][link]);
   header.SetSeq(m_localSeq[addr][link]);
+  NS_LOG_LOGIC("Sequence number is " << header.GetSeq());
 }
 
 // @apanda
