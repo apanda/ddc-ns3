@@ -229,6 +229,19 @@ public:
    * \returns DDC sequence number
    */
   uint32_t GetSeq (void) const;
+
+  /**
+   * @apanda
+   * \param DDC sequence number
+   */
+  void SetVnode (uint32_t);
+
+  /**
+   * @apanda
+   * \returns DDC sequence number
+   */
+  uint32_t GetVnode (void) const;
+
   static TypeId GetTypeId (void);
   virtual TypeId GetInstanceTypeId (void) const;
   virtual void Print (std::ostream &os) const;
@@ -257,6 +270,7 @@ private:
   bool m_goodChecksum;
   uint16_t m_headerSize;
   uint32_t m_seq :1;
+  uint32_t m_vnode : 1;
 };
 
 } // namespace ns3

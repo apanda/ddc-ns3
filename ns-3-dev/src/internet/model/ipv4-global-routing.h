@@ -235,13 +235,13 @@ protected:
  * @apanda
  * Find highest priority output port to send messages out of
  */
- bool FindOutputPort (Ipv4Address addr, uint32_t &link);  
+ bool FindOutputPort (uint8_t, Ipv4Address addr, uint32_t &link);  
 
 /**
  * @apanda
  * Find highest priority live link
  */
- bool FindHighPriorityLink (Ipv4Address address, uint32_t &link);
+ bool FindHighPriorityLink (uint8_t, Ipv4Address address, uint32_t &link);
 
 /**
  * @apanda
@@ -253,19 +253,19 @@ protected:
  * @apanda
  * Reverse input to output
  */
-  void ReverseInputToOutput (Ipv4Address addr, uint32_t link); 
+  void ReverseInputToOutput (uint8_t, Ipv4Address addr, uint32_t link); 
 
 /**
  * @apanda
  * Reverse output to input
  */
-  void ReverseOutputToInput (Ipv4Address addr, uint32_t link); 
+  void ReverseOutputToInput (uint8_t, Ipv4Address addr, uint32_t link); 
 
 /**
  * @apanda
  * Send on outlink
  */
- void SendOnOutlink (Ipv4Address addr, Ipv4Header& header, uint32_t link);
+ void SendOnOutlink (uint8_t, Ipv4Address addr, Ipv4Header& header, uint32_t link);
 
 /**
  * @apanda
@@ -278,13 +278,13 @@ protected:
  * @apanda
  * Create a generic routing entry, and prepare the header
  */
-void CreateRoutingEntry (uint32_t link, Ipv4Address addr, Ipv4Header& header, Ptr<Ipv4Route> &route);
+void CreateRoutingEntry (uint8_t, uint32_t link, Ipv4Address addr, Ipv4Header& header, Ptr<Ipv4Route> &route);
 
 /**
  * @apanda
  * Schedule reversals
  */
- void ScheduleReversals(Ipv4Address addr);
+ void ScheduleReversals(uint8_t, Ipv4Address addr);
 
 private:
   /// @apanda Link direction for DDC
@@ -321,19 +321,28 @@ private:
   typedef std::map<Ipv4Address, std::list<uint32_t> > DestinationListInterfaceQueues;
   typedef std::map<Ipv4Address, std::vector<uint32_t> > InterfaceReversalTTL;
   typedef std::map<Ipv4Address, std::vector<uint8_t> > SequenceNumbers;
+  typedef std::map<Ipv4Address, uint8_t> VnodeNumbers;
+  typedef std::map<Ipv4Address, std::vector<uint8_t> > RemoteVnodeNumbers;
 
-  /// @apanda Direction vectors
-  InterfaceDirection m_directions;
-  /// @apanda Book keeping for the various interfaces
-  InterfacePriorities m_priorities;
-  DestinationListInterfaceQueues m_inputs;
-  DestinationListInterfaceQueues m_to_reverse;
-  DestinationPriorityInterfaceQueues m_outputs;
-  DestinationPriorityInterfaceQueues m_prioritized_links;
+  VnodeNumbers m_localVnode;
+  RemoteVnodeNumbers m_remoteVnode;
   InterfaceReversalTTL m_ttl;
-  SequenceNumbers m_localSeq;
-  SequenceNumbers m_remoteSeq;
-  /// end @apanda
+  InterfacePriorities m_priorities;
+  DestinationPriorityInterfaceQueues m_prioritized_links;
+
+  struct ForwardingState {
+    /// @apanda Direction vectors
+    InterfaceDirection m_directions;
+    /// @apanda Book keeping for the various interfaces
+    DestinationListInterfaceQueues m_inputs;
+    DestinationListInterfaceQueues m_to_reverse;
+    DestinationPriorityInterfaceQueues m_outputs;
+    SequenceNumbers m_localSeq;
+    SequenceNumbers m_remoteSeq;
+    /// end @apanda
+  };
+
+  ForwardingState m_vnodeState[2];
 
   HostRoutes m_hostRoutes;
   NetworkRoutes m_networkRoutes;
