@@ -33,6 +33,10 @@
 #include "ns3/ipv4.h"
 #include "ns3/ipv4-routing-protocol.h"
 #include "ns3/random-variable.h"
+#include "ns3/channel.h"
+#include "ns3/net-device.h"
+#include "ns3/node.h"
+#include "ns3/global-router-interface.h"
 
 namespace ns3 {
 
@@ -43,7 +47,6 @@ class Ipv4Address;
 class Ipv4Header;
 class Ipv4RoutingTableEntry;
 class Ipv4MulticastRoutingTableEntry;
-class Node;
 
 
 /**
@@ -220,7 +223,7 @@ public:
  * @apanda
  * Primitive AEO operation, for control plane and such
  */
-  void PrimitiveAEO(Ipv4Address dest);
+  bool PrimitiveAEO(Ipv4Address dest);
 
 /**
  * @apanda
@@ -265,28 +268,90 @@ protected:
  * @apanda
  * Send on outlink
  */
- void SendOnOutlink (uint8_t, Ipv4Address addr, Ipv4Header& header, uint32_t link);
+  void SendOnOutlink (uint8_t, Ipv4Address addr, Ipv4Header& header, uint32_t link);
 
 /**
  * @apanda
  * Standard receive
  */
- void StandardReceive (Ipv4Address addr, Ipv4Header& header,
+  void StandardReceive (Ipv4Address addr, Ipv4Header& header,
                        Ptr<Ipv4Route>& route, Socket::SocketErrno& error);
 
 /**
  * @apanda
  * Create a generic routing entry, and prepare the header
  */
-void CreateRoutingEntry (uint8_t, uint32_t link, Ipv4Address addr, Ipv4Header& header, Ptr<Ipv4Route> &route);
+  void CreateRoutingEntry (uint8_t, uint32_t link, Ipv4Address addr, Ipv4Header& header, Ptr<Ipv4Route> &route);
 
 /**
  * @apanda
  * Schedule reversals
  */
- void ScheduleReversals(uint8_t, Ipv4Address addr);
+  void ScheduleReversals(uint8_t, Ipv4Address addr);
+
+/**
+ * @apanda
+ * Acquire lock
+ */
+  bool Lock (Ipv4Address, uint32_t);
+
+/**
+ * @apanda
+ * Release lock
+ */
+  void Unlock (Ipv4Address, uint32_t);
+
+/**
+ * @apanda
+ * Acquire lock
+ */
+  bool Lock (Ipv4Address, Ptr<NetDevice>);
+
+/**
+ * @apanda
+ * Release lock
+ */
+  void Unlock (Ipv4Address, Ptr<NetDevice>);
+
+/**
+ * @apanda
+ * Update remote vnode
+ */
+  void SetRemoteVnode (Ipv4Address, uint32_t, uint8_t);
+
+/**
+ * @apanda
+ * Update remote vnode
+ */
+  void SetRemoteVnode (Ipv4Address, Ptr<NetDevice>, uint8_t);
 
 private:
+
+/**
+ * @apanda
+ *Lock locally
+ */
+  bool LocalLock (Ipv4Address);
+
+/**
+ *
+ * @apanda
+ * Unlock locally
+ */
+ void LocalUnlock (Ipv4Address);
+
+/**
+ *
+ * @apanda
+ * Local set remote vnode
+ */
+  void LocalSetRemoteVnode (Ipv4Address, uint32_t, uint8_t);
+
+/**
+ * @apanda
+ */
+  void ClearVnode(uint8_t vnode, Ipv4Address addr);
+
   /// @apanda Link direction for DDC
   enum LinkDirection {
     In = 1,
@@ -323,12 +388,16 @@ private:
   typedef std::map<Ipv4Address, std::vector<uint8_t> > SequenceNumbers;
   typedef std::map<Ipv4Address, uint8_t> VnodeNumbers;
   typedef std::map<Ipv4Address, std::vector<uint8_t> > RemoteVnodeNumbers;
-
+  typedef std::map<Ipv4Address, std::vector<bool> > LockStatus;
+  typedef std::map<Ipv4Address, bool> LockHeld;
+  typedef std::map<Ipv4Address, uint32_t> LockCounts; 
+  LockStatus m_locks;
+  LockCounts m_lockCounts;
+  LockHeld m_held;
   VnodeNumbers m_localVnode;
   RemoteVnodeNumbers m_remoteVnode;
   InterfaceReversalTTL m_ttl;
   InterfacePriorities m_priorities;
-  DestinationPriorityInterfaceQueues m_prioritized_links;
 
   struct ForwardingState {
     /// @apanda Direction vectors
@@ -339,6 +408,7 @@ private:
     DestinationPriorityInterfaceQueues m_outputs;
     SequenceNumbers m_localSeq;
     SequenceNumbers m_remoteSeq;
+    DestinationPriorityInterfaceQueues m_prioritized_links;
     /// end @apanda
   };
 

@@ -711,9 +711,20 @@ GlobalRouteManagerImpl::InitializeRoutes ()
 //
       if (rtr && rtr->GetNumLSAs () )
         {
+          m_reversalMap.insert(AEOMap::value_type(rtr->GetRouterId(), std::list<Ptr<Ipv4GlobalRouting> >())); 
           SPFCalculate (rtr->GetRouterId ());
         }
     }
+  NS_LOG_LOGIC("Final tally");
+  for (AEOMap::iterator it = m_reversalMap.begin(); it != m_reversalMap.end(); it++) {
+    NS_LOG_LOGIC(it->first <<" -> " << (uint32_t)it->second.size());
+    for (std::list<Ptr<Ipv4GlobalRouting> >::iterator it2 = it->second.begin();
+         it2 != it->second.end(); it2++) {
+      Ptr<Ipv4GlobalRouting> gr = *it2;
+      NS_LOG_LOGIC("Reversing for address " << it->first);
+      gr->PrimitiveAEO(it->first);
+    }
+  }
   NS_LOG_INFO ("Finished SPF calculation");
 }
 
@@ -2050,7 +2061,9 @@ GlobalRouteManagerImpl::SPFIntraAddRouter (SPFVertex* v)
                                     " since outgoing interface id is negative " << outIf);
                     }
                 } // for all routes from the root the vertex 'v'
-                gr->PrimitiveAEO (lr->GetLinkData ());
+                m_reversalMap[lr->GetLinkData ()].push_back(gr);
+                //gr->PrimitiveAEO (lr->GetLinkData ());
+                // Record this order and then call stuff in order
             }
 //
 // Done adding the routes for the selected node.

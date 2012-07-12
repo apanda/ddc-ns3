@@ -772,6 +772,10 @@ private:
   void SPFAddASExternal (GlobalRoutingLSA *extlsa, SPFVertex *v);
   int32_t FindOutgoingInterfaceId (Ipv4Address a, 
                                    Ipv4Mask amask = Ipv4Mask ("255.255.255.255"));
+  // @apanda
+  typedef std::map<Ipv4Address, std::list<Ptr<Ipv4GlobalRouting> > > AEOMap;
+  AEOMap m_reversalMap;
+
 };
 
 } // namespace ns3

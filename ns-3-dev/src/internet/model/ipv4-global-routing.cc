@@ -380,6 +380,7 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice
 // See if this is a unicast packet we have a route for.
 //
   Ptr<Ipv4Route> rtentry;
+  header.SetVnode(m_localVnode[header.GetDestination()]);
   StandardReceive(header.GetDestination(), header, rtentry, sockerr);
   NS_LOG_LOGIC ("Unicast destination- looking up");
   return rtentry;
@@ -455,6 +456,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
   uint8_t vnode = header.GetVnode();
   Socket::SocketErrno error;
   Ptr<Ipv4Route> route = 0;
+  NS_LOG_LOGIC ("Received for vnode = " << (uint32_t)vnode);
   if (m_vnodeState[vnode].m_directions[destination][iif] == In) {
     // This assertion is now approved
     NS_ASSERT(m_vnodeState[vnode].m_remoteSeq[destination][iif] == header.GetSeq());
@@ -568,24 +570,36 @@ Ipv4GlobalRouting::SetIpv4 (Ptr<Ipv4> ipv4)
 }
 
 // @apanda
-void
+bool
 Ipv4GlobalRouting::PrimitiveAEO (Ipv4Address dest)
 {
   NS_LOG_FUNCTION (this << dest);
-  /*for (uint32_t i = 1; i < m_ipv4->GetNInterfaces(); i++) {
-    if (m_directions[dest][i] != Out) { 
-      if (m_directions[dest][i] != Dead) {  
-        m_outputs[dest].push(PriorityInterface(m_priorities[dest][i], i));
-        m_directions[dest][i] = Out;
-        m_localSeq[dest][i] = ((m_localSeq[dest][i] + 1) & 0x1);
-        // Reset TTL during AEO operation, this makes sense since AEO is
-        // primarily a control plane primitive, and is called in order, and
-        // sets true directions
-        m_ttl[dest][i] = 0;
+  bool success = LocalLock(dest);
+  NS_LOG_LOGIC("Acquiring lock " << success);
+  NS_ASSERT_MSG(success, "Could not acquire lock");
+  if (success) {
+    uint8_t newVnode = (m_localVnode[dest] + 1) % 2;
+    ClearVnode(newVnode, dest);
+    for (uint32_t i = 1; i < m_ipv4->GetNInterfaces(); i++) {
+      if (m_vnodeState[newVnode].m_directions[dest][i] != Out) { 
+        if (m_vnodeState[newVnode].m_directions[dest][i] != Dead) {  
+          m_vnodeState[newVnode].m_outputs[dest].push(PriorityInterface(m_priorities[dest][i], i));
+          m_vnodeState[newVnode].m_directions[dest][i] = Out;
+          m_vnodeState[newVnode].m_localSeq[dest][i] = 0;
+          m_vnodeState[newVnode].m_remoteSeq[dest][i] = 0;
+          // Reset TTL during AEO operation, this makes sense since AEO is
+          // primarily a control plane primitive, and is called in order, and
+          // sets true directions
+          m_ttl[dest][i] = 0;
+          LocalSetRemoteVnode(dest,  i, newVnode);
+        }
       }
-      m_inputs[dest].clear();
     }
-  }*/
+    m_localVnode[dest] = newVnode;
+    LocalUnlock(dest);
+    return true;
+  }
+  return false;
 }
 
 // @apanda
@@ -596,7 +610,7 @@ Ipv4GlobalRouting::SetInterfacePriority (
     uint32_t priority) {
   NS_LOG_LOGIC (this << "setting interface " << interface << " priority to " << priority);
   m_priorities[dest][interface] = priority;
-  m_prioritized_links[dest].push(PriorityInterface(priority, interface));
+  m_vnodeState[0].m_prioritized_links[dest].push(PriorityInterface(priority, interface));
 }
 
 // @apanda
@@ -628,21 +642,21 @@ bool
 Ipv4GlobalRouting::FindHighPriorityLink(uint8_t vnode, Ipv4Address addr, uint32_t &link)
 {
   NS_LOG_FUNCTION (this << addr);
-  if (m_prioritized_links[addr].empty()) {
+  if (m_vnodeState[vnode].m_prioritized_links[addr].empty()) {
       NS_LOG_LOGIC("No links of any sort");
       return false;
   }
   do {
-    const PriorityInterface interface = m_prioritized_links[addr].top();
+    const PriorityInterface interface = m_vnodeState[vnode].m_prioritized_links[addr].top();
     link = interface.second;
     if (m_vnodeState[vnode].m_directions[addr][link] == Out) {
       NS_LOG_LOGIC("Returning output link " << link << "(priority = " << interface.first << ")");
       return true;
     }
     else {
-      m_prioritized_links[addr].pop();
+      m_vnodeState[vnode].m_prioritized_links[addr].pop();
     }
-  } while (!m_prioritized_links[addr].empty());
+  } while (!m_vnodeState[vnode].m_prioritized_links[addr].empty());
   NS_LOG_LOGIC("Found no output");
   return false; 
 }
@@ -655,11 +669,13 @@ Ipv4GlobalRouting::InitializeDestination (Ipv4Address dest)
   if (m_vnodeState[0].m_directions.find(dest) != m_vnodeState[0].m_directions.end()) {
   }
   else {
+    m_locks.insert(LockStatus::value_type(dest, std::vector<bool>(m_ipv4->GetNInterfaces(), false)));
+    m_held.insert(LockHeld::value_type(dest, false));
+    m_lockCounts.insert(LockCounts::value_type(dest, 0));
     m_localVnode.insert(VnodeNumbers::value_type(dest, 0));
     m_remoteVnode.insert(RemoteVnodeNumbers::value_type(dest, std::vector<uint8_t>(m_ipv4->GetNInterfaces(), 0)));
     m_priorities.insert(InterfacePriorities::value_type(dest, std::vector<uint32_t>(m_ipv4->GetNInterfaces(), 0)));  
     m_ttl.insert(InterfacePriorities::value_type(dest, std::vector<uint32_t>(m_ipv4->GetNInterfaces(), 0)));  
-    m_prioritized_links.insert(DestinationPriorityInterfaceQueues::value_type(dest, InterfaceQueue())); 
     for (int i = 0; i < 2; i++) {
       m_vnodeState[i].m_directions.insert(InterfaceDirection::value_type(dest, std::vector<LinkDirection>(m_ipv4->GetNInterfaces(), Unknown)));
       m_vnodeState[i].m_inputs.insert(DestinationListInterfaceQueues::value_type(dest, std::list<uint32_t>()));
@@ -667,6 +683,7 @@ Ipv4GlobalRouting::InitializeDestination (Ipv4Address dest)
       m_vnodeState[i].m_localSeq.insert(SequenceNumbers::value_type(dest, std::vector<uint8_t>(m_ipv4->GetNInterfaces(), 0)));
       m_vnodeState[i].m_remoteSeq.insert(SequenceNumbers::value_type(dest, std::vector<uint8_t>(m_ipv4->GetNInterfaces(), 0)));
       m_vnodeState[i].m_to_reverse.insert(DestinationListInterfaceQueues::value_type(dest, std::list<uint32_t>()));
+      m_vnodeState[i].m_prioritized_links.insert(DestinationPriorityInterfaceQueues::value_type(dest, InterfaceQueue())); 
     }
   }
 }
@@ -702,6 +719,7 @@ Ipv4GlobalRouting::SendOnOutlink (uint8_t vnode, Ipv4Address addr, Ipv4Header& h
   NS_LOG_LOGIC("Setting sequence number to " << m_vnodeState[vnode].m_localSeq[addr][link]);
   header.SetSeq(m_vnodeState[vnode].m_localSeq[addr][link]);
   NS_LOG_LOGIC("Sequence number is " << header.GetSeq());
+  NS_LOG_LOGIC("Setting vnode number to " << (uint32_t)m_remoteVnode[addr][link]);
   header.SetVnode(m_remoteVnode[addr][link]);
 }
 
@@ -768,6 +786,151 @@ Ipv4GlobalRouting::ScheduleReversals (uint8_t vnode, Ipv4Address addr)
   }
   m_vnodeState[vnode].m_to_reverse.clear();
   m_vnodeState[vnode].m_to_reverse[addr].insert(m_vnodeState[vnode].m_to_reverse[addr].begin(), m_vnodeState[vnode].m_inputs[addr].begin(), m_vnodeState[vnode].m_inputs[addr].end()); 
+}
+
+// @apanda
+void
+Ipv4GlobalRouting::ClearVnode(uint8_t vnode, Ipv4Address dest)
+{
+  m_vnodeState[vnode].m_directions.erase(dest);
+  m_vnodeState[vnode].m_directions.insert(InterfaceDirection::value_type(dest, std::vector<LinkDirection>(m_ipv4->GetNInterfaces(), Unknown)));
+  m_vnodeState[vnode].m_inputs.erase(dest);
+  m_vnodeState[vnode].m_inputs.insert(DestinationListInterfaceQueues::value_type(dest, std::list<uint32_t>()));
+  m_vnodeState[vnode].m_outputs.erase(dest);
+  m_vnodeState[vnode].m_outputs.insert(DestinationPriorityInterfaceQueues::value_type(dest, InterfaceQueue())); 
+  m_vnodeState[vnode].m_localSeq.erase(dest);
+  m_vnodeState[vnode].m_localSeq.insert(SequenceNumbers::value_type(dest, std::vector<uint8_t>(m_ipv4->GetNInterfaces(), 0)));
+  m_vnodeState[vnode].m_remoteSeq.erase(dest);
+  m_vnodeState[vnode].m_remoteSeq.insert(SequenceNumbers::value_type(dest, std::vector<uint8_t>(m_ipv4->GetNInterfaces(), 0)));
+  m_vnodeState[vnode].m_to_reverse.erase(dest);
+  m_vnodeState[vnode].m_to_reverse.insert(DestinationListInterfaceQueues::value_type(dest, std::list<uint32_t>()));
+  m_vnodeState[vnode].m_prioritized_links.erase(dest);
+  m_vnodeState[vnode].m_prioritized_links.insert(DestinationPriorityInterfaceQueues::value_type(dest, InterfaceQueue())); 
+  for (uint32_t i = 1; i < m_ipv4->GetNInterfaces(); i++) {
+    m_vnodeState[vnode].m_prioritized_links[dest].push(PriorityInterface(m_priorities[dest][i], i));  
+  }
+}
+
+// @apanda
+bool
+Ipv4GlobalRouting::Lock (Ipv4Address addr, uint32_t link)
+{
+  if (!m_held[addr]) {
+    NS_ASSERT_MSG(!m_locks[addr][link], "Should not reaquire a lock");
+    m_locks[addr][link] = true;
+    m_lockCounts[addr] += 1;
+    return true;
+  }
+  return false;
+}
+
+// @apanda
+void
+Ipv4GlobalRouting::Unlock (Ipv4Address addr, uint32_t link)
+{
+  NS_ASSERT_MSG(!m_held[addr], "If someone else thinks they have it, I better not hold it");
+  NS_ASSERT_MSG(m_locks[addr][link], "Don't free something you don't hold");
+  m_locks[addr][link] = false;
+  m_lockCounts[addr] -= 1;
+}
+
+// @apanda
+bool 
+Ipv4GlobalRouting::Lock (Ipv4Address addr, Ptr<NetDevice> link)
+{
+  return Lock(addr, m_ipv4->GetInterfaceForDevice(link));
+}
+
+// @apanda
+void 
+Ipv4GlobalRouting::Unlock (Ipv4Address addr, Ptr<NetDevice> link)
+{
+  return Unlock(addr, m_ipv4->GetInterfaceForDevice(link));
+}
+
+// @apanda
+bool 
+Ipv4GlobalRouting::LocalLock (Ipv4Address addr)
+{
+  NS_ASSERT_MSG(!m_held[addr], "No recursive locks");
+  if (m_lockCounts[addr] == 0) {
+    // The locking loop, we need to do this by sending data eventually
+    for (uint32_t i = 1; i < m_ipv4->GetNInterfaces(); i++) {
+      Ptr<NetDevice> device = m_ipv4->GetNetDevice(i);
+      Ptr<Channel> channel = device->GetChannel();
+      Ptr<NetDevice> other = (channel->GetDevice(0) == device ? channel->GetDevice(1) : channel->GetDevice(0));
+      NS_ASSERT(other != device);
+      Ptr<Node> otherNode = other->GetNode();
+      Ptr<Ipv4GlobalRouting> rtr = otherNode->GetObject<GlobalRouter>()->GetRoutingProtocol();
+      bool ret = rtr->Lock(addr, other);
+      if (!ret) {
+        for (uint32_t j = 1; j < i; j++) {
+          Ptr<NetDevice> device = m_ipv4->GetNetDevice(j);
+          Ptr<Channel> channel = device->GetChannel();
+          Ptr<NetDevice> other = (channel->GetDevice(0) == device ? channel->GetDevice(1) : channel->GetDevice(0));
+          NS_ASSERT(other != device);
+          Ptr<Node> otherNode = other->GetNode();
+          Ptr<Ipv4GlobalRouting> rtr = otherNode->GetObject<GlobalRouter>()->GetRoutingProtocol();
+          rtr->Unlock(addr, other);
+        }
+        return false;
+      }
+    }
+    m_held[addr] = true;
+    return true;
+  }
+  return false;
+}
+
+// @apanda
+void
+Ipv4GlobalRouting::LocalUnlock (Ipv4Address addr)
+{
+  NS_ASSERT_MSG(m_held[addr], "Don't release unheld locks");
+  for (uint32_t i = 1; i < m_ipv4->GetNInterfaces(); i++) {
+    Ptr<NetDevice> device = m_ipv4->GetNetDevice(i);
+    Ptr<Channel> channel = device->GetChannel();
+    Ptr<NetDevice> other = (channel->GetDevice(0) == device ? channel->GetDevice(1) : channel->GetDevice(0));
+    NS_ASSERT(other != device);
+    Ptr<Node> otherNode = other->GetNode();
+    Ptr<Ipv4GlobalRouting> rtr = otherNode->GetObject<GlobalRouter>()->GetRoutingProtocol();
+    rtr->Unlock(addr, other);
+  }
+  m_held[addr] = false;
+}
+
+// @apanda
+void 
+Ipv4GlobalRouting::SetRemoteVnode (Ipv4Address addr, uint32_t interface, uint8_t vnode)
+{
+  NS_ASSERT_MSG(m_locks[addr][interface], "Don't set remote vnode without holding lock");
+  m_remoteVnode[addr][interface] = vnode;
+  if (m_vnodeState[m_localVnode[addr]].m_directions[addr][interface] != In) {
+    m_vnodeState[m_localVnode[addr]].m_inputs[addr].push_front(interface);
+  }
+  m_vnodeState[m_localVnode[addr]].m_directions[addr][interface] = In;
+  m_vnodeState[m_localVnode[addr]].m_localSeq[addr][interface] = 0;
+  m_vnodeState[m_localVnode[addr]].m_remoteSeq[addr][interface] = 0;
+}
+
+// @apanda
+void 
+Ipv4GlobalRouting::SetRemoteVnode (Ipv4Address addr, Ptr<NetDevice> interface, uint8_t vnode)
+{
+  SetRemoteVnode(addr, m_ipv4->GetInterfaceForDevice(interface), vnode);
+}
+
+// @apanda
+void 
+Ipv4GlobalRouting::LocalSetRemoteVnode (Ipv4Address addr, uint32_t link, uint8_t vnode)
+{
+  Ptr<NetDevice> device = m_ipv4->GetNetDevice(link);
+  Ptr<Channel> channel = device->GetChannel();
+  Ptr<NetDevice> other = (channel->GetDevice(0) == device ? channel->GetDevice(1) : channel->GetDevice(0));
+  NS_ASSERT(other != device);
+  Ptr<Node> otherNode = other->GetNode();
+  Ptr<Ipv4GlobalRouting> rtr = otherNode->GetObject<GlobalRouter>()->GetRoutingProtocol();
+  rtr->SetRemoteVnode(addr, other, vnode);
 }
 
 } // namespace ns3
