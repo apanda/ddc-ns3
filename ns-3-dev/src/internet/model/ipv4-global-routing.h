@@ -293,13 +293,13 @@ protected:
  * @apanda
  * Acquire lock
  */
-  bool Lock (Ipv4Address, uint32_t);
+  bool SimpleLock (Ipv4Address, uint32_t);
 
 /**
  * @apanda
  * Release lock
  */
-  void Unlock (Ipv4Address, uint32_t);
+  void SimpleUnlock (Ipv4Address, uint32_t);
 
 /**
  * @apanda
@@ -391,6 +391,8 @@ private:
   typedef std::map<Ipv4Address, std::vector<bool> > LockStatus;
   typedef std::map<Ipv4Address, bool> LockHeld;
   typedef std::map<Ipv4Address, uint32_t> LockCounts; 
+  typedef std::map<Ipv4Address, bool> AeoRequests;
+
   LockStatus m_locks;
   LockCounts m_lockCounts;
   LockHeld m_held;
@@ -398,6 +400,7 @@ private:
   RemoteVnodeNumbers m_remoteVnode;
   InterfaceReversalTTL m_ttl;
   InterfacePriorities m_priorities;
+  AeoRequests m_aeoRequested;
 
   struct ForwardingState {
     /// @apanda Direction vectors

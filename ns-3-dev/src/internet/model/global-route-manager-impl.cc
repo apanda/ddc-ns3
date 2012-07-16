@@ -722,7 +722,7 @@ GlobalRouteManagerImpl::InitializeRoutes ()
          it2 != it->second.end(); it2++) {
       Ptr<Ipv4GlobalRouting> gr = *it2;
       NS_LOG_LOGIC("Reversing for address " << it->first);
-      gr->PrimitiveAEO(it->first);
+      Simulator::ScheduleNow(&Ipv4GlobalRouting::PrimitiveAEO, gr, it->first); 
     }
   }
   NS_LOG_INFO ("Finished SPF calculation");

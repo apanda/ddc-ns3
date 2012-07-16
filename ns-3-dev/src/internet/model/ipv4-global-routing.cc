@@ -574,10 +574,12 @@ bool
 Ipv4GlobalRouting::PrimitiveAEO (Ipv4Address dest)
 {
   NS_LOG_FUNCTION (this << dest);
+  m_aeoRequested[dest] = true;
   bool success = LocalLock(dest);
   NS_LOG_LOGIC("Acquiring lock " << success);
-  NS_ASSERT_MSG(success, "Could not acquire lock");
+  // NS_ASSERT_MSG(success, "Could not acquire lock");
   if (success) {
+    m_aeoRequested[dest] = false;
     uint8_t newVnode = (m_localVnode[dest] + 1) % 2;
     ClearVnode(newVnode, dest);
     for (uint32_t i = 1; i < m_ipv4->GetNInterfaces(); i++) {
@@ -669,6 +671,7 @@ Ipv4GlobalRouting::InitializeDestination (Ipv4Address dest)
   if (m_vnodeState[0].m_directions.find(dest) != m_vnodeState[0].m_directions.end()) {
   }
   else {
+    m_aeoRequested.insert(AeoRequests::value_type(dest, false));
     m_locks.insert(LockStatus::value_type(dest, std::vector<bool>(m_ipv4->GetNInterfaces(), false)));
     m_held.insert(LockHeld::value_type(dest, false));
     m_lockCounts.insert(LockCounts::value_type(dest, 0));
@@ -813,7 +816,7 @@ Ipv4GlobalRouting::ClearVnode(uint8_t vnode, Ipv4Address dest)
 
 // @apanda
 bool
-Ipv4GlobalRouting::Lock (Ipv4Address addr, uint32_t link)
+Ipv4GlobalRouting::SimpleLock (Ipv4Address addr, uint32_t link)
 {
   if (!m_held[addr]) {
     NS_ASSERT_MSG(!m_locks[addr][link], "Should not reaquire a lock");
@@ -826,26 +829,29 @@ Ipv4GlobalRouting::Lock (Ipv4Address addr, uint32_t link)
 
 // @apanda
 void
-Ipv4GlobalRouting::Unlock (Ipv4Address addr, uint32_t link)
+Ipv4GlobalRouting::SimpleUnlock (Ipv4Address addr, uint32_t link)
 {
   NS_ASSERT_MSG(!m_held[addr], "If someone else thinks they have it, I better not hold it");
   NS_ASSERT_MSG(m_locks[addr][link], "Don't free something you don't hold");
   m_locks[addr][link] = false;
   m_lockCounts[addr] -= 1;
+  if (m_aeoRequested[addr] && m_lockCounts[addr] == 0) {
+    PrimitiveAEO(addr);
+  }
 }
 
 // @apanda
 bool 
 Ipv4GlobalRouting::Lock (Ipv4Address addr, Ptr<NetDevice> link)
 {
-  return Lock(addr, m_ipv4->GetInterfaceForDevice(link));
+  return SimpleLock(addr, m_ipv4->GetInterfaceForDevice(link));
 }
 
 // @apanda
 void 
 Ipv4GlobalRouting::Unlock (Ipv4Address addr, Ptr<NetDevice> link)
 {
-  return Unlock(addr, m_ipv4->GetInterfaceForDevice(link));
+  return SimpleUnlock(addr, m_ipv4->GetInterfaceForDevice(link));
 }
 
 // @apanda
@@ -894,7 +900,7 @@ Ipv4GlobalRouting::LocalUnlock (Ipv4Address addr)
     NS_ASSERT(other != device);
     Ptr<Node> otherNode = other->GetNode();
     Ptr<Ipv4GlobalRouting> rtr = otherNode->GetObject<GlobalRouter>()->GetRoutingProtocol();
-    rtr->Unlock(addr, other);
+    Simulator::ScheduleNow(&Ipv4GlobalRouting::Unlock, rtr, addr, other); //rtr->Unlock(addr, other);
   }
   m_held[addr] = false;
 }
