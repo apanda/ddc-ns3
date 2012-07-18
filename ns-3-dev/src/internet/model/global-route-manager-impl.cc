@@ -27,6 +27,7 @@
 #include <queue>
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 #include "ns3/assert.h"
 #include "ns3/fatal-error.h"
 #include "ns3/log.h"
@@ -689,6 +690,7 @@ GlobalRouteManagerImpl::InitializeRoutes ()
 //
   NS_LOG_INFO ("About to start SPF calculation");
   NodeList::Iterator listEnd = NodeList::End ();
+  std::map<Ipv4Address, Ptr<Node> > nodeMap;
   for (NodeList::Iterator i = NodeList::Begin (); i != listEnd; i++)
     {
       Ptr<Node> node = *i;
@@ -712,7 +714,12 @@ GlobalRouteManagerImpl::InitializeRoutes ()
       if (rtr && rtr->GetNumLSAs () )
         {
           m_reversalMap.insert(AEOMap::value_type(rtr->GetRouterId(), std::list<Ptr<Ipv4GlobalRouting> >())); 
+          m_distance.insert(Distances::value_type(node->GetId(), std::vector<uint32_t>(NodeList::GetNNodes(), 0)));
           SPFCalculate (rtr->GetRouterId ());
+          nodeMap.insert(std::map<Ipv4Address, Ptr<Node> >::value_type(rtr->GetRouterId(), node));
+          NS_LOG_LOGIC("=== INSERT ROOT ===");
+          NS_LOG_LOGIC("While adding, router ID " << rtr->GetRouterId());
+          
         }
     }
   NS_LOG_LOGIC("Final tally");
@@ -725,6 +732,65 @@ GlobalRouteManagerImpl::InitializeRoutes ()
       Simulator::ScheduleNow(&Ipv4GlobalRouting::PrimitiveAEO, gr, it->first); 
     }
   }
+  NS_LOG_LOGIC("===== NODE MAP ====");
+  NS_LOG_LOGIC("=== DISTANCES ===");
+  for (Distances::iterator it = m_distance.begin(); it != m_distance.end(); it++) {
+    std::stringstream line;
+    line << it->first << ": ";
+    for (std::vector<uint32_t>::iterator it2 = it->second.begin(); it2 != it->second.end(); it2++) {
+      line << *it2 << " ";
+    }
+    NS_LOG_LOGIC(line.str());
+  }
+  NS_LOG_LOGIC("=== DISTANCES ===");
+  for (std::map<Ipv4Address, Ptr<Node> >::iterator it = nodeMap.begin(); it != nodeMap.end(); it++) {
+    Ptr<Node> node = it->second;
+    NS_LOG_LOGIC(node->GetId() << "  " << it->first);
+  }
+  NS_LOG_LOGIC("===== NODE MAP ====");
+  listEnd = NodeList::End ();
+  NS_LOG_LOGIC("===== NODE LINKS ====");
+  for (NodeList::Iterator i = NodeList::Begin (); i != listEnd; i++)
+    {
+      Ptr<Node> node = *i;
+      Ptr<Ipv4> ipv4 = node->GetObject<Ipv4>();
+//
+// Look for the GlobalRouter interface that indicates that the node is
+// participating in routing.
+//
+      Ptr<GlobalRouter> rtr = 
+        node->GetObject<GlobalRouter> ();
+
+      // Ignore nodes that are not assigned to our systemId (distributed sim)
+      if (node->GetSystemId () != MpiInterface::GetSystemId ()) 
+        {
+          continue;
+        }
+
+//
+// if the node has a global router interface, then run the global routing
+// algorithms.
+//
+      if (rtr && rtr->GetNumLSAs () )
+        {
+          Ipv4Address rtrId = rtr->GetRouterId (); 
+          GlobalRoutingLSA *rlsa = m_lsdb->GetLSA (rtrId);
+          std::map<uint32_t, Ipv4Address> interfaceMap;
+          for (uint32_t i = 0; i < rlsa->GetNLinkRecords (); i++) {
+            GlobalRoutingLinkRecord *l = rlsa->GetLinkRecord (i);
+            if (l->GetLinkType() == GlobalRoutingLinkRecord::PointToPoint) {
+              interfaceMap.insert(std::map<uint32_t, Ipv4Address>::value_type(ipv4->GetInterfaceForAddress(l->GetLinkData()),
+                                                        l->GetLinkId()));
+            }
+          }
+          for (std::map<uint32_t, Ipv4Address>::iterator it = interfaceMap.begin();
+               it != interfaceMap.end(); it++) {
+            Ptr<Node> second = nodeMap[it->second];
+            NS_LOG_LOGIC (node->GetId() << " --" << it->first << "--> " << second->GetId());
+          }
+        }
+    }
+  NS_LOG_LOGIC("===== NODE LINKS ====");
   NS_LOG_INFO ("Finished SPF calculation");
 }
 
@@ -759,6 +825,7 @@ GlobalRouteManagerImpl::SPFNext (SPFVertex* v, CandidateQueue& candidate)
     {
       NS_LOG_LOGIC ("Vertex " << v << " is a vertex router");
       numRecordsInVertex = v->GetLSA ()->GetNLinkRecords (); 
+      NS_LOG_LOGIC("Number of vertex records = " << numRecordsInVertex);
     }
   if (v->GetVertexType () == SPFVertex::VertexNetwork)
     {
@@ -799,7 +866,7 @@ GlobalRouteManagerImpl::SPFNext (SPFVertex* v, CandidateQueue& candidate)
               w_lsa = m_lsdb->GetLSA (l->GetLinkId ());
               NS_ASSERT (w_lsa);
               NS_LOG_LOGIC ("Found a P2P record from " << 
-                            v->GetVertexId () << " to " << w_lsa->GetLinkStateId ());
+                            v->GetVertexId () << " to " << w_lsa->GetLinkStateId () << " metric = " <<  l->GetMetric());
             }
           else if (l->GetLinkType () == 
                    GlobalRoutingLinkRecord::TransitNetwork)
@@ -1366,6 +1433,8 @@ GlobalRouteManagerImpl::SPFCalculate (Ipv4Address root)
   m_spfroot= v;
   v->SetDistanceFromRoot (0);
   v->GetLSA ()->SetStatus (GlobalRoutingLSA::LSA_SPF_IN_SPFTREE);
+  NS_LOG_LOGIC ("Starting SPFCalculate for node " << root);
+  NS_LOG_LOGIC ("LSA = " << v->GetLSA());
   NS_LOG_LOGIC ("Starting SPFCalculate for node " << root);
 
 //
@@ -1941,13 +2010,38 @@ GlobalRouteManagerImpl::SPFIntraAddRouter (SPFVertex* v)
   Ipv4Address routerId = m_spfroot->GetVertexId ();
 
   NS_LOG_LOGIC ("Vertex ID = " << routerId);
+// @apanda Find destination node, so we can get a nice distance map here
+  Ptr<Node> dest = 0;
+  NodeList::Iterator i = NodeList::Begin (); 
+  NodeList::Iterator listEnd = NodeList::End ();
+  for (; i != listEnd; i++) 
+    {
+      dest = *i;
+      Ptr<GlobalRouter> rtr =
+        dest->GetObject<GlobalRouter> ();
+        if (rtr == 0)
+          {
+            continue;
+          }
+
+        if (rtr->GetRouterId () == v->GetVertexId ()) 
+          {
+            break;
+          }
+        else
+          {
+            dest = 0;
+          }
+    }
+    NS_ASSERT_MSG(dest != 0, "Could not find destination");
+  
 //
 // We need to walk the list of nodes looking for the one that has the router
 // ID corresponding to the root vertex.  This is the one we're going to write
 // the routing information to.
 //
-  NodeList::Iterator i = NodeList::Begin (); 
-  NodeList::Iterator listEnd = NodeList::End ();
+  i = NodeList::Begin (); 
+  listEnd = NodeList::End ();
   for (; i != listEnd; i++)
     {
       Ptr<Node> node = *i;
@@ -2062,6 +2156,7 @@ GlobalRouteManagerImpl::SPFIntraAddRouter (SPFVertex* v)
                     }
                 } // for all routes from the root the vertex 'v'
                 m_reversalMap[lr->GetLinkData ()].push_back(gr);
+                m_distance[node->GetId()][dest->GetId()] = v->GetDistanceFromRoot();
                 //gr->PrimitiveAEO (lr->GetLinkData ());
                 // Record this order and then call stuff in order
             }

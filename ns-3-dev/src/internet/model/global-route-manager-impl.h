@@ -775,6 +775,8 @@ private:
   // @apanda
   typedef std::map<Ipv4Address, std::list<Ptr<Ipv4GlobalRouting> > > AEOMap;
   AEOMap m_reversalMap;
+  typedef std::map<uint32_t, std::vector<uint32_t> > Distances;
+  Distances m_distance;
 
 };
 
