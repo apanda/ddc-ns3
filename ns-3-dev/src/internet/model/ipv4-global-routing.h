@@ -231,6 +231,17 @@ public:
  */
  void SetInterfacePriority(Ipv4Address dest, uint32_t interface, uint32_t priority);
 
+/**
+ * @apanda
+ * Set reversal order
+ */
+  void SetReversalOrder (Ipv4Address, const std::list<uint32_t>&);
+
+/**
+ * @apanda
+ * Send a heartbeat
+ */
+ void SendInitialHeartbeat (Ipv4Address);
 protected:
   void DoDispose (void);
 
@@ -315,6 +326,12 @@ protected:
 
 /**
  * @apanda
+ * Receive heartbeat
+ */
+  void ReceiveHeartbeat (uint32_t, Ipv4Address, Ptr<NetDevice>);
+
+/**
+ * @apanda
  * Update remote vnode
  */
   void SetRemoteVnode (Ipv4Address, uint32_t, uint8_t);
@@ -326,6 +343,12 @@ protected:
   void SetRemoteVnode (Ipv4Address, Ptr<NetDevice>, uint8_t);
 
 private:
+
+/**
+ * @apanda
+ * Check if I should execute a PrimitiveAEO operation
+ */
+ void CheckAndAEO (Ipv4Address, uint32_t);
 
 /**
  * @apanda
@@ -351,6 +374,12 @@ private:
  * @apanda
  */
   void ClearVnode(uint8_t vnode, Ipv4Address addr);
+
+/**
+ * @apanda
+ * Update the sequence number for heartbeat
+ */
+  void UpdateHeartbeat(uint32_t, Ipv4Address);
 
   /// @apanda Link direction for DDC
   enum LinkDirection {
@@ -392,6 +421,9 @@ private:
   typedef std::map<Ipv4Address, bool> LockHeld;
   typedef std::map<Ipv4Address, uint32_t> LockCounts; 
   typedef std::map<Ipv4Address, bool> AeoRequests;
+  typedef std::map<Ipv4Address, std::vector<uint32_t> > LinkOrder;
+  typedef std::map<Ipv4Address, std::vector<bool> > HeartbeatState;
+  typedef std::map<Ipv4Address, uint32_t> CurrentSequence;
 
   LockStatus m_locks;
   LockCounts m_lockCounts;
@@ -401,7 +433,10 @@ private:
   InterfaceReversalTTL m_ttl;
   InterfacePriorities m_priorities;
   AeoRequests m_aeoRequested;
-
+  LinkOrder m_reverseBefore;
+  LinkOrder m_reverseAfter;
+  CurrentSequence m_heartbeatSequence;
+  HeartbeatState m_heartbeatState;
   struct ForwardingState {
     /// @apanda Direction vectors
     InterfaceDirection m_directions;

@@ -28,6 +28,8 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <functional>
+#include <utility>
 #include "ns3/assert.h"
 #include "ns3/fatal-error.h"
 #include "ns3/log.h"
@@ -760,6 +762,8 @@ GlobalRouteManagerImpl::InitializeRoutes ()
 //
       Ptr<GlobalRouter> rtr = 
         node->GetObject<GlobalRouter> ();
+                  
+      Ptr<Ipv4GlobalRouting> gr = rtr->GetRoutingProtocol ();
 
       // Ignore nodes that are not assigned to our systemId (distributed sim)
       if (node->GetSystemId () != MpiInterface::GetSystemId ()) 
@@ -783,10 +787,40 @@ GlobalRouteManagerImpl::InitializeRoutes ()
                                                         l->GetLinkId()));
             }
           }
-          for (std::map<uint32_t, Ipv4Address>::iterator it = interfaceMap.begin();
-               it != interfaceMap.end(); it++) {
-            Ptr<Node> second = nodeMap[it->second];
-            NS_LOG_LOGIC (node->GetId() << " --" << it->first << "--> " << second->GetId());
+          for (NodeList::Iterator i2 = NodeList::Begin(); i2 != listEnd; i2++) {
+            Ptr<Node> dest = *i2;
+            Ptr<Ipv4> destIpv4 = node->GetObject<Ipv4>();
+            typedef std::pair<uint32_t, uint32_t> IntPair;
+            typedef std::priority_queue<IntPair, 
+                        std::vector<IntPair>,
+                        std::greater<std::vector<IntPair>::value_type> > InterfaceQueue;
+            InterfaceQueue intQueue;
+            intQueue.push(std::pair<uint32_t, uint32_t>(m_distance[node->GetId()][dest->GetId()], 0));
+            for (std::map<uint32_t, Ipv4Address>::iterator it = interfaceMap.begin();
+                it != interfaceMap.end(); it++) {
+                Ptr<Node> nextHop = nodeMap[it->second];
+                intQueue.push(std::pair<uint32_t, uint32_t>(m_distance[nextHop->GetId()][dest->GetId()], it->first));
+            }
+            std::stringstream outline;
+            std::list<uint32_t> interfaces;
+            std::map<uint32_t, uint32_t> ifaceDistances;
+            while (!intQueue.empty()) {
+              outline << intQueue.top().second << "(" << intQueue.top().first <<")   ";
+              interfaces.push_back(intQueue.top().second);
+              ifaceDistances.insert(std::map<uint32_t, uint32_t>::value_type(intQueue.top().second, intQueue.top().first));
+              intQueue.pop();
+            }
+            
+            NS_LOG_LOGIC ( node->GetId() << " (dest = " << dest-> GetId() << ") " << outline.str());
+
+            for (uint32_t iface = 1; iface < destIpv4->GetNInterfaces(); iface++) {
+              for (uint32_t addr = 0; addr < destIpv4->GetNAddresses(iface); addr++) {
+                gr->SetReversalOrder(destIpv4->GetAddress (iface, addr).GetLocal (), interfaces);
+                for (uint32_t oiface = 1; oiface < ipv4->GetNInterfaces(); oiface++) {
+                  gr->SetInterfacePriority(destIpv4->GetAddress(oiface, addr).GetLocal(), oiface, ifaceDistances[oiface]);
+                }
+              }
+            }
           }
         }
     }

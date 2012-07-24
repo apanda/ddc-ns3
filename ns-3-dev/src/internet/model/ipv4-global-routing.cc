@@ -679,6 +679,8 @@ Ipv4GlobalRouting::InitializeDestination (Ipv4Address dest)
     m_remoteVnode.insert(RemoteVnodeNumbers::value_type(dest, std::vector<uint8_t>(m_ipv4->GetNInterfaces(), 0)));
     m_priorities.insert(InterfacePriorities::value_type(dest, std::vector<uint32_t>(m_ipv4->GetNInterfaces(), 0)));  
     m_ttl.insert(InterfacePriorities::value_type(dest, std::vector<uint32_t>(m_ipv4->GetNInterfaces(), 0)));  
+    m_heartbeatSequence.insert(CurrentSequence::value_type(dest, 0));
+    m_heartbeatState.insert(HeartbeatState::value_type(dest, std::vector<bool>(m_ipv4->GetNInterfaces(), false)));
     for (int i = 0; i < 2; i++) {
       m_vnodeState[i].m_directions.insert(InterfaceDirection::value_type(dest, std::vector<LinkDirection>(m_ipv4->GetNInterfaces(), Unknown)));
       m_vnodeState[i].m_inputs.insert(DestinationListInterfaceQueues::value_type(dest, std::list<uint32_t>()));
@@ -854,6 +856,61 @@ Ipv4GlobalRouting::Unlock (Ipv4Address addr, Ptr<NetDevice> link)
   return SimpleUnlock(addr, m_ipv4->GetInterfaceForDevice(link));
 }
 
+//@apanda
+void
+Ipv4GlobalRouting::UpdateHeartbeat (uint32_t seq, Ipv4Address addr)
+{
+  m_heartbeatSequence[addr] = seq;
+  for (uint32_t i = 0; i < m_ipv4->GetNInterfaces(); i++) {
+    m_heartbeatState[addr][i] = false; 
+  }
+}
+
+// @apanda
+void
+Ipv4GlobalRouting::CheckAndAEO (Ipv4Address addr, uint32_t iface)
+{
+  if (m_heartbeatState[addr][0]) {
+    // We have already AEOed, let's just get on with our life
+    return;
+  }
+
+  bool seenPrevious = true;
+  bool ifaceBefore = false;
+  for (std::vector<uint32_t>::iterator it = m_reverseBefore[addr].begin();
+       it != m_reverseBefore[addr].end(); it++) {
+    ifaceBefore |= (*it == iface);
+    seenPrevious &= (m_heartbeatState[addr][*it]);
+  }
+  if (seenPrevious && m_heartbeatState[addr][0]) {
+    // We alread did this, just return
+    return;
+  }
+ NS_ASSERT(seenPrevious || ifaceBefore);
+ if (seenPrevious) {
+   m_heartbeatState[addr][0] = true;
+   PrimitiveAEO(addr);
+ }
+
+}
+
+// @apanda
+void
+Ipv4GlobalRouting::ReceiveHeartbeat (uint32_t seq, Ipv4Address addr, Ptr<NetDevice> link)
+{
+  if (seq != m_heartbeatSequence[addr]) {
+    if (seq > m_heartbeatSequence[addr]) {
+      UpdateHeartbeat(seq, addr);
+    }
+    else {
+      // Spurious
+      return;
+    }
+  }
+  m_heartbeatState[addr][m_ipv4->GetInterfaceForDevice(link)] = true;
+  CheckAndAEO(addr, m_ipv4->GetInterfaceForDevice(link));
+}
+
 // @apanda
 bool 
 Ipv4GlobalRouting::LocalLock (Ipv4Address addr)
@@ -903,6 +960,15 @@ Ipv4GlobalRouting::LocalUnlock (Ipv4Address addr)
     Simulator::ScheduleNow(&Ipv4GlobalRouting::Unlock, rtr, addr, other); //rtr->Unlock(addr, other);
   }
   m_held[addr] = false;
+  for (std::vector<uint32_t>::iterator it = m_reverseAfter[addr].begin(); it != m_reverseAfter[addr].end(); it++) {
+    Ptr<NetDevice> device = m_ipv4->GetNetDevice(*it);
+    Ptr<Channel> channel = device->GetChannel();
+    Ptr<NetDevice> other = (channel->GetDevice(0) == device ? channel->GetDevice(1) : channel->GetDevice(0));
+    NS_ASSERT(other != device);
+    Ptr<Node> otherNode = other->GetNode();
+    Ptr<Ipv4GlobalRouting> rtr = otherNode->GetObject<GlobalRouter>()->GetRoutingProtocol();
+    Simulator::ScheduleNow(&Ipv4GlobalRouting::ReceiveHeartbeat, rtr, m_heartbeatSequence[addr], addr, other); //rtr->ReceiveHeartbeat(addr, other);
+  }
 }
 
 // @apanda
@@ -939,4 +1005,38 @@ Ipv4GlobalRouting::LocalSetRemoteVnode (Ipv4Address addr, uint32_t link, uint8_t
   rtr->SetRemoteVnode(addr, other, vnode);
 }
 
+// @apanda
+void 
+Ipv4GlobalRouting::SetReversalOrder (Ipv4Address addr, const std::list<uint32_t>& interfaces) 
+{
+  std::list<uint32_t>::const_iterator it;
+  for (it = interfaces.begin(); 
+       it != interfaces.end(); it++) {
+    NS_LOG_LOGIC("Vector " << *it);
+  }
+
+  for (it = interfaces.begin(); 
+       it != interfaces.end() && (*it) != 0; it++) {
+    NS_LOG_LOGIC("Considering " << *it);
+  }
+  NS_ASSERT(it !=  interfaces.end());
+  m_reverseBefore.insert(LinkOrder::value_type(addr, std::vector<uint32_t>(interfaces.begin(), it++)));
+  if (it != interfaces.end()) {
+    NS_LOG_LOGIC("Interface = " << *it);
+  }
+  else {
+    NS_LOG_LOGIC("Inteface end of the line");
+  }
+  m_reverseAfter.insert(LinkOrder::value_type(addr, std::vector<uint32_t>(it, interfaces.end())));
+}
+
+// @apanda
+void
+Ipv4GlobalRouting::SendInitialHeartbeat (Ipv4Address addr)
+{
+  NS_ASSERT(m_reverseBefore[addr].empty());
+  m_heartbeatSequence[addr]++;
+  m_heartbeatState[addr][0] = true;
+  PrimitiveAEO(addr);
+}
 } // namespace ns3
