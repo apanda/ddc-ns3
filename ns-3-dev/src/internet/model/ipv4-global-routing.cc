@@ -721,7 +721,7 @@ void
 Ipv4GlobalRouting::SendOnOutlink (uint8_t vnode, Ipv4Address addr, Ipv4Header& header, uint32_t link)
 {
   NS_LOG_FUNCTION (this << addr);
-  NS_LOG_LOGIC("Setting sequence number to " << m_vnodeState[vnode].m_localSeq[addr][link]);
+  NS_LOG_LOGIC("Setting sequence number to " << (uint32_t)m_vnodeState[vnode].m_localSeq[addr][link]);
   header.SetSeq(m_vnodeState[vnode].m_localSeq[addr][link]);
   NS_LOG_LOGIC("Sequence number is " << header.GetSeq());
   NS_LOG_LOGIC("Setting vnode number to " << (uint32_t)m_remoteVnode[addr][link]);
@@ -870,7 +870,9 @@ Ipv4GlobalRouting::UpdateHeartbeat (uint32_t seq, Ipv4Address addr)
 void
 Ipv4GlobalRouting::CheckAndAEO (Ipv4Address addr, uint32_t iface)
 {
+  NS_LOG_FUNCTION (this << addr << iface);
   if (m_heartbeatState[addr][0]) {
+    NS_LOG_LOGIC("Already AEOd for this");
     // We have already AEOed, let's just get on with our life
     return;
   }
@@ -882,13 +884,10 @@ Ipv4GlobalRouting::CheckAndAEO (Ipv4Address addr, uint32_t iface)
     ifaceBefore |= (*it == iface);
     seenPrevious &= (m_heartbeatState[addr][*it]);
   }
-  if (seenPrevious && m_heartbeatState[addr][0]) {
-    // We alread did this, just return
-    return;
-  }
- NS_ASSERT(seenPrevious || ifaceBefore);
+ NS_ASSERT_MSG(seenPrevious || ifaceBefore, "Cannot have someone later than us in the order hearbeating before us");
  if (seenPrevious) {
    m_heartbeatState[addr][0] = true;
+   NS_LOG_LOGIC("Actually reversing");
    PrimitiveAEO(addr);
  }
 
@@ -898,12 +897,20 @@ Ipv4GlobalRouting::CheckAndAEO (Ipv4Address addr, uint32_t iface)
 void
 Ipv4GlobalRouting::ReceiveHeartbeat (uint32_t seq, Ipv4Address addr, Ptr<NetDevice> link)
 {
+  Ptr<Channel> channel = link->GetChannel();
+  Ptr<NetDevice> other = (channel->GetDevice(0) == link ? channel->GetDevice(1) : channel->GetDevice(0));
+  NS_ASSERT(other != link);
+  Ptr<Node> otherNode = other->GetNode();
+  NS_LOG_LOGIC("Receiving a heartbeat at " <<  m_ipv4->GetNetDevice(0)->GetNode()->GetId() << " from " << otherNode->GetId() << " for " << addr);
+  NS_LOG_FUNCTION (this << seq << addr << link);
   if (seq != m_heartbeatSequence[addr]) {
+    NS_LOG_LOGIC("New heartbeat, maybe?");
     if (seq > m_heartbeatSequence[addr]) {
       UpdateHeartbeat(seq, addr);
     }
     else {
       // Spurious
+      NS_LOG_LOGIC("Discarding spurious heartbeat");
       return;
     }
   }
@@ -967,6 +974,7 @@ Ipv4GlobalRouting::LocalUnlock (Ipv4Address addr)
     NS_ASSERT(other != device);
     Ptr<Node> otherNode = other->GetNode();
     Ptr<Ipv4GlobalRouting> rtr = otherNode->GetObject<GlobalRouter>()->GetRoutingProtocol();
+    NS_LOG_LOGIC("Sending heartbeat for " << addr << " to " << otherNode->GetId() << " from " <<  m_ipv4->GetNetDevice(0)->GetNode()->GetId());
     Simulator::ScheduleNow(&Ipv4GlobalRouting::ReceiveHeartbeat, rtr, m_heartbeatSequence[addr], addr, other); //rtr->ReceiveHeartbeat(addr, other);
   }
 }
@@ -1009,6 +1017,8 @@ Ipv4GlobalRouting::LocalSetRemoteVnode (Ipv4Address addr, uint32_t link, uint8_t
 void 
 Ipv4GlobalRouting::SetReversalOrder (Ipv4Address addr, const std::list<uint32_t>& interfaces) 
 {
+  NS_LOG_FUNCTION(this << addr);
+  NS_LOG_LOGIC("SetReversalOrder " << addr << " node = " << m_ipv4->GetNetDevice(0)->GetNode()->GetId());
   std::list<uint32_t>::const_iterator it;
   for (it = interfaces.begin(); 
        it != interfaces.end(); it++) {
@@ -1020,7 +1030,10 @@ Ipv4GlobalRouting::SetReversalOrder (Ipv4Address addr, const std::list<uint32_t>
     NS_LOG_LOGIC("Considering " << *it);
   }
   NS_ASSERT(it !=  interfaces.end());
-  m_reverseBefore.insert(LinkOrder::value_type(addr, std::vector<uint32_t>(interfaces.begin(), it++)));
+  m_reverseBefore.insert(LinkOrder::value_type(addr, std::vector<uint32_t>(interfaces.begin(), it)));
+  NS_ASSERT(*it == 0);
+  it++;
+  NS_LOG_LOGIC("Now at iface = " << *it);
   if (it != interfaces.end()) {
     NS_LOG_LOGIC("Interface = " << *it);
   }
@@ -1034,6 +1047,12 @@ Ipv4GlobalRouting::SetReversalOrder (Ipv4Address addr, const std::list<uint32_t>
 void
 Ipv4GlobalRouting::SendInitialHeartbeat (Ipv4Address addr)
 {
+  NS_LOG_FUNCTION(this << addr);
+  NS_LOG_LOGIC("Initial heartbeat for address = " << addr << " from node = " << m_ipv4->GetNetDevice(0)->GetNode()->GetId());
+  for (std::vector<uint32_t>::iterator it = m_reverseBefore[addr].begin();
+       it != m_reverseBefore[addr].end(); it++) {
+    NS_LOG_LOGIC("REVERSE BEFORE NOT EMPTY: " << *it);
+  }
   NS_ASSERT(m_reverseBefore[addr].empty());
   m_heartbeatSequence[addr]++;
   m_heartbeatState[addr][0] = true;

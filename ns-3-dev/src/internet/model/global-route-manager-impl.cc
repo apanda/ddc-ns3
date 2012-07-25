@@ -730,8 +730,8 @@ GlobalRouteManagerImpl::InitializeRoutes ()
     for (std::list<Ptr<Ipv4GlobalRouting> >::iterator it2 = it->second.begin();
          it2 != it->second.end(); it2++) {
       Ptr<Ipv4GlobalRouting> gr = *it2;
-      NS_LOG_LOGIC("Reversing for address " << it->first);
-      Simulator::ScheduleNow(&Ipv4GlobalRouting::PrimitiveAEO, gr, it->first); 
+      //NS_LOG_LOGIC("Reversing for address " << it->first);
+      //Simulator::ScheduleNow(&Ipv4GlobalRouting::PrimitiveAEO, gr, it->first); 
     }
   }
   NS_LOG_LOGIC("===== NODE MAP ====");
@@ -780,34 +780,51 @@ GlobalRouteManagerImpl::InitializeRoutes ()
           Ipv4Address rtrId = rtr->GetRouterId (); 
           GlobalRoutingLSA *rlsa = m_lsdb->GetLSA (rtrId);
           std::map<uint32_t, Ipv4Address> interfaceMap;
+          std::map<uint32_t, uint32_t> inverseInterfaceMap;
           for (uint32_t i = 0; i < rlsa->GetNLinkRecords (); i++) {
             GlobalRoutingLinkRecord *l = rlsa->GetLinkRecord (i);
             if (l->GetLinkType() == GlobalRoutingLinkRecord::PointToPoint) {
-              interfaceMap.insert(std::map<uint32_t, Ipv4Address>::value_type(ipv4->GetInterfaceForAddress(l->GetLinkData()),
+              uint32_t currIface = ipv4->GetInterfaceForAddress(l->GetLinkData());
+              interfaceMap.insert(std::map<uint32_t, Ipv4Address>::value_type(currIface,
                                                         l->GetLinkId()));
+              Ptr<Node> nextHop = nodeMap[l->GetLinkId()];
+              // Record translation between node ID and interace
+              inverseInterfaceMap.insert(std::map<uint32_t, uint32_t>::value_type(nextHop->GetId(), currIface));
             }
           }
+          // Add one for the current node
+          inverseInterfaceMap.insert(std::map<uint32_t, uint32_t>::value_type(node->GetId(), 0));
+          for (uint32_t iface = 1; iface < ipv4->GetNInterfaces(); iface++) {
+            for (uint32_t addr = 0; addr < ipv4->GetNAddresses(iface); addr++) {
+              NS_LOG_LOGIC("InitialHeartbeat for " << ipv4->GetAddress(iface, addr) << " for node " << node->GetId());
+              Simulator::ScheduleNow(&Ipv4GlobalRouting::SendInitialHeartbeat, gr, ipv4->GetAddress(iface, addr).GetLocal());
+            }
+          }
+
           for (NodeList::Iterator i2 = NodeList::Begin(); i2 != listEnd; i2++) {
             Ptr<Node> dest = *i2;
-            Ptr<Ipv4> destIpv4 = node->GetObject<Ipv4>();
+            Ptr<Ipv4> destIpv4 = dest->GetObject<Ipv4>();
             typedef std::pair<uint32_t, uint32_t> IntPair;
             typedef std::priority_queue<IntPair, 
                         std::vector<IntPair>,
                         std::greater<std::vector<IntPair>::value_type> > InterfaceQueue;
             InterfaceQueue intQueue;
-            intQueue.push(std::pair<uint32_t, uint32_t>(m_distance[node->GetId()][dest->GetId()], 0));
+            // Add the current node in
+            intQueue.push(std::pair<uint32_t, uint32_t>(m_distance[node->GetId()][dest->GetId()], node->GetId()));
             for (std::map<uint32_t, Ipv4Address>::iterator it = interfaceMap.begin();
                 it != interfaceMap.end(); it++) {
                 Ptr<Node> nextHop = nodeMap[it->second];
-                intQueue.push(std::pair<uint32_t, uint32_t>(m_distance[nextHop->GetId()][dest->GetId()], it->first));
+                // Add IDs for every subsequent interface
+                intQueue.push(std::pair<uint32_t, uint32_t>(m_distance[nextHop->GetId()][dest->GetId()], nextHop->GetId()));
             }
             std::stringstream outline;
             std::list<uint32_t> interfaces;
             std::map<uint32_t, uint32_t> ifaceDistances;
             while (!intQueue.empty()) {
-              outline << intQueue.top().second << "(" << intQueue.top().first <<")   ";
-              interfaces.push_back(intQueue.top().second);
-              ifaceDistances.insert(std::map<uint32_t, uint32_t>::value_type(intQueue.top().second, intQueue.top().first));
+              uint32_t interface = inverseInterfaceMap[intQueue.top().second];
+              outline << interface << "(" << intQueue.top().first <<")   ";
+              interfaces.push_back(interface);
+              ifaceDistances.insert(std::map<uint32_t, uint32_t>::value_type(interface, intQueue.top().first));
               intQueue.pop();
             }
             
@@ -817,7 +834,7 @@ GlobalRouteManagerImpl::InitializeRoutes ()
               for (uint32_t addr = 0; addr < destIpv4->GetNAddresses(iface); addr++) {
                 gr->SetReversalOrder(destIpv4->GetAddress (iface, addr).GetLocal (), interfaces);
                 for (uint32_t oiface = 1; oiface < ipv4->GetNInterfaces(); oiface++) {
-                  gr->SetInterfacePriority(destIpv4->GetAddress(oiface, addr).GetLocal(), oiface, ifaceDistances[oiface]);
+                  gr->SetInterfacePriority(destIpv4->GetAddress(iface, addr).GetLocal(), oiface, ifaceDistances[oiface]);
                 }
               }
             }

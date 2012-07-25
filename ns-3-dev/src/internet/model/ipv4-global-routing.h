@@ -241,7 +241,8 @@ public:
  * @apanda
  * Send a heartbeat
  */
- void SendInitialHeartbeat (Ipv4Address);
+  void SendInitialHeartbeat (Ipv4Address);
+
 protected:
   void DoDispose (void);
 
