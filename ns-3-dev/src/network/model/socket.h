@@ -28,6 +28,8 @@
 #include "ns3/tag.h"
 #include "ns3/object.h"
 #include "ns3/net-device.h"
+#include "ns3/ipv4-header.h"
+#include "ns3/packet.h"
 #include "address.h"
 #include <stdint.h>
 
@@ -417,6 +419,12 @@ public:
   virtual Ptr<Packet> RecvFrom (uint32_t maxSize, uint32_t flags,
                                 Address &fromAddress) = 0;
 
+
+  /**
+   * @apanda
+   */
+  virtual Ptr<Packet> Recv (uint32_t maxSize, uint32_t flag, Ipv4Header& hdr) {return 0;};
+  virtual Ptr<Packet> RecvFrom (Address &fromAddress, Ipv4Header& hdr) {return 0;};
   /////////////////////////////////////////////////////////////////////
   //   The remainder of these public methods are overloaded methods  //
   //   or variants of Send() and Recv(), and they are non-virtual    //

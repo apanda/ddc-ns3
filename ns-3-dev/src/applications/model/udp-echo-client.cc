@@ -67,6 +67,8 @@ UdpEchoClient::GetTypeId (void)
                    MakeUintegerChecker<uint32_t> ())
     .AddTraceSource ("Tx", "A new packet is created and is sent",
                      MakeTraceSourceAccessor (&UdpEchoClient::m_txTrace))
+    .AddTraceSource ("Rx", "A packet is received",
+                     MakeTraceSourceAccessor (&UdpEchoClient::m_rxTrace))
   ;
   return tid;
 }
@@ -142,7 +144,7 @@ UdpEchoClient::StartApplication (void)
 
   m_socket->SetRecvCallback (MakeCallback (&UdpEchoClient::HandleRead, this));
 
-  ScheduleTransmit (Seconds (0.));
+  // ScheduleTransmit (Seconds (0.));
 }
 
 void 
@@ -157,7 +159,7 @@ UdpEchoClient::StopApplication ()
       m_socket = 0;
     }
 
-  Simulator::Cancel (m_sendEvent);
+  // Simulator::Cancel (m_sendEvent);
 }
 
 void 
@@ -273,7 +275,7 @@ UdpEchoClient::Send (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  NS_ASSERT (m_sendEvent.IsExpired ());
+  //NS_ASSERT (m_sendEvent.IsExpired ());
 
   Ptr<Packet> p;
   if (m_dataSize)
@@ -317,10 +319,10 @@ UdpEchoClient::Send (void)
                    Ipv6Address::ConvertFrom (m_peerAddress) << " port " << m_peerPort);
     }
 
-  if (m_sent < m_count) 
-    {
-      ScheduleTransmit (m_interval);
-    }
+  //if (m_sent < m_count) 
+  //  {
+  //    ScheduleTransmit (m_interval);
+  //  }
 }
 
 void
@@ -329,7 +331,8 @@ UdpEchoClient::HandleRead (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this << socket);
   Ptr<Packet> packet;
   Address from;
-  while ((packet = socket->RecvFrom (from)))
+  Ipv4Header hdr;
+  while ((packet = socket->RecvFrom (from, hdr)))
     {
       if (InetSocketAddress::IsMatchingType (from))
         {
@@ -343,7 +346,14 @@ UdpEchoClient::HandleRead (Ptr<Socket> socket)
                        Inet6SocketAddress::ConvertFrom (from).GetIpv6 () << " port " <<
                        Inet6SocketAddress::ConvertFrom (from).GetPort ());
         }
+      m_rxTrace (packet, hdr);
     }
+}
+
+void 
+UdpEchoClient::AddReceivePacketEvent (Callback<void, Ptr<const Packet>, Ipv4Header&> rxEvent)
+{
+  m_rxTrace.ConnectWithoutContext(rxEvent);
 }
 
 } // Namespace ns3

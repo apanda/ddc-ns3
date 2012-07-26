@@ -24,6 +24,7 @@
 #include "ns3/ptr.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/traced-callback.h"
+#include "ns3/ipv4-header.h"
 
 namespace ns3 {
 
@@ -122,16 +123,19 @@ public:
    */
   void SetFill (uint8_t *fill, uint32_t fillSize, uint32_t dataSize);
 
+  void Send (void);
+  virtual void StartApplication (void);
+  virtual void StopApplication (void);
+
+  void AddReceivePacketEvent (Callback<void, Ptr<const Packet>, Ipv4Header& > rxEvent);
+
 protected:
   virtual void DoDispose (void);
 
 private:
 
-  virtual void StartApplication (void);
-  virtual void StopApplication (void);
 
   void ScheduleTransmit (Time dt);
-  void Send (void);
 
   void HandleRead (Ptr<Socket> socket);
 
@@ -149,6 +153,8 @@ private:
   EventId m_sendEvent;
   /// Callbacks for tracing the packet Tx events
   TracedCallback<Ptr<const Packet> > m_txTrace;
+  /// Callbacks for tracing the packet Rx events
+  TracedCallback<Ptr<const Packet>, Ipv4Header&> m_rxTrace;
 };
 
 } // namespace ns3

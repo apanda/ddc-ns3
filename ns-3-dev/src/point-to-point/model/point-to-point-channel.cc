@@ -82,6 +82,8 @@ PointToPointChannel::Attach (Ptr<PointToPointNetDevice> device)
 
 void PointToPointChannel::SetLinkDown()
 {
+  NS_LOG_FUNCTION_NOARGS();
+  NS_LOG_LOGIC("Setting link down now");
   for (int i = 0 ; i < m_nDevices; i++) {
     m_link[i].m_src->SetLinkDown();
   }

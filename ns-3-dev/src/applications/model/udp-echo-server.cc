@@ -143,8 +143,10 @@ UdpEchoServer::HandleRead (Ptr<Socket> socket)
 {
   Ptr<Packet> packet;
   Address from;
-  while ((packet = socket->RecvFrom (from)))
+  Ipv4Header hdr;
+  while ((packet = socket->RecvFrom (from, hdr)))
     {
+      m_rxTrace (packet, hdr);
       if (InetSocketAddress::IsMatchingType (from))
         {
           NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s server received " << packet->GetSize () << " bytes from " <<
@@ -177,6 +179,12 @@ UdpEchoServer::HandleRead (Ptr<Socket> socket)
                        InetSocketAddress::ConvertFrom (from).GetPort ());
         }
     }
+}
+
+void 
+UdpEchoServer::AddReceivePacketEvent (Callback<void, Ptr<const Packet>, Ipv4Header& > rxEvent)
+{
+  m_rxTrace.ConnectWithoutContext(rxEvent);
 }
 
 } // Namespace ns3

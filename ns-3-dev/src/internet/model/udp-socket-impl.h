@@ -75,6 +75,9 @@ public:
   virtual int Send (Ptr<Packet> p, uint32_t flags);
   virtual int SendTo (Ptr<Packet> p, uint32_t flags, const Address &address);
   virtual uint32_t GetRxAvailable (void) const;
+  virtual Ptr<Packet> Recv (uint32_t maxSize, uint32_t flag, Ipv4Header& hdr);
+  virtual Ptr<Packet> RecvFrom (Address &fromAddress, Ipv4Header& hdr);
+                                
   virtual Ptr<Packet> Recv (uint32_t maxSize, uint32_t flags);
   virtual Ptr<Packet> RecvFrom (uint32_t maxSize, uint32_t flags,
                                 Address &fromAddress);
@@ -135,6 +138,7 @@ private:
   bool m_allowBroadcast;
 
   std::queue<Ptr<Packet> > m_deliveryQueue;
+  std::queue<Ipv4Header> m_headerQueue;
   uint32_t m_rxAvailable;
 
   // Socket attributes

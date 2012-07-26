@@ -23,6 +23,9 @@
 #include "ns3/event-id.h"
 #include "ns3/ptr.h"
 #include "ns3/address.h"
+#include "ns3/ipv4-address.h"
+#include "ns3/traced-callback.h"
+#include "ns3/ipv4-header.h"
 
 namespace ns3 {
 
@@ -46,6 +49,7 @@ public:
   static TypeId GetTypeId (void);
   UdpEchoServer ();
   virtual ~UdpEchoServer ();
+  void AddReceivePacketEvent (Callback<void, Ptr<const Packet>, Ipv4Header& > rxEvent);
 
 protected:
   virtual void DoDispose (void);
@@ -61,6 +65,8 @@ private:
   Ptr<Socket> m_socket;
   Ptr<Socket> m_socket6;
   Address m_local;
+  /// Callbacks for tracing the packet Rx events
+  TracedCallback<Ptr<const Packet>, Ipv4Header&> m_rxTrace;
 };
 
 } // namespace ns3

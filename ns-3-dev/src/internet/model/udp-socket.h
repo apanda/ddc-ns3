@@ -24,6 +24,7 @@
 #define UDP_SOCKET_H
 
 #include "ns3/socket.h"
+#include "ns3/ipv4-header.h"
 #include "ns3/traced-callback.h"
 #include "ns3/callback.h"
 #include "ns3/ptr.h"
@@ -97,6 +98,8 @@ public:
    */
   virtual int MulticastLeaveGroup (uint32_t interface, const Address &groupAddress) = 0;
 
+  virtual Ptr<Packet> Recv (uint32_t maxSize, uint32_t flag, Ipv4Header& hdr) = 0;
+  virtual Ptr<Packet> RecvFrom (Address &fromAddress, Ipv4Header& hdr) = 0;
 private:
   // Indirect the attribute setting and getting through private virtual methods
   virtual void SetRcvBufSize (uint32_t size) = 0;

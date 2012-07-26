@@ -27,13 +27,48 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("DataDrivenConnectivity-NSDI-Stretch");
+NS_LOG_COMPONENT_DEFINE ("DataDrivenConnectivity1");
 
 std::vector<PointToPointChannel* > channels;
 UniformVariable randVar;
 const int32_t NODES = 12;
 std::vector<std::list<uint32_t>*> connectivityGraph(NODES);
 Time simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
+bool IsGraphConnected(int start) 
+{
+  bool visited[NODES] = {false};
+  std::stack<uint32_t> nodes;
+  nodes.push(start);
+  while (!nodes.empty()) {
+    int node = (uint32_t)nodes.top();
+    nodes.pop();
+    if (visited[node]) {
+      continue;
+    }
+    visited[node] = true;
+    for ( std::list<uint32_t>::iterator iterator = connectivityGraph[node]->begin(); 
+    iterator != connectivityGraph[node]->end();
+    iterator++) {
+      nodes.push(*iterator);
+    }
+    for (int i = 0; i < NODES; i++) {
+      if (i == node) {
+        continue;
+      }
+      if (std::find(connectivityGraph[i]->begin(), connectivityGraph[i]->end(), node) !=
+               connectivityGraph[i]->end()) {
+        nodes.push(i);
+      }
+    }
+  }
+  for (int i = 0; i < NODES; i++) {
+    if (!visited[i]) {
+      NS_LOG_ERROR("Found disconnect " << i);
+      return false;
+    }
+  }
+  return true;
+}
 
 void ScheduleLinkRecovery(uint32_t failedLink) 
 {
@@ -44,6 +79,7 @@ void ScheduleLinkRecovery(uint32_t failedLink)
   NS_ASSERT(0 <= nodeSrc && nodeSrc < (uint32_t)NODES);
   NS_ASSERT(0 <= nodeDest && nodeDest < (uint32_t)NODES);
   connectivityGraph[nodeSrc]->push_back(nodeDest);
+  IsGraphConnected(nodeSrc);
   channels[failedLink]->SetLinkUp();
   NS_LOG_INFO("Link " << failedLink << " is now up");
 }
@@ -51,27 +87,26 @@ void ScheduleLinkRecovery(uint32_t failedLink)
 void ScheduleLinkFailure() 
 {
   uint32_t linkOfInterest = (uint32_t)-1;
-  for (int i = 0; i < 20; i++) {
-    linkOfInterest = randVar.GetInteger(0, channels.size() - 1);
-    uint32_t nodeA = channels[linkOfInterest]->GetDevice(0)->GetNode()->GetId();
-    uint32_t nodeB = channels[linkOfInterest]->GetDevice(1)->GetNode()->GetId();
-    uint32_t nodeSrc = (nodeA < nodeB ? nodeA : nodeB);
-    uint32_t nodeDest = (nodeA > nodeB ? nodeA : nodeB);
-    NS_ASSERT(0 <= nodeSrc && nodeSrc < (uint32_t)NODES);
-    NS_ASSERT(0 <= nodeDest && nodeDest < (uint32_t)NODES);
-    for (std::list<uint32_t>::iterator it = connectivityGraph[nodeSrc]->begin();
-         it != connectivityGraph[nodeSrc]->end();
-         it++) {
-      NS_ASSERT(0 <= *it && *it < (uint32_t)NODES);
-      NS_ASSERT(0 <= *it && *it < (uint32_t)NODES);
-      if (*it == nodeDest) {
-        connectivityGraph[nodeSrc]->erase(it);
-        break;
-      }
+  linkOfInterest = randVar.GetInteger(0, channels.size() - 1);
+  uint32_t nodeA = channels[linkOfInterest]->GetDevice(0)->GetNode()->GetId();
+  uint32_t nodeB = channels[linkOfInterest]->GetDevice(1)->GetNode()->GetId();
+  uint32_t nodeSrc = (nodeA < nodeB ? nodeA : nodeB);
+  uint32_t nodeDest = (nodeA > nodeB ? nodeA : nodeB);
+  NS_ASSERT(0 <= nodeSrc && nodeSrc < (uint32_t)NODES);
+  NS_ASSERT(0 <= nodeDest && nodeDest < (uint32_t)NODES);
+  for (std::list<uint32_t>::iterator it = connectivityGraph[nodeSrc]->begin();
+       it != connectivityGraph[nodeSrc]->end();
+       it++) {
+    NS_ASSERT(0 <= *it && *it < (uint32_t)NODES);
+    NS_ASSERT(0 <= *it && *it < (uint32_t)NODES);
+    if (*it == nodeDest) {
+      connectivityGraph[nodeSrc]->erase(it);
+      break;
     }
-    channels[linkOfInterest]->SetLinkDown();
-    NS_LOG_INFO("Taking " << linkOfInterest << " down");
   }
+  IsGraphConnected(nodeSrc);
+  channels[linkOfInterest]->SetLinkDown();
+  NS_LOG_INFO("Taking " << linkOfInterest << " down");
   /*Time downStep = Seconds(randVar.GetValue(240.0, 3600.0));
   Time tAbsolute = Simulator::Now() + downStep; 
   if (tAbsolute < simulationEnd) {
@@ -148,6 +183,7 @@ main (int argc, char *argv[])
   connectivityGraph[8]->push_back(11);
   connectivityGraph[9]->push_back(10);
   connectivityGraph[10]->push_back(11);
+  NS_ASSERT(IsGraphConnected(0));
 
   NS_LOG_INFO("Creating nodes");
   NodeContainer nodes;
@@ -218,8 +254,7 @@ main (int argc, char *argv[])
     AddressValue(nodes.Get(0)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal()));
   Simulator::ScheduleNow(&UdpEchoClient::StartApplication, clients[11]);
   clients[11]->AddReceivePacketEvent(MakeCallback(&RxPacket));
-  Simulator::Schedule(Seconds(5.0), &UdpEchoClient::Send, clients[11]);
-  Simulator::Schedule(Seconds(1.0), &ScheduleLinkFailure);
+  Simulator::Schedule(Seconds(1.0), &UdpEchoClient::Send, clients[11]);
 
   Ptr<OutputStreamWrapper> out = asciiHelper.CreateFileStream("route.table");
   NS_LOG_INFO("Node interface list");

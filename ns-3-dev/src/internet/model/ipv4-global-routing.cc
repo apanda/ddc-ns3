@@ -627,7 +627,7 @@ Ipv4GlobalRouting::FindOutputPort (uint8_t vnode, Ipv4Address addr, uint32_t &li
   do {
     const PriorityInterface interface = m_vnodeState[vnode].m_outputs[addr].top();
     link = interface.second;
-    if (m_vnodeState[vnode].m_directions[addr][link] == Out) {
+    if (m_vnodeState[vnode].m_directions[addr][link] == Out && m_ipv4->GetNetDevice(link)->IsLinkUp()) {
       NS_LOG_LOGIC("Returning output link " << link << "(priority = " << interface.first << ")");
       return true;
     }
@@ -651,7 +651,7 @@ Ipv4GlobalRouting::FindHighPriorityLink(uint8_t vnode, Ipv4Address addr, uint32_
   do {
     const PriorityInterface interface = m_vnodeState[vnode].m_prioritized_links[addr].top();
     link = interface.second;
-    if (m_vnodeState[vnode].m_directions[addr][link] == Out) {
+    if (m_ipv4->GetNetDevice(link)->IsLinkUp()) {
       NS_LOG_LOGIC("Returning output link " << link << "(priority = " << interface.first << ")");
       return true;
     }
@@ -760,7 +760,7 @@ Ipv4GlobalRouting::StandardReceive (Ipv4Address addr, Ipv4Header& header,
     ScheduleReversals(vnode, addr);
     
     if (m_vnodeState[vnode].m_outputs.empty()) {
-    NS_LOG_LOGIC ("Failed to find a link, so just using first high priority link " << addr);
+      NS_LOG_LOGIC ("Failed to find a link, so just using first high priority link " << addr);
       if (FindHighPriorityLink(vnode, addr, link)) {
         CreateRoutingEntry(vnode, link, addr, header, route);
         return;

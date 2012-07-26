@@ -473,6 +473,7 @@ PointToPointNetDevice::NotifyLinkUp (void)
 void
 PointToPointNetDevice::SetLinkUp (void)
 {
+  NS_LOG_LOGIC("Setting link up");
   m_linkUp = true;
   m_linkChangeCallbacks ();
 }
@@ -480,6 +481,7 @@ PointToPointNetDevice::SetLinkUp (void)
 void
 PointToPointNetDevice::SetLinkDown (void)
 {
+  NS_LOG_LOGIC("Setting link down");
   m_linkUp = false;
   m_linkChangeCallbacks ();
 }
@@ -523,6 +525,8 @@ PointToPointNetDevice::GetAddress (void) const
 bool
 PointToPointNetDevice::IsLinkUp (void) const
 {
+  NS_LOG_FUNCTION_NOARGS();
+  NS_LOG_LOGIC("Check if link is up");
   return m_linkUp;
 }
 

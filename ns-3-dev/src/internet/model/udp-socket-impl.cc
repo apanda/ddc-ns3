@@ -760,6 +760,47 @@ UdpSocketImpl::GetRxAvailable (void) const
   return m_rxAvailable;
 }
 
+Ptr<Packet> 
+UdpSocketImpl::Recv (uint32_t maxSize, uint32_t flag, Ipv4Header& hdr)
+{
+
+  NS_LOG_FUNCTION (this << maxSize << flag);
+  if (m_deliveryQueue.empty () )
+    {
+      m_errno = ERROR_AGAIN;
+      return 0;
+    }
+  Ptr<Packet> p = m_deliveryQueue.front ();
+  hdr = m_headerQueue.front ();
+  if (p->GetSize () <= maxSize) 
+    {
+      m_deliveryQueue.pop ();
+      m_headerQueue.pop ();
+      m_rxAvailable -= p->GetSize ();
+    }
+  else
+    {
+      p = 0; 
+    }
+  return p;
+}
+
+Ptr<Packet> 
+UdpSocketImpl::RecvFrom (Address &fromAddress, Ipv4Header& hdr)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+  Ptr<Packet> packet = Recv (std::numeric_limits<uint32_t>::max (), 0, hdr);
+  if (packet != 0)
+    {
+      SocketAddressTag tag;
+      bool found;
+      found = packet->PeekPacketTag (tag);
+      NS_ASSERT (found);
+      fromAddress = tag.GetAddress ();
+    }
+  return packet;
+}
+
 Ptr<Packet>
 UdpSocketImpl::Recv (uint32_t maxSize, uint32_t flags)
 {
@@ -773,6 +814,7 @@ UdpSocketImpl::Recv (uint32_t maxSize, uint32_t flags)
   if (p->GetSize () <= maxSize) 
     {
       m_deliveryQueue.pop ();
+      m_headerQueue.pop ();
       m_rxAvailable -= p->GetSize ();
     }
   else
@@ -889,6 +931,7 @@ UdpSocketImpl::ForwardUp (Ptr<Packet> packet, Ipv4Header header, uint16_t port,
       tag.SetAddress (address);
       packet->AddPacketTag (tag);
       m_deliveryQueue.push (packet);
+      m_headerQueue.push (header);
       m_rxAvailable += packet->GetSize ();
       NotifyDataRecv ();
     }

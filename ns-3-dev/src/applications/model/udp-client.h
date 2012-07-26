@@ -58,6 +58,7 @@ public:
   void SetRemote (Ipv4Address ip, uint16_t port);
   void SetRemote (Ipv6Address ip, uint16_t port);
   void SetRemote (Address ip, uint16_t port);
+  void Send (void);
 
 protected:
   virtual void DoDispose (void);
@@ -68,7 +69,6 @@ private:
   virtual void StopApplication (void);
 
   void ScheduleTransmit (Time dt);
-  void Send (void);
 
   uint32_t m_count;
   Time m_interval;
