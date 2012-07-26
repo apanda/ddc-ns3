@@ -24,112 +24,189 @@
 #include <vector>
 #include <stack>
 #include <algorithm>
+#include <iostream>
+#include <map>
+#include <fstream>
+#include <cstdlib>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <functional>
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("DataDrivenConnectivity1");
+NS_LOG_COMPONENT_DEFINE ("DDC-NSDI-STRETCH");
 
-std::vector<PointToPointChannel* > channels;
-UniformVariable randVar;
-const int32_t NODES = 12;
-std::vector<std::list<uint32_t>*> connectivityGraph(NODES);
-Time simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
-bool IsGraphConnected(int start) 
+class Topology : public Object
 {
-  bool visited[NODES] = {false};
-  std::stack<uint32_t> nodes;
-  nodes.push(start);
-  while (!nodes.empty()) {
-    int node = (uint32_t)nodes.top();
-    nodes.pop();
-    if (visited[node]) {
-      continue;
+  protected:
+    std::vector<UdpEchoClient*> m_clients;
+    std::vector<UdpEchoServer*> m_servers;
+    std::vector<PointToPointChannel* > m_channels;
+    UniformVariable randVar;
+    int32_t m_numNodes;
+    std::vector<std::list<uint32_t>*> m_connectivityGraph;
+    Time m_simulationEnd;
+    std::vector<uint32_t> m_nodeTranslate;
+    std::map<std::pair<uint32_t, uint32_t>, PointToPointChannel*> m_channelMap;
+    std::map<uint32_t, uint32_t> m_nodeForwardTranslationMap;
+    NodeContainer m_nodes;
+    std::vector<NetDeviceContainer> m_nodeDevices;
+    std::vector<NetDeviceContainer> m_linkDevices;
+  public:
+
+    void RxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
+      NS_LOG_LOGIC("Received packet " << (uint32_t)header.GetTtl());
     }
-    visited[node] = true;
-    for ( std::list<uint32_t>::iterator iterator = connectivityGraph[node]->begin(); 
-    iterator != connectivityGraph[node]->end();
-    iterator++) {
-      nodes.push(*iterator);
+    
+    void ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
+      NS_LOG_LOGIC("Server Received packet " << (uint32_t)header.GetTtl());
     }
-    for (int i = 0; i < NODES; i++) {
-      if (i == node) {
-        continue;
+    Topology()
+    {
+      m_numNodes = 0;
+      m_simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
+   }
+   
+    virtual ~Topology()
+    {
+        for (int i = 0; i < m_numNodes; i++) {
+            delete m_connectivityGraph[i];
+        }
+    }
+    void PopulateGraph(std::string& filename)
+    {
+      m_numNodes = -1;
+      std::map<uint32_t, std::list<uint32_t>*> tempConnectivityGraph;
+      NS_LOG_INFO("Entering PopulateGraph with file " << filename);
+      std::ifstream topology(filename.c_str());
+      NS_ASSERT(topology.is_open());
+    
+      while (topology.good()) {
+        std::string input;
+        getline(topology, input);
+        size_t found = input.find(" ");
+        if (found == std::string::npos) {
+          continue;
+        }
+        std::string node1s = input.substr(0, int(found));
+        std::string node2s = input.substr(int(found) + 1, input.length() - (int(found) + 1));
+        uint32_t node1 = std::atoi(node1s.c_str()) ;
+        uint32_t node2 = std::atoi(node2s.c_str());
+        if (!tempConnectivityGraph[node1]) {
+          tempConnectivityGraph[node1] = new std::list<uint32_t>;
+        }
+        if (!tempConnectivityGraph[node2]) {
+          tempConnectivityGraph[node2] = new std::list<uint32_t>;
+        }
+        tempConnectivityGraph[node1]->push_back(node2);
       }
-      if (std::find(connectivityGraph[i]->begin(), connectivityGraph[i]->end(), node) !=
-               connectivityGraph[i]->end()) {
-        nodes.push(i);
+    
+      m_numNodes = tempConnectivityGraph.size();
+      uint32_t last = 0;
+      m_connectivityGraph.resize(m_numNodes);
+    
+      for (std::map<uint32_t, std::list<uint32_t>*>::iterator it = tempConnectivityGraph.begin();
+          it != tempConnectivityGraph.end();
+          it++) {
+          m_nodeTranslate.push_back(it->first);
+          m_nodeForwardTranslationMap[it->first] = last;
+          last++;
+      }
+      for (int i = 0; i < m_numNodes; i++) {
+        m_connectivityGraph[i] = new std::list<uint32_t>;
+        for (std::list<uint32_t>::iterator it = tempConnectivityGraph[m_nodeTranslate[i]]->begin();
+             it != tempConnectivityGraph[m_nodeTranslate[i]]->end();
+             it++) {
+          m_connectivityGraph[i]->push_back(m_nodeForwardTranslationMap[*it]);
+        }
       }
     }
-  }
-  for (int i = 0; i < NODES; i++) {
-    if (!visited[i]) {
-      NS_LOG_ERROR("Found disconnect " << i);
-      return false;
+
+    void HookupSimulation()
+    {
+      NS_LOG_INFO("Creating nodes");
+      m_nodes.Create (m_numNodes);
+      m_nodeDevices.resize(m_numNodes);
+      NS_LOG_INFO("Creating point to point connections");
+      PointToPointHelper pointToPoint;
+      for (int i = 0; i < m_numNodes; i++) {
+        for ( std::list<uint32_t>::iterator iterator = m_connectivityGraph[i]->begin(); 
+        iterator != m_connectivityGraph[i]->end();
+        iterator++) {
+          NetDeviceContainer p2pDevices = 
+            pointToPoint.Install (m_nodes.Get(i), m_nodes.Get(*iterator));
+          m_nodeDevices[i].Add(p2pDevices.Get(0));
+          m_nodeDevices[*iterator].Add(p2pDevices.Get(1));
+          m_linkDevices.push_back(p2pDevices);
+          PointToPointChannel* channel = (PointToPointChannel*)GetPointer(p2pDevices.Get(0)->GetChannel());
+          m_channels.push_back(channel);
+          std::pair<uint32_t, uint32_t> normalizedLink;
+          if (m_nodeTranslate[i] < m_nodeTranslate[*iterator]) {
+            normalizedLink = std::pair<uint32_t, uint32_t>(m_nodeTranslate[i], m_nodeTranslate[*iterator]);
+          }
+          else {
+            normalizedLink = std::pair<uint32_t, uint32_t>(m_nodeTranslate[i], m_nodeTranslate[*iterator]);
+          }
+          m_channelMap[normalizedLink] = channel;
+        }
+      }
+
+      InternetStackHelper stack;
+      stack.Install (m_nodes);
+      Ipv4AddressHelper address;
+      address.SetBase ("10.1.1.0", "255.255.255.0");
+      NS_LOG_INFO("Assigning address");
+      for (int i = 0; i < (int)m_linkDevices.size(); i++) {
+        Ipv4InterfaceContainer current = address.Assign(m_linkDevices[i]);
+        address.NewNetwork();
+      }
+      Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+
+      UdpEchoServerHelper echoServer (9);
+
+      ApplicationContainer serverApps = echoServer.Install (m_nodes);
+      serverApps.Start (Seconds (1.0));
+      serverApps.Stop (m_simulationEnd);
+      m_clients.resize(m_numNodes);
+      m_servers.resize(m_numNodes);
+      for (int i = 0; i < m_numNodes; i++) {
+        m_servers[i] =  (UdpEchoServer*)PeekPointer(serverApps.Get(i));
+        m_servers[i]->AddReceivePacketEvent(MakeCallback(&Topology::ServerRxPacket, this));
+        int j = 0;
+        UdpEchoClientHelper echoClient (m_nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
+                                          9);
+        echoClient.SetAttribute ("MaxPackets", UintegerValue (0));
+        echoClient.SetAttribute ("Interval", TimeValue (Seconds (randVar.GetValue(1.0, 3000.0))));
+        echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+        ApplicationContainer clientApps = echoClient.Install (m_nodes.Get (i));
+        m_clients[i] = (UdpEchoClient*)(PeekPointer(clientApps.Get(0)));
+        Simulator::ScheduleNow(&UdpEchoClient::StartApplication, m_clients[i]);
+      }
+      //clients[11]->SetAttribute("RemoteAddress",
+      //  AddressValue(nodes.Get(0)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal()));
+      //Simulator::ScheduleNow(&UdpEchoClient::StartApplication, clients[11]);
+      //clients[11]->AddReceivePacketEvent(MakeCallback(&RxPacket));
+      //Simulator::Schedule(Seconds(1.0), &UdpEchoClient::Send, clients[11]);
+
+      /*Ptr<OutputStreamWrapper> out = asciiHelper.CreateFileStream("route.table");
+      NS_LOG_INFO("Node interface list");
+      for (int i = 0; i < NODES; i++) {
+          Ptr<Ipv4> ipv4 = nodes.Get(i)->GetObject<Ipv4>();
+          NS_ASSERT(ipv4 != NULL);
+          for (int j = 0; j < (int)ipv4->GetNInterfaces(); j++) {
+              for (int k = 0; k < (int)ipv4->GetNAddresses(j); k++) {
+                Ipv4InterfaceAddress iaddr = ipv4->GetAddress (j, k);
+                Ipv4Address addr = iaddr.GetLocal ();
+                (*out->GetStream()) << i << "\t" << j << "\t" << addr << "\n";
+              }
+          }
+      }
+      for (int i = 0; i < NODES; i++) {
+        nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
+      }*/
     }
-  }
-  return true;
-}
-
-void ScheduleLinkRecovery(uint32_t failedLink) 
-{
-  uint32_t nodeA = channels[failedLink]->GetDevice(0)->GetNode()->GetId();
-  uint32_t nodeB = channels[failedLink]->GetDevice(1)->GetNode()->GetId();
-  uint32_t nodeSrc = (nodeA < nodeB ? nodeA : nodeB);
-  uint32_t nodeDest = (nodeA > nodeB ? nodeA : nodeB);
-  NS_ASSERT(0 <= nodeSrc && nodeSrc < (uint32_t)NODES);
-  NS_ASSERT(0 <= nodeDest && nodeDest < (uint32_t)NODES);
-  connectivityGraph[nodeSrc]->push_back(nodeDest);
-  IsGraphConnected(nodeSrc);
-  channels[failedLink]->SetLinkUp();
-  NS_LOG_INFO("Link " << failedLink << " is now up");
-}
-
-void ScheduleLinkFailure() 
-{
-  uint32_t linkOfInterest = (uint32_t)-1;
-  linkOfInterest = randVar.GetInteger(0, channels.size() - 1);
-  uint32_t nodeA = channels[linkOfInterest]->GetDevice(0)->GetNode()->GetId();
-  uint32_t nodeB = channels[linkOfInterest]->GetDevice(1)->GetNode()->GetId();
-  uint32_t nodeSrc = (nodeA < nodeB ? nodeA : nodeB);
-  uint32_t nodeDest = (nodeA > nodeB ? nodeA : nodeB);
-  NS_ASSERT(0 <= nodeSrc && nodeSrc < (uint32_t)NODES);
-  NS_ASSERT(0 <= nodeDest && nodeDest < (uint32_t)NODES);
-  for (std::list<uint32_t>::iterator it = connectivityGraph[nodeSrc]->begin();
-       it != connectivityGraph[nodeSrc]->end();
-       it++) {
-    NS_ASSERT(0 <= *it && *it < (uint32_t)NODES);
-    NS_ASSERT(0 <= *it && *it < (uint32_t)NODES);
-    if (*it == nodeDest) {
-      connectivityGraph[nodeSrc]->erase(it);
-      break;
-    }
-  }
-  IsGraphConnected(nodeSrc);
-  channels[linkOfInterest]->SetLinkDown();
-  NS_LOG_INFO("Taking " << linkOfInterest << " down");
-  /*Time downStep = Seconds(randVar.GetValue(240.0, 3600.0));
-  Time tAbsolute = Simulator::Now() + downStep; 
-  if (tAbsolute < simulationEnd) {
-    Simulator::Schedule(downStep, &ScheduleLinkFailure);
-  }
-  Time upStep = Seconds(randVar.GetValue(240.0, 5200.0));
-  tAbsolute = Simulator::Now() + upStep;
-  if (tAbsolute < simulationEnd) {
-    Simulator::Schedule(upStep, &ScheduleLinkRecovery, linkOfInterest);
-  }*/
-  //Simulator::Schedule(Seconds(randVar.GetValue(180.0, 6000.0)), &ScheduleLinkRecovery, failedLink);
-}
-void SendToClient(UdpEchoClient* client) {
-    //client->ManualSend();
-}
-
-void RxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
-  NS_LOG_LOGIC("Received packet " << (uint32_t)header.GetTtl());
-}
-
-void ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
-  NS_LOG_LOGIC("Server Received packet " << (uint32_t)header.GetTtl());
-}
+};
 
 int
 main (int argc, char *argv[])
@@ -139,8 +216,6 @@ main (int argc, char *argv[])
   Ptr<OutputStreamWrapper> stream = asciiHelper.CreateFileStream ("tcp-trace.tr");
   uint32_t packets = 1;
   bool simulateError;
-  std::vector<UdpEchoClient*> clients;
-  std::vector<UdpEchoServer*> servers;
   CommandLine cmd;
   cmd.AddValue("packets", "Number of packets to echo", packets);
   cmd.AddValue("error", "Simulate error", simulateError);
@@ -148,135 +223,8 @@ main (int argc, char *argv[])
   //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
-  for (int i = 0; i < NODES; i++) {
-      connectivityGraph[i] = new std::list<uint32_t>;
-  }
+  //Simulator::Run ();
+  //Simulator::Destroy ();
 
-  // Graph
-  // 0 -> 1, 2
-  // 1 -> 0, 3
-  // 2->  0, 3, 4
-  // 3 -> 1, 2, 4
-  // 4 -> 2, 3
-  connectivityGraph[0]->push_back(1);
-  connectivityGraph[0]->push_back(6);
-  connectivityGraph[0]->push_back(7);
-  connectivityGraph[0]->push_back(5);
-  connectivityGraph[1]->push_back(6);
-  connectivityGraph[1]->push_back(7);
-  connectivityGraph[1]->push_back(8);
-  connectivityGraph[2]->push_back(7);
-  connectivityGraph[2]->push_back(8);
-  connectivityGraph[2]->push_back(9);
-  connectivityGraph[2]->push_back(3);
-  connectivityGraph[2]->push_back(5);
-  connectivityGraph[3]->push_back(8);
-  connectivityGraph[3]->push_back(9);
-  connectivityGraph[3]->push_back(10);
-  connectivityGraph[4]->push_back(9);
-  connectivityGraph[4]->push_back(10);
-  connectivityGraph[4]->push_back(11);
-  connectivityGraph[4]->push_back(5);
-  connectivityGraph[4]->push_back(5);
-  //connectivityGraph[6]->push_back(11);
-  connectivityGraph[7]->push_back(8);
-  connectivityGraph[8]->push_back(11);
-  connectivityGraph[9]->push_back(10);
-  connectivityGraph[10]->push_back(11);
-  NS_ASSERT(IsGraphConnected(0));
-
-  NS_LOG_INFO("Creating nodes");
-  NodeContainer nodes;
-  nodes.Create (NODES);
-
-  NS_LOG_INFO("Creating point to point connections");
-  PointToPointHelper pointToPoint;
-
-  std::vector<NetDeviceContainer> nodeDevices(NODES);
-  std::vector<NetDeviceContainer> linkDevices;
-  for (int i = 0; i < NODES; i++) {
-    for ( std::list<uint32_t>::iterator iterator = connectivityGraph[i]->begin(); 
-    iterator != connectivityGraph[i]->end();
-    iterator++) {
-      NetDeviceContainer p2pDevices = 
-        pointToPoint.Install (nodes.Get(i), nodes.Get(*iterator));
-      nodeDevices[i].Add(p2pDevices.Get(0));
-      nodeDevices[*iterator].Add(p2pDevices.Get(1));
-      linkDevices.push_back(p2pDevices);
-      channels.push_back((PointToPointChannel*)GetPointer(p2pDevices.Get(0)->GetChannel()));
-    }
-  }
-
-  pointToPoint.EnablePcapAll("DDCTest");
-  InternetStackHelper stack;
-  stack.Install (nodes);
-  Ipv4AddressHelper address;
-  address.SetBase ("10.1.1.0", "255.255.255.0");
-  NS_LOG_INFO("Assigning address");
-  for (int i = 0; i < (int)linkDevices.size(); i++) {
-    Ipv4InterfaceContainer current = address.Assign(linkDevices[i]);
-    stack.EnableAsciiIpv4(stream, current); 
-    address.NewNetwork();
-  }
-  //Ipv4GlobalRoutingHelper::SetSimulationEndTime(simulationEnd);
-  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-
-  // Simulate error
-  if (simulateError) {
-    for (int i = 0 ; i < 5; i++) {
-      ScheduleLinkFailure();
-    }
-  }
-
-  UdpEchoServerHelper echoServer (9);
-
-  ApplicationContainer serverApps = echoServer.Install (nodes);
-  serverApps.Start (Seconds (1.0));
-  serverApps.Stop (simulationEnd);
-  clients.resize(NODES);
-  for (int i = 0; i < NODES; i++) {
-    servers.push_back((UdpEchoServer*)PeekPointer(serverApps.Get(i)));
-    servers[i]->AddReceivePacketEvent(MakeCallback(&ServerRxPacket));
-    int j = 0;
-    UdpEchoClientHelper echoClient (nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
-                                      9);
-    echoClient.SetAttribute ("MaxPackets", UintegerValue (0));
-    echoClient.SetAttribute ("Interval", TimeValue (Seconds (randVar.GetValue(1.0, 3000.0))));
-    echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
-    ApplicationContainer clientApps = echoClient.Install (nodes.Get (i));
-    //clientApps.Start (Seconds (0.0));
-    clientApps.Stop (simulationEnd);
-    clients[i] = (UdpEchoClient*)(PeekPointer(clientApps.Get(0)));
-    //clients[i]->ChangeDestination(nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(), 9);
-    Simulator::Schedule(Seconds(1.0), &SendToClient, clients[i]);
-  }
-  clients[11]->SetAttribute("RemoteAddress",
-    AddressValue(nodes.Get(0)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal()));
-  Simulator::ScheduleNow(&UdpEchoClient::StartApplication, clients[11]);
-  clients[11]->AddReceivePacketEvent(MakeCallback(&RxPacket));
-  Simulator::Schedule(Seconds(1.0), &UdpEchoClient::Send, clients[11]);
-
-  Ptr<OutputStreamWrapper> out = asciiHelper.CreateFileStream("route.table");
-  NS_LOG_INFO("Node interface list");
-  for (int i = 0; i < NODES; i++) {
-      Ptr<Ipv4> ipv4 = nodes.Get(i)->GetObject<Ipv4>();
-      NS_ASSERT(ipv4 != NULL);
-      for (int j = 0; j < (int)ipv4->GetNInterfaces(); j++) {
-          for (int k = 0; k < (int)ipv4->GetNAddresses(j); k++) {
-            Ipv4InterfaceAddress iaddr = ipv4->GetAddress (j, k);
-            Ipv4Address addr = iaddr.GetLocal ();
-            (*out->GetStream()) << i << "\t" << j << "\t" << addr << "\n";
-          }
-      }
-  }
-  for (int i = 0; i < NODES; i++) {
-    nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
-  }
-  Simulator::Run ();
-  Simulator::Destroy ();
-
-  for (int i = 0; i < NODES; i++) {
-      delete connectivityGraph[i];
-  }
   return 0;
 }
