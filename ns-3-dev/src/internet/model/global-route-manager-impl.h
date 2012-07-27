@@ -739,6 +739,9 @@ public:
  */
   void DebugSPFCalculate (Ipv4Address root);
 
+  // @apanda
+  void SendHeartbeats ();
+
 private:
 /**
  * @brief GlobalRouteManagerImpl copy construction is disallowed.

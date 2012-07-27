@@ -45,7 +45,7 @@ UdpSocket::GetTypeId (void)
                    MakeUintegerChecker<uint32_t> ())
     .AddAttribute ("IpTtl",
                    "socket-specific TTL for unicast IP packets (if non-zero)",
-                   UintegerValue (255),
+                   UintegerValue (0),
                    MakeUintegerAccessor (&UdpSocket::GetIpTtl,
                                          &UdpSocket::SetIpTtl),
                    MakeUintegerChecker<uint8_t> ())

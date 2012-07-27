@@ -2350,6 +2350,23 @@ GlobalRouteManagerImpl::SPFVertexAddParent (SPFVertex* v)
     }
 }
 
+void
+GlobalRouteManagerImpl::SendHeartbeats()
+{
+  for (NodeList::Iterator i = NodeList::Begin (); i != NodeList::End (); i++)
+    {
+      Ptr<Node> node = *i;
+      Ptr<Ipv4> ipv4 = node->GetObject<Ipv4>();
+      Ptr<GlobalRouter> router = node->GetObject<GlobalRouter> ();
+      Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol ();
+      for (uint32_t iface = 1; iface < ipv4->GetNInterfaces(); iface++) {
+        for (uint32_t addr = 0; addr < ipv4->GetNAddresses(iface); addr++) {
+          NS_LOG_LOGIC("InitialHeartbeat for " << ipv4->GetAddress(iface, addr) << " for node " << node->GetId());
+          Simulator::ScheduleNow(&Ipv4GlobalRouting::SendInitialHeartbeat, gr, ipv4->GetAddress(iface, addr).GetLocal());
+        }
+      }
+    }
+}
 } // namespace ns3
 
 
