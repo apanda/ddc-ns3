@@ -50,6 +50,10 @@ public:
   void ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
     NS_LOG_LOGIC(m_id << " Server Received packet " << (uint32_t)header.GetTtl());
   }
+
+  void NodeReversal (uint32_t iface, Ipv4Address addr) {
+    NS_LOG_LOGIC(m_id << " reversed iface " << iface << " for " << addr);
+  }
 };
 class Topology : public Object
 {
@@ -185,6 +189,9 @@ class Topology : public Object
       m_clients.resize(m_numNodes);
       m_servers.resize(m_numNodes);
       for (uint32_t i = 0; i < m_numNodes; i++) {
+        Ptr<GlobalRouter> router = m_nodes.Get(i)->GetObject<GlobalRouter>();
+        Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
+        gr->AddReversalCallback(MakeCallback(&NodeCallback::NodeReversal, &m_callbacks[i]));
         m_servers[i] =  (UdpEchoServer*)PeekPointer(serverApps.Get(i));
         m_servers[i]->AddReceivePacketEvent(MakeCallback(&NodeCallback::ServerRxPacket, &m_callbacks[i]));
         int j = 0;
@@ -233,6 +240,13 @@ class Topology : public Object
       Simulator::ScheduleNow(&UdpEchoClient::StartApplication, m_clients[client]);
       Simulator::Schedule(Seconds(1.0), &UdpEchoClient::Send, m_clients[client]);
     }
+    
+    void FailLink (uint32_t from, uint32_t to)
+    {
+      NS_ASSERT(from < to);
+      NS_LOG_LOGIC("Failing link between " << from << " and " << to);
+      m_channelMap[std::pair<uint32_t, uint32_t>(from, to)]->SetLinkDown();
+    }
 };
 
 int
@@ -254,6 +268,7 @@ main (int argc, char *argv[])
   simulationTopology.HookupSimulation();
   //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
+  Simulator::ScheduleNow(&Topology::FailLink, &simulationTopology, 5, 6);
   Simulator::Schedule(Seconds(1.0), &Topology::PingMachines, &simulationTopology, 1, 6);
   //simulationTopology.PingMachines(1, 6);
   Simulator::Run ();

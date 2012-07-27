@@ -700,6 +700,7 @@ void
 Ipv4GlobalRouting::ReverseInputToOutput (uint8_t vnode, Ipv4Address addr, uint32_t link) 
 {
   NS_ASSERT(m_vnodeState[vnode].m_directions[addr][link] == In);
+  m_reversalCallback(link, addr);
   m_ttl[addr][link]++;
   m_vnodeState[vnode].m_directions[addr][link] = Out;
   m_vnodeState[vnode].m_inputs[addr].remove(link);
@@ -712,6 +713,7 @@ void
 Ipv4GlobalRouting::ReverseOutputToInput (uint8_t vnode, Ipv4Address addr, uint32_t link) 
 {
   NS_ASSERT(m_vnodeState[vnode].m_directions[addr][link] == Out);
+  m_reversalCallback(link, addr);
   m_ttl[addr][link]++;
   m_vnodeState[vnode].m_directions[addr][link] = In;
   m_vnodeState[vnode].m_inputs[addr].push_front(link);
@@ -1060,4 +1062,12 @@ Ipv4GlobalRouting::SendInitialHeartbeat (Ipv4Address addr)
   m_heartbeatState[addr][0] = true;
   PrimitiveAEO(addr);
 }
+
+// @apanda
+void 
+Ipv4GlobalRouting::AddReversalCallback (Callback<void, uint32_t, Ipv4Address> callback)
+{
+  m_reversalCallback.ConnectWithoutContext(callback);
+}
+
 } // namespace ns3

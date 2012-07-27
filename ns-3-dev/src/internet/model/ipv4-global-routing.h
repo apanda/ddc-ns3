@@ -37,6 +37,7 @@
 #include "ns3/net-device.h"
 #include "ns3/node.h"
 #include "ns3/global-router-interface.h"
+#include "ns3/traced-callback.h"
 
 namespace ns3 {
 
@@ -243,6 +244,11 @@ public:
  */
   void SendInitialHeartbeat (Ipv4Address);
 
+/**
+ * @apanda
+ * Set reversal callback
+ */
+ void AddReversalCallback (Callback<void, uint32_t, Ipv4Address>);
 protected:
   void DoDispose (void);
 
@@ -458,6 +464,8 @@ private:
   ASExternalRoutes m_ASexternalRoutes; // External routes imported
 
   Ptr<Ipv4> m_ipv4;
+
+  TracedCallback<uint32_t, Ipv4Address> m_reversalCallback;
 };
 
 } // Namespace ns3
