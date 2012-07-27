@@ -37,6 +37,20 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("DDC-NSDI-STRETCH");
 
+class NodeCallback : public Object {
+  uint32_t m_id;
+public:
+  NodeCallback () {}
+  NodeCallback (uint32_t id) : m_id(id) {};
+
+  void RxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
+    NS_LOG_LOGIC(m_id << " Received packet " << (uint32_t)header.GetTtl());
+  }
+  
+  void ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
+    NS_LOG_LOGIC(m_id << " Server Received packet " << (uint32_t)header.GetTtl());
+  }
+};
 class Topology : public Object
 {
   protected:
@@ -44,7 +58,7 @@ class Topology : public Object
     std::vector<UdpEchoServer*> m_servers;
     std::vector<PointToPointChannel* > m_channels;
     UniformVariable randVar;
-    int32_t m_numNodes;
+    uint32_t m_numNodes;
     std::vector<std::list<uint32_t>*> m_connectivityGraph;
     Time m_simulationEnd;
     std::vector<uint32_t> m_nodeTranslate;
@@ -53,15 +67,8 @@ class Topology : public Object
     NodeContainer m_nodes;
     std::vector<NetDeviceContainer> m_nodeDevices;
     std::vector<NetDeviceContainer> m_linkDevices;
+    std::vector<NodeCallback> m_callbacks;
   public:
-
-    void RxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
-      NS_LOG_LOGIC("Received packet " << (uint32_t)header.GetTtl());
-    }
-    
-    void ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
-      NS_LOG_LOGIC("Server Received packet " << (uint32_t)header.GetTtl());
-    }
     Topology()
     {
       m_numNodes = 0;
@@ -70,13 +77,12 @@ class Topology : public Object
    
     virtual ~Topology()
     {
-        for (int i = 0; i < m_numNodes; i++) {
+        for (uint32_t i = 0; i < m_numNodes; i++) {
             delete m_connectivityGraph[i];
         }
     }
     void PopulateGraph(std::string& filename)
     {
-      m_numNodes = -1;
       std::map<uint32_t, std::list<uint32_t>*> tempConnectivityGraph;
       NS_LOG_INFO("Entering PopulateGraph with file " << filename);
       std::ifstream topology(filename.c_str());
@@ -100,6 +106,7 @@ class Topology : public Object
           tempConnectivityGraph[node2] = new std::list<uint32_t>;
         }
         tempConnectivityGraph[node1]->push_back(node2);
+        tempConnectivityGraph[node2]->push_back(node1);
       }
     
       m_numNodes = tempConnectivityGraph.size();
@@ -111,15 +118,17 @@ class Topology : public Object
           it++) {
           m_nodeTranslate.push_back(it->first);
           m_nodeForwardTranslationMap[it->first] = last;
+          NS_LOG_LOGIC("TRANSLATION: " << it->first << " = " << last);
           last++;
       }
-      for (int i = 0; i < m_numNodes; i++) {
+      for (uint32_t i = 0; i < m_numNodes; i++) {
         m_connectivityGraph[i] = new std::list<uint32_t>;
         for (std::list<uint32_t>::iterator it = tempConnectivityGraph[m_nodeTranslate[i]]->begin();
              it != tempConnectivityGraph[m_nodeTranslate[i]]->end();
              it++) {
           m_connectivityGraph[i]->push_back(m_nodeForwardTranslationMap[*it]);
         }
+        NS_ASSERT_MSG(!m_connectivityGraph[i]->empty(), "Empty for " << i);
       }
     }
 
@@ -130,10 +139,15 @@ class Topology : public Object
       m_nodeDevices.resize(m_numNodes);
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
-      for (int i = 0; i < m_numNodes; i++) {
+      for (uint32_t i = 0; i < m_numNodes; i++) {
+        m_callbacks.push_back(NodeCallback(i));
+        NS_ASSERT(!m_connectivityGraph[i]->empty());
         for ( std::list<uint32_t>::iterator iterator = m_connectivityGraph[i]->begin(); 
         iterator != m_connectivityGraph[i]->end();
         iterator++) {
+          if (*iterator < i) {
+            continue;
+          }
           NetDeviceContainer p2pDevices = 
             pointToPoint.Install (m_nodes.Get(i), m_nodes.Get(*iterator));
           m_nodeDevices[i].Add(p2pDevices.Get(0));
@@ -170,9 +184,9 @@ class Topology : public Object
       serverApps.Stop (m_simulationEnd);
       m_clients.resize(m_numNodes);
       m_servers.resize(m_numNodes);
-      for (int i = 0; i < m_numNodes; i++) {
+      for (uint32_t i = 0; i < m_numNodes; i++) {
         m_servers[i] =  (UdpEchoServer*)PeekPointer(serverApps.Get(i));
-        m_servers[i]->AddReceivePacketEvent(MakeCallback(&Topology::ServerRxPacket, this));
+        m_servers[i]->AddReceivePacketEvent(MakeCallback(&NodeCallback::ServerRxPacket, &m_callbacks[i]));
         int j = 0;
         UdpEchoClientHelper echoClient (m_nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
                                           9);
@@ -181,6 +195,7 @@ class Topology : public Object
         echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
         ApplicationContainer clientApps = echoClient.Install (m_nodes.Get (i));
         m_clients[i] = (UdpEchoClient*)(PeekPointer(clientApps.Get(0)));
+        m_clients[i]->AddReceivePacketEvent(MakeCallback(&NodeCallback::RxPacket, &m_callbacks[i]));
         Simulator::ScheduleNow(&UdpEchoClient::StartApplication, m_clients[i]);
       }
       //clients[11]->SetAttribute("RemoteAddress",
@@ -206,6 +221,18 @@ class Topology : public Object
         nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
       }*/
     }
+
+    void PingMachines (uint32_t client, uint32_t server)
+    {
+      NS_LOG_LOGIC("Untranslated sending between " << client << " and " << server);
+      client = m_nodeForwardTranslationMap[client];
+      server = m_nodeForwardTranslationMap[server];
+      NS_LOG_LOGIC("Sending between " << client << " and " << server);
+      m_clients[client]->SetRemote(m_nodes.Get(server)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(), 9);
+      Simulator::ScheduleNow(&UdpEchoClient::StopApplication, m_clients[client]);
+      Simulator::ScheduleNow(&UdpEchoClient::StartApplication, m_clients[client]);
+      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::Send, m_clients[client]);
+    }
 };
 
 int
@@ -216,15 +243,21 @@ main (int argc, char *argv[])
   Ptr<OutputStreamWrapper> stream = asciiHelper.CreateFileStream ("tcp-trace.tr");
   uint32_t packets = 1;
   bool simulateError;
+  std::string topology;
   CommandLine cmd;
   cmd.AddValue("packets", "Number of packets to echo", packets);
   cmd.AddValue("error", "Simulate error", simulateError);
+  cmd.AddValue("topology", "Topology file", topology);
   cmd.Parse(argc, argv);
+  Topology simulationTopology;
+  simulationTopology.PopulateGraph(topology);
+  simulationTopology.HookupSimulation();
   //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
-
-  //Simulator::Run ();
-  //Simulator::Destroy ();
+  Simulator::Schedule(Seconds(1.0), &Topology::PingMachines, &simulationTopology, 1, 6);
+  //simulationTopology.PingMachines(1, 6);
+  Simulator::Run ();
+  Simulator::Destroy ();
 
   return 0;
 }

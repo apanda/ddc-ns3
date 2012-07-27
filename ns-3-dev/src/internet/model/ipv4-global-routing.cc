@@ -668,6 +668,8 @@ void
 Ipv4GlobalRouting::InitializeDestination (Ipv4Address dest)
 {
   NS_LOG_FUNCTION (this << dest);
+  NS_LOG_LOGIC("Initializing stuff for dest = " << dest << " at node " << m_ipv4->GetNetDevice(0)->GetNode()->GetId());
+  NS_LOG_LOGIC("Number of interfaces = " << m_ipv4->GetNInterfaces());
   if (m_vnodeState[0].m_directions.find(dest) != m_vnodeState[0].m_directions.end()) {
   }
   else {

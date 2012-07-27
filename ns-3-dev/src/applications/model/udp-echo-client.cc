@@ -28,6 +28,7 @@
 #include "ns3/uinteger.h"
 #include "ns3/trace-source-accessor.h"
 #include "udp-echo-client.h"
+#include "ns3/udp-socket.h"
 
 namespace ns3 {
 
@@ -141,7 +142,6 @@ UdpEchoClient::StartApplication (void)
           m_socket->Connect (Inet6SocketAddress (Ipv6Address::ConvertFrom(m_peerAddress), m_peerPort));
         }
     }
-
   m_socket->SetRecvCallback (MakeCallback (&UdpEchoClient::HandleRead, this));
 
   // ScheduleTransmit (Seconds (0.));
