@@ -20,6 +20,9 @@
 #include "ns3/point-to-point-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/random-variable.h"
+#include "ns3/ipv4-l3-protocol.h"
+#include "ns3/global-route-manager-impl.h"
+#include "boost/algorithm/string.hpp"
 #include <list>
 #include <vector>
 #include <stack>
@@ -32,29 +35,11 @@
 #include <string>
 #include <utility>
 #include <functional>
+#include "stretch-classes.h"
 
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("DDC-NSDI-STRETCH");
-
-class NodeCallback : public Object {
-  uint32_t m_id;
-public:
-  NodeCallback () {}
-  NodeCallback (uint32_t id) : m_id(id) {};
-
-  void RxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
-    NS_LOG_LOGIC(m_id << " Received packet " << (uint32_t)header.GetTtl());
-  }
-  
-  void ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
-    NS_LOG_LOGIC(m_id << " Server Received packet " << (uint32_t)header.GetTtl());
-  }
-
-  void NodeReversal (uint32_t iface, Ipv4Address addr) {
-    NS_LOG_LOGIC(m_id << " reversed iface " << iface << " for " << addr);
-  }
-};
 class Topology : public Object
 {
   protected:
@@ -72,11 +57,51 @@ class Topology : public Object
     std::vector<NetDeviceContainer> m_nodeDevices;
     std::vector<NetDeviceContainer> m_linkDevices;
     std::vector<NodeCallback> m_callbacks;
+    std::vector<std::pair<uint32_t, uint32_t> > m_pathsToTest;
+    uint32_t m_currentPath;
+    uint32_t m_currentTrial;
+    uint32_t m_packets;
   public:
+
+    void AddPathsToTest(std::vector<std::pair<uint32_t, uint32_t> > paths)
+    {
+      m_pathsToTest.insert(m_pathsToTest.end(), paths.begin(), paths.end());
+      std::cout << m_pathsToTest[m_currentPath].first << "," << m_pathsToTest[m_currentPath].second << ",";
+      Simulator::Schedule(Seconds(2.0), &Topology::PingMachines, this, m_pathsToTest[m_currentPath].first, m_pathsToTest[m_currentPath].second);
+    }
+
+    void RouteEnded ()
+    {
+      NS_LOG_LOGIC("Packet ended");
+      m_currentTrial++;
+      if (m_currentTrial < m_packets) {
+        std::cout << ",";
+        Simulator::Schedule(Seconds(2.0), &Topology::PingMachines, this, m_pathsToTest[m_currentPath].first, m_pathsToTest[m_currentPath].second);
+      }
+      else {
+        m_currentPath++;
+        m_currentTrial = 0;
+        std::cout << std::endl;
+        if (m_currentPath < m_pathsToTest.size()) {
+          std::cout << m_pathsToTest[m_currentPath].first << "," << m_pathsToTest[m_currentPath].second << ",";
+          Simulator::ScheduleNow(&Topology::Reset, this);
+          Simulator::Schedule(Seconds(2.0), &Topology::PingMachines, this, m_pathsToTest[m_currentPath].first, m_pathsToTest[m_currentPath].second);
+        }
+      }
+    }
+    
+    void SetPackets(uint32_t packets)
+    {
+      m_packets = packets;
+    }
+
     Topology()
     {
       m_numNodes = 0;
+      m_currentPath = 0;
+      m_currentTrial = 0;
       m_simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
+      m_packets = 0;
    }
    
     virtual ~Topology()
@@ -144,7 +169,7 @@ class Topology : public Object
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
       for (uint32_t i = 0; i < m_numNodes; i++) {
-        m_callbacks.push_back(NodeCallback(i));
+        m_callbacks.push_back(NodeCallback(m_nodeTranslate[i], this));
         NS_ASSERT(!m_connectivityGraph[i]->empty());
         for ( std::list<uint32_t>::iterator iterator = m_connectivityGraph[i]->begin(); 
         iterator != m_connectivityGraph[i]->end();
@@ -191,6 +216,9 @@ class Topology : public Object
       for (uint32_t i = 0; i < m_numNodes; i++) {
         Ptr<GlobalRouter> router = m_nodes.Get(i)->GetObject<GlobalRouter>();
         Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
+        Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
+        l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
+        l3->SetAttribute("DefaultTtl", UintegerValue(255));
         gr->AddReversalCallback(MakeCallback(&NodeCallback::NodeReversal, &m_callbacks[i]));
         m_servers[i] =  (UdpEchoServer*)PeekPointer(serverApps.Get(i));
         m_servers[i]->AddReceivePacketEvent(MakeCallback(&NodeCallback::ServerRxPacket, &m_callbacks[i]));
@@ -228,6 +256,10 @@ class Topology : public Object
         nodes.Get(i)->GetObject<Ipv4>()->GetRoutingProtocol()->PrintRoutingTable(out);
       }*/
     }
+    void Reset ()
+    {
+      SimulationSingleton<GlobalRouteManagerImpl>::Get ()->SendHeartbeats();
+    }
 
     void PingMachines (uint32_t client, uint32_t server)
     {
@@ -245,9 +277,52 @@ class Topology : public Object
     {
       NS_ASSERT(from < to);
       NS_LOG_LOGIC("Failing link between " << from << " and " << to);
-      m_channelMap[std::pair<uint32_t, uint32_t>(from, to)]->SetLinkDown();
+      FailLinkPair(std::pair<uint32_t, uint32_t>(from, to));
+    }
+
+    void FailLinkPair(std::pair<uint32_t, uint32_t> key)
+    {
+      NS_LOG_LOGIC("Failing link between " << key.first << " and " << key.second);
+      m_channelMap[key]->SetLinkDown();
     }
 };
+
+
+void NodeCallback::RxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
+  NS_LOG_LOGIC(m_id << " Received packet " << (uint32_t)header.GetTtl());
+  std::cout << (uint32_t)header.GetTtl();
+  m_topology->RouteEnded();
+}
+
+void NodeCallback::ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
+  NS_LOG_LOGIC(m_id << " Server Received packet " << (uint32_t)header.GetTtl());
+  std::cout << (uint32_t)header.GetTtl() << ",";
+}
+
+void NodeCallback::NodeReversal (uint32_t iface, Ipv4Address addr) {
+  NS_LOG_LOGIC(m_id << " reversed iface " << iface << " for " << addr);
+}
+
+void NodeCallback::DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, Ipv4L3Protocol::DropReason drop, Ptr<Ipv4> ipv4, uint32_t iface) {
+  NS_LOG_LOGIC(m_id << " dropped packet " << iface);
+  std::cout << "D";
+  m_topology->RouteEnded();
+}
+
+void
+ParseLinks(std::string links, std::vector<std::pair<uint32_t, uint32_t> >& results)
+{
+  std::vector<std::string> linkParts;
+  
+  boost::split(linkParts, links, boost::is_any_of(","));
+  for (std::vector<std::string>::iterator it = linkParts.begin(); 
+       it != linkParts.end(); it++) {
+    std::vector<std::string> nodeParts;
+    boost::split(nodeParts, *it, boost::is_any_of("="));
+    NS_ASSERT(nodeParts.size() == 2);
+    results.push_back(std::pair<uint32_t, uint32_t>(std::atoi(nodeParts[0].c_str()), std::atoi(nodeParts[1].c_str())));
+  }
+}
 
 int
 main (int argc, char *argv[])
@@ -255,21 +330,42 @@ main (int argc, char *argv[])
   AsciiTraceHelper asciiHelper;
 
   Ptr<OutputStreamWrapper> stream = asciiHelper.CreateFileStream ("tcp-trace.tr");
-  uint32_t packets = 1;
   bool simulateError;
   std::string topology;
+  std::string links;
+  std::string paths;
+  uint32_t packets = 1;
+  std::vector<std::pair<uint32_t, uint32_t> > linksToFail;
+  std::vector<std::pair<uint32_t, uint32_t> > pathsToTest;
   CommandLine cmd;
   cmd.AddValue("packets", "Number of packets to echo", packets);
   cmd.AddValue("error", "Simulate error", simulateError);
   cmd.AddValue("topology", "Topology file", topology);
+  cmd.AddValue("links", "Links to fail", links);
+  cmd.AddValue("paths", "Source destination pairs to test", paths);
+  cmd.AddValue("packets", "Packets to send per trial", packets);
   cmd.Parse(argc, argv);
+  if (!links.empty()) {
+    ParseLinks(links, linksToFail);
+  }
+  if (!paths.empty()) {
+    ParseLinks(paths, pathsToTest);
+  }
   Topology simulationTopology;
+  simulationTopology.SetPackets(packets);
   simulationTopology.PopulateGraph(topology);
   simulationTopology.HookupSimulation();
   //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
-  Simulator::ScheduleNow(&Topology::FailLink, &simulationTopology, 5, 6);
-  Simulator::Schedule(Seconds(1.0), &Topology::PingMachines, &simulationTopology, 1, 6);
+  //Simulator::ScheduleNow(&Topology::FailLink, &simulationTopology, 5, 6);
+  //Simulator::ScheduleNow(&Topology::FailLink, &simulationTopology, 6, 7);
+  for (std::vector<std::pair<uint32_t, uint32_t> >::iterator it = linksToFail.begin();
+       it != linksToFail.end();
+       it++) {
+    Simulator::ScheduleNow(&Topology::FailLinkPair, &simulationTopology, *it);
+  }
+  simulationTopology.AddPathsToTest(pathsToTest);
+  //Simulator::Schedule(Seconds(1.0), &Topology::PingMachines, &simulationTopology, 1, 6);
   //simulationTopology.PingMachines(1, 6);
   Simulator::Run ();
   Simulator::Destroy ();
