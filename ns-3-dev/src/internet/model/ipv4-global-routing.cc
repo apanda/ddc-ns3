@@ -485,7 +485,9 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
       else {
         NS_LOG_LOGIC("Reversing output to input");
         // TODO Add delay here, it is pretty easy in this case
-        ReverseOutputToInput(vnode, destination, iif);
+        // ReverseOutputToInput(vnode, destination, iif);
+        NS_LOG_LOGIC("Reversing output to input eventually");
+        Simulator::ScheduleNow(&Ipv4GlobalRouting::ReverseOutputToInput, this, vnode, destination, iif);
         StandardReceive(destination, header, route, error);
         if (route != 0) {
           ucb(route, p, header);
@@ -699,7 +701,10 @@ Ipv4GlobalRouting::InitializeDestination (Ipv4Address dest)
 void 
 Ipv4GlobalRouting::ReverseInputToOutput (uint8_t vnode, Ipv4Address addr, uint32_t link) 
 {
-  NS_ASSERT(m_vnodeState[vnode].m_directions[addr][link] == In);
+  if (m_vnodeState[vnode].m_directions[addr][link] != In) {
+    return;
+  }
+  NS_LOG_FUNCTION (this << vnode << addr << link);
   m_reversalCallback(link, addr);
   m_ttl[addr][link]++;
   m_vnodeState[vnode].m_directions[addr][link] = Out;
@@ -712,7 +717,11 @@ Ipv4GlobalRouting::ReverseInputToOutput (uint8_t vnode, Ipv4Address addr, uint32
 void 
 Ipv4GlobalRouting::ReverseOutputToInput (uint8_t vnode, Ipv4Address addr, uint32_t link) 
 {
+  if (m_vnodeState[vnode].m_directions[addr][link] != Out) {
+    return;
+  }
   NS_ASSERT(m_vnodeState[vnode].m_directions[addr][link] == Out);
+  NS_LOG_FUNCTION (this << vnode << addr << link);
   m_reversalCallback(link, addr);
   m_ttl[addr][link]++;
   m_vnodeState[vnode].m_directions[addr][link] = In;
@@ -763,7 +772,7 @@ Ipv4GlobalRouting::StandardReceive (Ipv4Address addr, Ipv4Header& header,
     NS_LOG_LOGIC ("Reversing " << addr);
     ScheduleReversals(vnode, addr);
     
-    if (m_vnodeState[vnode].m_outputs.empty()) {
+    if (m_vnodeState[vnode].m_outputs[addr].empty()) {
       NS_LOG_LOGIC ("Failed to find a link, so just using first high priority link " << addr);
       if (FindHighPriorityLink(vnode, addr, link)) {
         CreateRoutingEntry(vnode, link, addr, header, route);
@@ -774,7 +783,7 @@ Ipv4GlobalRouting::StandardReceive (Ipv4Address addr, Ipv4Header& header,
         return;
       }
     }
-  } while (!m_vnodeState[vnode].m_inputs.empty() || !m_vnodeState[vnode].m_outputs.empty());
+  } while (!m_vnodeState[vnode].m_inputs[addr].empty() || !m_vnodeState[vnode].m_outputs[addr].empty());
 }
 
 // @apanda
@@ -791,7 +800,9 @@ Ipv4GlobalRouting::ScheduleReversals (uint8_t vnode, Ipv4Address addr)
   for (std::list<uint32_t>::iterator it = m_vnodeState[vnode].m_to_reverse[addr].begin();
       it != m_vnodeState[vnode].m_to_reverse[addr].end();
       it++) {
-    ReverseInputToOutput(vnode, addr, *it);
+    // ReverseInputToOutput(vnode, addr, *it)
+    NS_LOG_LOGIC("Scheduling reversal from input to output");
+    Simulator::ScheduleNow(&Ipv4GlobalRouting::ReverseInputToOutput, this, vnode, addr, *it);
   }
   m_vnodeState[vnode].m_to_reverse.clear();
   m_vnodeState[vnode].m_to_reverse[addr].insert(m_vnodeState[vnode].m_to_reverse[addr].begin(), m_vnodeState[vnode].m_inputs[addr].begin(), m_vnodeState[vnode].m_inputs[addr].end()); 
