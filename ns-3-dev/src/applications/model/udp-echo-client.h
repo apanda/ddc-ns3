@@ -123,6 +123,7 @@ public:
    */
   void SetFill (uint8_t *fill, uint32_t fillSize, uint32_t dataSize);
 
+  void SendBurst (uint32_t);
   void Send (void);
   virtual void StartApplication (void);
   virtual void StopApplication (void);
@@ -145,7 +146,6 @@ private:
 
   uint32_t m_dataSize;
   uint8_t *m_data;
-
   uint32_t m_sent;
   Ptr<Socket> m_socket;
   Address m_peerAddress;

@@ -325,6 +325,41 @@ UdpEchoClient::Send (void)
   //  }
 }
 
+void 
+UdpEchoClient::SendBurst (uint32_t burstLength)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+  uint32_t burstCount = 0;
+  while (burstLength > 0) {
+    Ptr<Packet> p;
+    p = Create<Packet> ((uint8_t*)&burstCount, sizeof(burstCount));
+    burstCount++;
+    burstLength--;
+    // call to the trace sinks before the packet is actually sent,
+    // so that tags added to the packet can be sent as well
+    m_txTrace (p);
+    m_socket->Send (p);
+
+    ++m_sent;
+
+    if (Ipv4Address::IsMatchingType (m_peerAddress))
+      {
+        NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s client sent " << m_size << " bytes to " <<
+                     Ipv4Address::ConvertFrom (m_peerAddress) << " port " << m_peerPort);
+      }
+    else if (Ipv6Address::IsMatchingType (m_peerAddress))
+      {
+        NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds () << "s client sent " << m_size << " bytes to " <<
+                     Ipv6Address::ConvertFrom (m_peerAddress) << " port " << m_peerPort);
+      }
+  }
+
+  //if (m_sent < m_count) 
+  //  {
+  //    ScheduleTransmit (m_interval);
+  //  }
+}
+
 void
 UdpEchoClient::HandleRead (Ptr<Socket> socket)
 {
