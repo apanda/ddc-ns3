@@ -325,11 +325,18 @@ UdpEchoClient::Send (void)
   //  }
 }
 
+void
+UdpEchoClient::SendInternal (Ptr<Packet> p) 
+{
+  m_socket->Send(p);
+}
+
 void 
-UdpEchoClient::SendBurst (uint32_t burstLength)
+UdpEchoClient::SendBurst (uint32_t burstLength, Time time)
 {
   NS_LOG_FUNCTION_NOARGS ();
   uint32_t burstCount = 0;
+  Time packetTime = time;
   while (burstLength > 0) {
     Ptr<Packet> p;
     p = Create<Packet> ((uint8_t*)&burstCount, sizeof(burstCount));
@@ -338,8 +345,8 @@ UdpEchoClient::SendBurst (uint32_t burstLength)
     // call to the trace sinks before the packet is actually sent,
     // so that tags added to the packet can be sent as well
     m_txTrace (p);
-    m_socket->Send (p);
-
+    Simulator::Schedule(packetTime, &UdpEchoClient::SendInternal, this, p);
+    packetTime += time;
     ++m_sent;
 
     if (Ipv4Address::IsMatchingType (m_peerAddress))

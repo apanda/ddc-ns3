@@ -401,7 +401,6 @@ private:
   bool m_respondToInterfaceEvents;
   /// A uniform random number generator for randomly routing packets among ECMP 
   UniformVariable m_rand;
-
   typedef std::list<Ipv4RoutingTableEntry *> HostRoutes;
   typedef std::list<Ipv4RoutingTableEntry *>::const_iterator HostRoutesCI;
   typedef std::list<Ipv4RoutingTableEntry *>::iterator HostRoutesI;
@@ -458,6 +457,9 @@ private:
   };
 
   ForwardingState m_vnodeState[2];
+
+  Time m_reverseInputToOutputDelay;
+  Time m_reverseOutputToInputDelay;
 
   HostRoutes m_hostRoutes;
   NetworkRoutes m_networkRoutes;

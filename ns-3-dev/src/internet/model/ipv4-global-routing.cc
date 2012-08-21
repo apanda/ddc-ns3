@@ -51,6 +51,16 @@ Ipv4GlobalRouting::GetTypeId (void)
                    BooleanValue (false),
                    MakeBooleanAccessor (&Ipv4GlobalRouting::m_respondToInterfaceEvents),
                    MakeBooleanChecker ())
+    .AddAttribute ("ReverseOutputToInputDelay",
+                   "Delay reversing output to input",
+                   TimeValue (Seconds (0)),
+                   MakeTimeAccessor (&Ipv4GlobalRouting::m_reverseOutputToInputDelay),
+                   MakeTimeChecker ())
+    .AddAttribute ("ReverseInputToOutputDelay",
+                   "Delay reversing input to output",
+                   TimeValue (Seconds (0)),
+                   MakeTimeAccessor (&Ipv4GlobalRouting::m_reverseInputToOutputDelay),
+                   MakeTimeChecker())
   ;
   return tid;
 }
@@ -487,7 +497,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
         // TODO Add delay here, it is pretty easy in this case
         // ReverseOutputToInput(vnode, destination, iif);
         NS_LOG_LOGIC("Reversing output to input eventually");
-        Simulator::ScheduleNow(&Ipv4GlobalRouting::ReverseOutputToInput, this, vnode, destination, iif);
+        Simulator::Schedule(m_reverseOutputToInputDelay, &Ipv4GlobalRouting::ReverseOutputToInput, this, vnode, destination, iif);
         StandardReceive(destination, header, route, error);
         if (route != 0) {
           ucb(route, p, header);
@@ -802,7 +812,7 @@ Ipv4GlobalRouting::ScheduleReversals (uint8_t vnode, Ipv4Address addr)
       it++) {
     // ReverseInputToOutput(vnode, addr, *it)
     NS_LOG_LOGIC("Scheduling reversal from input to output");
-    Simulator::ScheduleNow(&Ipv4GlobalRouting::ReverseInputToOutput, this, vnode, addr, *it);
+    Simulator::Schedule(m_reverseInputToOutputDelay, &Ipv4GlobalRouting::ReverseInputToOutput, this, vnode, addr, *it);
   }
   m_vnodeState[vnode].m_to_reverse.clear();
   m_vnodeState[vnode].m_to_reverse[addr].insert(m_vnodeState[vnode].m_to_reverse[addr].begin(), m_vnodeState[vnode].m_inputs[addr].begin(), m_vnodeState[vnode].m_inputs[addr].end()); 

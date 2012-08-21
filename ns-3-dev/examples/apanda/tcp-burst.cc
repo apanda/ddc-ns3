@@ -23,6 +23,7 @@
 #include "ns3/ipv4-l3-protocol.h"
 #include "ns3/global-route-manager-impl.h"
 #include "boost/algorithm/string.hpp"
+#include "ns3/data-rate.h"
 #include <list>
 #include <vector>
 #include <stack>
@@ -61,8 +62,12 @@ class Topology : public Object
     uint32_t m_currentPath;
     uint32_t m_currentTrial;
     uint32_t m_packets;
+    double m_delay;
   public:
-
+    void SetDelay(double delay)
+    {
+      m_delay = delay;
+    }
     void AddPathsToTest(std::vector<std::pair<uint32_t, uint32_t> > paths)
     {
       m_pathsToTest.insert(m_pathsToTest.end(), paths.begin(), paths.end());
@@ -167,6 +172,7 @@ class Topology : public Object
       m_nodeDevices.resize(m_numNodes);
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
+      pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("60000b/s"));
       for (uint32_t i = 0; i < m_numNodes; i++) {
         m_callbacks.push_back(NodeCallback(m_nodeTranslate[i], this));
         NS_ASSERT(!m_connectivityGraph[i]->empty());
@@ -176,6 +182,7 @@ class Topology : public Object
           if (*iterator < i) {
             continue;
           }
+          pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("60000b/s")));
           NetDeviceContainer p2pDevices = 
             pointToPoint.Install (m_nodes.Get(i), m_nodes.Get(*iterator));
           m_nodeDevices[i].Add(p2pDevices.Get(0));
@@ -215,6 +222,8 @@ class Topology : public Object
       for (uint32_t i = 0; i < m_numNodes; i++) {
         Ptr<GlobalRouter> router = m_nodes.Get(i)->GetObject<GlobalRouter>();
         Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
+        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MilliSeconds(m_delay * 200.0)));
+        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MilliSeconds(m_delay * 200.0)));
         Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
         l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
         l3->SetAttribute("DefaultTtl", UintegerValue(255));
@@ -247,7 +256,7 @@ class Topology : public Object
       m_clients[client]->SetRemote(m_nodes.Get(server)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(), 9);
       Simulator::ScheduleNow(&UdpEchoClient::StopApplication, m_clients[client]);
       Simulator::ScheduleNow(&UdpEchoClient::StartApplication, m_clients[client]);
-      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::SendBurst, m_clients[client], m_packets);
+      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::SendBurst, m_clients[client], m_packets, MilliSeconds(200.0));
     }
     
     void FailLink (uint32_t from, uint32_t to)
@@ -282,6 +291,7 @@ void NodeCallback::ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header)
 
 void NodeCallback::NodeReversal (uint32_t iface, Ipv4Address addr) {
   NS_LOG_LOGIC(m_id << " reversed iface " << iface << " for " << addr);
+  std::cout << "R";
 }
 
 void NodeCallback::DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, Ipv4L3Protocol::DropReason drop, Ptr<Ipv4> ipv4, uint32_t iface) {
@@ -316,6 +326,7 @@ main (int argc, char *argv[])
   std::string links;
   std::string paths;
   uint32_t packets = 1;
+  double delay = 0.0;
   std::vector<std::pair<uint32_t, uint32_t> > linksToFail;
   std::vector<std::pair<uint32_t, uint32_t> > pathsToTest;
   CommandLine cmd;
@@ -325,6 +336,7 @@ main (int argc, char *argv[])
   cmd.AddValue("links", "Links to fail", links);
   cmd.AddValue("paths", "Source destination pairs to test", paths);
   cmd.AddValue("packets", "Packets to send per trial", packets);
+  cmd.AddValue("delay", "Delay for repairs", delay);
   cmd.Parse(argc, argv);
   if (!links.empty()) {
     ParseLinks(links, linksToFail);
@@ -333,6 +345,7 @@ main (int argc, char *argv[])
     ParseLinks(paths, pathsToTest);
   }
   Topology simulationTopology;
+  simulationTopology.SetDelay(delay);
   simulationTopology.SetPackets(packets);
   simulationTopology.PopulateGraph(topology);
   simulationTopology.HookupSimulation();

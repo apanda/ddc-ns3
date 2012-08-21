@@ -123,7 +123,7 @@ public:
    */
   void SetFill (uint8_t *fill, uint32_t fillSize, uint32_t dataSize);
 
-  void SendBurst (uint32_t);
+  void SendBurst (uint32_t, Time);
   void Send (void);
   virtual void StartApplication (void);
   virtual void StopApplication (void);
@@ -135,7 +135,7 @@ protected:
 
 private:
 
-
+  void SendInternal (Ptr<Packet> p);
   void ScheduleTransmit (Time dt);
 
   void HandleRead (Ptr<Socket> socket);
