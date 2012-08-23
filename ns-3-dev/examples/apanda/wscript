@@ -13,6 +13,9 @@ def build(bld):
 
     obj = bld.create_ns3_program('tcp-burst', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
     obj.source = 'tcp-burst.cc'
+
+    obj = bld.create_ns3_program('traffic-sim', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
+    obj.source = 'traffic-sim.cc'
 #
 #    obj = bld.create_ns3_program('stretch-sp', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
 #    obj.source = 'stretch-sp.cc'
