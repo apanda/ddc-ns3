@@ -282,8 +282,8 @@ class Topology : public Object
 
     void PingMachines (UdpEchoClient* client)
     {
-      NS_LOG_LOGIC("Untranslated sending between " << client << " and " << server);
-      NS_LOG_LOGIC("Sending between " << client << " and " << server);
+      NS_LOG_LOGIC("Untranslated sending between " << client);
+      NS_LOG_LOGIC("Sending between " << client);
       Simulator::ScheduleNow(&UdpEchoClient::StartApplication, client);
       Simulator::Schedule(Seconds(1.0), &UdpEchoClient::SendBurst, client, m_packets, MilliSeconds(200.0));
     }
