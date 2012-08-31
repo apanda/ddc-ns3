@@ -199,7 +199,7 @@ class Topology : public Object
       m_nodeDevices.resize(m_numNodes);
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
-      pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Gb/s"));
+      pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Gbps"));
       for (uint32_t i = 0; i < m_numNodes; i++) {
         m_callbacks.push_back(NodeCallback(m_nodeTranslate[i], this));
         NS_ASSERT(!m_connectivityGraph[i]->empty());
@@ -209,7 +209,7 @@ class Topology : public Object
           if (*iterator < i) {
             continue;
           }
-          pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("10Gb/s")));
+          pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("10Gbps")));
           NetDeviceContainer p2pDevices = 
             pointToPoint.Install (m_nodes.Get(i), m_nodes.Get(*iterator));
           m_nodeDevices[i].Add(p2pDevices.Get(0));

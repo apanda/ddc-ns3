@@ -46,20 +46,20 @@ static const uint32_t PORT = 22;
 class TcpFileTransfer : public Object
 {
   protected:
-    static const uint32_t TOTAL_TX_BYTES = 64000; //209715200;
-    static const uint32_t WRITE_SIZE = 1040;
+    static const uint64_t TOTAL_TX_BYTES = 53687091200; //209715200;
+    static const uint64_t WRITE_SIZE = 1040;
     uint8_t m_data[WRITE_SIZE];
     Ptr<Node> m_node;
     Ptr<Socket> m_socket;
     Ptr<Node> m_dest;
-    uint32_t m_currentBytes;
+    uint64_t m_currentBytes;
  public:
     void RetransmitCallback (bool fastRetransmit)
     {
       std::cout << m_node->GetId() << "," << (fastRetransmit ? "FR" : "T") << std::endl;
     }
     TcpFileTransfer(Ptr<Node> node, Ptr<Node> dest) {
-      for (uint32_t i = 0; i  < WRITE_SIZE; i++) {
+      for (uint32_t i = 0; i  < (uint32_t)WRITE_SIZE; i++) {
         m_data[i] = i % 256;
       }
       m_dest = dest;
@@ -80,15 +80,15 @@ class TcpFileTransfer : public Object
       NS_LOG_LOGIC("Actually sending");
       while (m_currentBytes < TOTAL_TX_BYTES && localSocket->GetTxAvailable () > 0)
       {
-        uint32_t left = TOTAL_TX_BYTES - m_currentBytes;
-        uint32_t offset = m_currentBytes % WRITE_SIZE;
-        uint32_t toWrite = std::min (WRITE_SIZE - offset, 
-                            std::min (left, localSocket->GetTxAvailable ()));
+        uint64_t left = TOTAL_TX_BYTES - m_currentBytes;
+        uint64_t offset = m_currentBytes % WRITE_SIZE;
+        uint32_t toWrite = (uint32_t)std::min (WRITE_SIZE - offset, 
+                            std::min (left, (uint64_t)localSocket->GetTxAvailable ()));
         int amountSent = localSocket->Send (&m_data[offset], toWrite, 0);
         if (amountSent < 0) {
           return;
         }
-        m_currentBytes += amountSent;
+        m_currentBytes += (uint64_t)amountSent;
       }
       localSocket->Close ();
     }
@@ -127,7 +127,7 @@ class Topology : public Object
     void ReceivePacketCallback (Ptr<const Packet> packet, const Address& addr)
     {
       Ipv4Address ipAddr = InetSocketAddress::ConvertFrom(addr).GetIpv4();
-      std::cout << m_addressToNodeMap[ipAddr] << ",RX," << packet->GetSize() << std::endl;
+      std::cout << m_addressToNodeMap[ipAddr] << ",RX," << Simulator::Now().ToDouble(Time::US) << "," << packet->GetSize() << std::endl;
     }
 
     inline uint32_t CannonicalNode (const uint32_t node) 
@@ -243,7 +243,7 @@ class Topology : public Object
       m_nodeDevices.resize(m_numNodes);
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
-      pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Gb/s"));
+      pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Gbps"));
       for (uint32_t i = 0; i < m_numNodes; i++) {
         m_callbacks.push_back(NodeCallback(m_nodeTranslate[i], this));
         NS_ASSERT(!m_connectivityGraph[i]->empty());
@@ -253,7 +253,7 @@ class Topology : public Object
           if (*iterator < i) {
             continue;
           }
-          pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("60000b/s")));
+          pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("10Gbps")));
           NetDeviceContainer p2pDevices = 
             pointToPoint.Install (m_nodes.Get(i), m_nodes.Get(*iterator));
           m_nodeDevices[i].Add(p2pDevices.Get(0));
