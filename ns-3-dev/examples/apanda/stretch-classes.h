@@ -11,4 +11,5 @@ public:
   void ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header);
   void NodeReversal (uint32_t iface, Ipv4Address addr);  
   void DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, Ipv4L3Protocol::DropReason drop, Ptr<Ipv4> ipv4, uint32_t iface);
+  void PhyDropTrace (Ptr<const Packet>);
 };

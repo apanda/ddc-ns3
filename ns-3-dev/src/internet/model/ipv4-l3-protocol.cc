@@ -554,6 +554,8 @@ Ipv4L3Protocol::Send (Ptr<Packet> packet,
       ttl = tag.GetTtl ();
     }
 
+  NS_LOG_LOGIC ("Sending packet with TTL  " << (uint32_t)ttl);
+
   // Handle a few cases:
   // 1) packet is destined to limited broadcast address
   // 2) packet is destined to a subnet-directed broadcast address

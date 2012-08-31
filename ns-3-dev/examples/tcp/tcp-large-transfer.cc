@@ -74,10 +74,10 @@ int main (int argc, char *argv[])
 {
   // Users may find it convenient to turn on explicit debugging
   // for selected modules; the below lines suggest how to do this
-  //  LogComponentEnable("TcpL4Protocol", LOG_LEVEL_ALL);
-  //  LogComponentEnable("TcpSocketImpl", LOG_LEVEL_ALL);
-  //  LogComponentEnable("PacketSink", LOG_LEVEL_ALL);
-  //  LogComponentEnable("TcpLargeTransfer", LOG_LEVEL_ALL);
+  // LogComponentEnable("TcpL4Protocol", LOG_LEVEL_ALL);
+  // LogComponentEnable("TcpSocketImpl", LOG_LEVEL_ALL);
+  // LogComponentEnable("PacketSink", LOG_LEVEL_ALL);
+  // LogComponentEnable("TcpLargeTransfer", LOG_LEVEL_ALL);
 
   CommandLine cmd;
   cmd.Parse (argc, argv);

@@ -61,6 +61,11 @@ Ipv4GlobalRouting::GetTypeId (void)
                    TimeValue (Seconds (0)),
                    MakeTimeAccessor (&Ipv4GlobalRouting::m_reverseInputToOutputDelay),
                    MakeTimeChecker())
+    .AddAttribute ("AllowReversal",
+                   "Allow DDC reversals",
+                   BooleanValue (true),
+                   MakeBooleanAccessor (&Ipv4GlobalRouting::m_allowReversal),
+                   MakeBooleanChecker ())
   ;
   return tid;
 }
@@ -779,19 +784,24 @@ Ipv4GlobalRouting::StandardReceive (Ipv4Address addr, Ipv4Header& header,
       CreateRoutingEntry(vnode, link, addr, header, route);
       return;
     }
-    NS_LOG_LOGIC ("Reversing " << addr);
-    ScheduleReversals(vnode, addr);
-    
-    if (m_vnodeState[vnode].m_outputs[addr].empty()) {
-      NS_LOG_LOGIC ("Failed to find a link, so just using first high priority link " << addr);
-      if (FindHighPriorityLink(vnode, addr, link)) {
-        CreateRoutingEntry(vnode, link, addr, header, route);
-        return;
+    if (m_allowReversal) {
+      NS_LOG_LOGIC ("Reversing " << addr);
+      ScheduleReversals(vnode, addr);
+      
+      if (m_vnodeState[vnode].m_outputs[addr].empty()) {
+        NS_LOG_LOGIC ("Failed to find a link, so just using first high priority link " << addr);
+        if (FindHighPriorityLink(vnode, addr, link)) {
+          CreateRoutingEntry(vnode, link, addr, header, route);
+          return;
+        }
+        else {
+          error = Socket::ERROR_NOROUTETOHOST;
+          return;
+        }
       }
-      else {
-        error = Socket::ERROR_NOROUTETOHOST;
-        return;
-      }
+    }
+    else {
+      return;
     }
   } while (!m_vnodeState[vnode].m_inputs[addr].empty() || !m_vnodeState[vnode].m_outputs[addr].empty());
 }

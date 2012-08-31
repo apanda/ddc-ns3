@@ -34,9 +34,8 @@ if __name__=="__main__":
     print "Chose nodes"
     delay = eval(sys.argv[7])
     out = open(path.expanduser(sys.argv[8]),'w') 
-    random_dest = random.sample(nodes, 1)
-    source_dest_choices = random.sample(filter(lambda n: n != random_dest[0], nodes), perc)
-    source_dest_pairs = ','.join(map(lambda e:'='.join(map(str, [e, random_dest[0]])), source_dest_choices))
+    source_dest_choices = random.sample(list(comb), perc)
+    source_dest_pairs = ','.join(map(lambda e:'='.join(map(str, e)), source_dest_choices))
     #for failures in xrange(int(float(len(edges) * edges_to_fail[0])), int(float(len(edges) * edges_to_fail[1]))):
     for failures in xrange(edges_to_fail[0], edges_to_fail[1]):
         tried = 0
@@ -67,7 +66,7 @@ if __name__=="__main__":
             while current_delay < delay[1]:
                 out.write(str.format("delay = {0}\n", current_delay))
                 out.flush()
-                executable = str.format("""examples/apanda/traffic-sim --links="{0}" --paths="{1}" --delay="{4}" --topology={2} --packets={3}""",
+                executable = str.format("""examples/apanda/traffic-sim-tcp --links="{0}" --paths="{1}" --delay="{4}" --topology={2} --packets={3}""",
                                         failed_edges, source_dest_pairs, topo, packets, current_delay)
                 print executable
                 current_delay += delay[2]

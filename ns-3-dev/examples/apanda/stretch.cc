@@ -287,6 +287,7 @@ void NodeCallback::DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, I
   m_topology->RouteEnded();
 }
 
+void NodeCallback::PhyDropTrace (Ptr<const Packet>) {}
 void
 ParseLinks(std::string links, std::vector<std::pair<uint32_t, uint32_t> >& results)
 {

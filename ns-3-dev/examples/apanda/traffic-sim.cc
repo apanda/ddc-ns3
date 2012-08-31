@@ -123,7 +123,7 @@ class Topology : public Object
     
     void SetPackets(uint32_t packets)
     {
-      m_packets = packets;
+      m_packets = packets * 1000;
     }
 
     Topology()
@@ -199,7 +199,7 @@ class Topology : public Object
       m_nodeDevices.resize(m_numNodes);
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
-      pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("60000b/s"));
+      pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Gb/s"));
       for (uint32_t i = 0; i < m_numNodes; i++) {
         m_callbacks.push_back(NodeCallback(m_nodeTranslate[i], this));
         NS_ASSERT(!m_connectivityGraph[i]->empty());
@@ -209,11 +209,13 @@ class Topology : public Object
           if (*iterator < i) {
             continue;
           }
-          pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("60000b/s")));
+          pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("10Gb/s")));
           NetDeviceContainer p2pDevices = 
             pointToPoint.Install (m_nodes.Get(i), m_nodes.Get(*iterator));
           m_nodeDevices[i].Add(p2pDevices.Get(0));
+          p2pDevices.Get(0)->TraceConnectWithoutContext("MacTxDrop", MakeCallback(&NodeCallback::PhyDropTrace, &m_callbacks[i]));
           m_nodeDevices[*iterator].Add(p2pDevices.Get(1));
+          p2pDevices.Get(1)->TraceConnectWithoutContext("MacTxDrop", MakeCallback(&NodeCallback::PhyDropTrace, &m_callbacks[*iterator]));
           m_linkDevices.push_back(p2pDevices);
           PointToPointChannel* channel = (PointToPointChannel*)GetPointer(p2pDevices.Get(0)->GetChannel());
           m_channels.push_back(channel);
@@ -252,7 +254,7 @@ class Topology : public Object
 
       Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
-      NS_LOG_INFO("Done pupulating routing table");
+      NS_LOG_INFO("Done populating routing table");
 
       UdpEchoServerHelper echoServer (9);
 
@@ -264,8 +266,8 @@ class Topology : public Object
       for (uint32_t i = 0; i < m_numNodes; i++) {
         Ptr<GlobalRouter> router = m_nodes.Get(i)->GetObject<GlobalRouter>();
         Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
-        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MilliSeconds(m_delay * 200.0)));
-        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MilliSeconds(m_delay * 200.0)));
+        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MilliSeconds(m_delay * 0.012)));
+        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MilliSeconds(m_delay * 0.012)));
         Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
         l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
         l3->SetAttribute("DefaultTtl", UintegerValue(255));
@@ -285,7 +287,7 @@ class Topology : public Object
       NS_LOG_LOGIC("Untranslated sending between " << client);
       NS_LOG_LOGIC("Sending between " << client);
       Simulator::ScheduleNow(&UdpEchoClient::StartApplication, client);
-      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::SendBurst, client, m_packets, MilliSeconds(200.0));
+      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::SendBurst, client, m_packets, MilliSeconds(0.012));
     }
     
     void FailLink (uint32_t from, uint32_t to)
@@ -331,6 +333,10 @@ void NodeCallback::DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, I
   std::cout << m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetSource()))
             << "," << m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetDestination()))
             << ",D(" << (uint32_t)hdr.GetTtl() << ")" << std::endl;
+}
+
+void NodeCallback::PhyDropTrace (Ptr<const Packet> p) {
+  std::cout << m_id << ",P" << std::endl;
 }
 
 void

@@ -67,7 +67,7 @@ if __name__=="__main__":
             while current_delay < delay[1]:
                 out.write(str.format("delay = {0}\n", current_delay))
                 out.flush()
-                executable = str.format("""examples/apanda/traffic-sim --links="{0}" --paths="{1}" --delay="{4}" --topology={2} --packets={3}""",
+                executable = str.format("""examples/apanda/traffic-sim-tcp --links="{0}" --paths="{1}" --delay="{4}" --topology={2} --packets={3}""",
                                         failed_edges, source_dest_pairs, topo, packets, current_delay)
                 print executable
                 current_delay += delay[2]

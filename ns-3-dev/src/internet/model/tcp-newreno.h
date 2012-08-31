@@ -66,6 +66,7 @@ private:
 
 protected:
   TracedValue<uint32_t>  m_cWnd;         //< Congestion window
+  TracedCallback<bool>   m_retransmitCallback; //@apanda retransmits
   uint32_t               m_ssThresh;     //< Slow Start Threshold
   uint32_t               m_initialCWnd;  //< Initial cWnd value
   SequenceNumber32       m_recover;      //< Previous highest Tx seqnum for fast recovery

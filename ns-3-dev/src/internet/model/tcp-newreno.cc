@@ -51,6 +51,9 @@ TcpNewReno::GetTypeId (void)
     .AddTraceSource ("CongestionWindow",
                      "The TCP connection's congestion window",
                      MakeTraceSourceAccessor (&TcpNewReno::m_cWnd))
+    .AddTraceSource("Retransmit",
+                    "TCP retransmit callback",
+                    MakeTraceSourceAccessor (&TcpNewReno::m_retransmitCallback));
   ;
   return tid;
 }
@@ -128,6 +131,8 @@ TcpNewReno::NewAck (const SequenceNumber32& seq)
       m_cWnd += m_segmentSize;  // increase cwnd
       NS_LOG_INFO ("Partial ACK in fast recovery: cwnd set to " << m_cWnd);
       TcpSocketBase::NewAck (seq); // update m_nextTxSequence and send new data if allowed by window
+      NS_LOG_LOGIC ("Retransmit");
+      m_retransmitCallback (true);
       DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
       return;
     }
@@ -170,6 +175,8 @@ TcpNewReno::DupAck (const TcpHeader& t, uint32_t count)
       m_inFastRec = true;
       NS_LOG_INFO ("Triple dupack. Enter fast recovery mode. Reset cwnd to " << m_cWnd <<
                    ", ssthresh to " << m_ssThresh << " at fast recovery seqnum " << m_recover);
+      NS_LOG_LOGIC ("Retransmit");
+      m_retransmitCallback (true);
       DoRetransmit ();
     }
   else if (m_inFastRec)
@@ -208,6 +215,8 @@ TcpNewReno::Retransmit (void)
   NS_LOG_INFO ("RTO. Reset cwnd to " << m_cWnd <<
                ", ssthresh to " << m_ssThresh << ", restart from seqnum " << m_nextTxSequence);
   m_rtt->IncreaseMultiplier ();             // Double the next RTO
+  NS_LOG_LOGIC ("Retransmit");
+  m_retransmitCallback (false);
   DoRetransmit ();                          // Retransmit the packet
 }
 

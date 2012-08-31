@@ -443,6 +443,7 @@ private:
   LinkOrder m_reverseAfter;
   CurrentSequence m_heartbeatSequence;
   HeartbeatState m_heartbeatState;
+  bool m_allowReversal;
   struct ForwardingState {
     /// @apanda Direction vectors
     InterfaceDirection m_directions;

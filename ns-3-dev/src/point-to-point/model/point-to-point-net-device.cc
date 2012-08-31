@@ -642,7 +642,12 @@ PointToPointNetDevice::Send (
     }
   else
     {
-      return m_queue->Enqueue (packet);
+      if (!m_queue->Enqueue (packet))
+       {
+         m_macTxDropTrace (packet);
+         return false;
+       }
+       return true;
     }
 }
 

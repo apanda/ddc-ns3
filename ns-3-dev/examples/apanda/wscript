@@ -16,6 +16,12 @@ def build(bld):
 
     obj = bld.create_ns3_program('traffic-sim', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
     obj.source = 'traffic-sim.cc'
+
+    obj = bld.create_ns3_program('traffic-sim-tcp', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
+    obj.source = 'traffic-sim-tcp.cc'
+
+    obj = bld.create_ns3_program('traffic-sim-tcp-noreversal', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
+    obj.source = 'traffic-sim-tcp-noreversal.cc'
 #
 #    obj = bld.create_ns3_program('stretch-sp', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
 #    obj.source = 'stretch-sp.cc'
