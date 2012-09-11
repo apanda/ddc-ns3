@@ -516,6 +516,8 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
 
     }
     else {
+      m_vnodeState[vnode].m_directions[destination][iif] = In;
+      m_vnodeState[vnode].m_remoteSeq[destination][iif] = header.GetSeq();
       NS_LOG_LOGIC ("Received on an uncategorized port");
       StandardReceive(destination, header, route, error);
       if (route != 0) {
@@ -540,6 +542,20 @@ Ipv4GlobalRouting::NotifyInterfaceUp (uint32_t i)
       GlobalRouteManager::BuildGlobalRoutingDatabase ();
       GlobalRouteManager::InitializeRoutes ();
     }
+  if (Simulator::Now ().GetSeconds() > 0) {
+    for (InterfacePriorities::iterator it = m_priorities.begin();
+         it != m_priorities.end();
+         it++) {
+        Ipv4Address dest = (*it).first;
+        uint32_t vnode = m_localVnode[dest];
+        m_vnodeState[vnode].m_directions[dest][i] = Unknown;
+        m_vnodeState[vnode].m_localSeq[dest][i] = 0;
+        m_vnodeState[vnode].m_remoteSeq[dest][i] = 0;
+        m_ttl[dest][i] = 0;
+        m_vnodeState[vnode].m_inputs[dest].push_back(i);
+        m_vnodeState[vnode].m_to_reverse[dest].push_back(i);
+    }
+  }
 }
 
 void 

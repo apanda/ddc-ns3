@@ -129,6 +129,7 @@ public:
   virtual void StopApplication (void);
 
   void AddReceivePacketEvent (Callback<void, Ptr<const Packet>, Ipv4Header& > rxEvent);
+  void AddTransmitPacketEvent (Callback<void, Ptr<const Packet>, uint32_t, Ipv4Address > txEvent);
 
 protected:
   virtual void DoDispose (void);
@@ -152,7 +153,7 @@ private:
   uint16_t m_peerPort;
   EventId m_sendEvent;
   /// Callbacks for tracing the packet Tx events
-  TracedCallback<Ptr<const Packet> > m_txTrace;
+  TracedCallback<Ptr<const Packet>, uint32_t, Ipv4Address > m_txTrace;
   /// Callbacks for tracing the packet Rx events
   TracedCallback<Ptr<const Packet>, Ipv4Header&> m_rxTrace;
 };

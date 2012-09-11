@@ -222,8 +222,8 @@ class Topology : public Object
       for (uint32_t i = 0; i < m_numNodes; i++) {
         Ptr<GlobalRouter> router = m_nodes.Get(i)->GetObject<GlobalRouter>();
         Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
-        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MilliSeconds(m_delay * 200.0)));
-        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MilliSeconds(m_delay * 200.0)));
+        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MicroSeconds(m_delay * 1000.0)));
+        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MicroSeconds(m_delay * 1000.0)));
         Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
         l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
         l3->SetAttribute("DefaultTtl", UintegerValue(255));

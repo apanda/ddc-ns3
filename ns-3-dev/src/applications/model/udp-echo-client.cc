@@ -303,7 +303,7 @@ UdpEchoClient::Send (void)
     }
   // call to the trace sinks before the packet is actually sent,
   // so that tags added to the packet can be sent as well
-  m_txTrace (p);
+  m_txTrace (p, (uint32_t)GetNode()->GetId(), Ipv4Address::ConvertFrom(m_peerAddress));
   m_socket->Send (p);
 
   ++m_sent;
@@ -328,6 +328,7 @@ UdpEchoClient::Send (void)
 void
 UdpEchoClient::SendInternal (Ptr<Packet> p) 
 {
+  m_txTrace (p, (uint32_t)GetNode()->GetId(), Ipv4Address::ConvertFrom(m_peerAddress));
   m_socket->Send(p);
 }
 
@@ -336,7 +337,7 @@ UdpEchoClient::SendBurst (uint32_t burstLength, Time time)
 {
   NS_LOG_FUNCTION_NOARGS ();
   uint32_t burstCount = 0;
-  Time packetTime = time;
+  Time packetTime = Simulator::Now();
   while (burstLength > 0) {
     Ptr<Packet> p;
     p = Create<Packet> ((uint8_t*)&burstCount, sizeof(burstCount));
@@ -344,9 +345,9 @@ UdpEchoClient::SendBurst (uint32_t burstLength, Time time)
     burstLength--;
     // call to the trace sinks before the packet is actually sent,
     // so that tags added to the packet can be sent as well
-    m_txTrace (p);
     Simulator::Schedule(packetTime, &UdpEchoClient::SendInternal, this, p);
-    packetTime += time;
+    std::cout << "TX_t," << packetTime << "," << time << std::endl;
+    packetTime = packetTime + time;
     ++m_sent;
 
     if (Ipv4Address::IsMatchingType (m_peerAddress))
@@ -398,4 +399,9 @@ UdpEchoClient::AddReceivePacketEvent (Callback<void, Ptr<const Packet>, Ipv4Head
   m_rxTrace.ConnectWithoutContext(rxEvent);
 }
 
+void 
+UdpEchoClient::AddTransmitPacketEvent (Callback<void, Ptr<const Packet>, uint32_t, Ipv4Address> txEvent)
+{
+  m_txTrace.ConnectWithoutContext(txEvent);
+}
 } // Namespace ns3

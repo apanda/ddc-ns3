@@ -164,6 +164,7 @@ UdpEchoServer::HandleRead (Ptr<Socket> socket)
       packet->RemoveAllByteTags ();
 
       NS_LOG_LOGIC ("Echoing packet");
+      m_txTrace(packet, hdr);
       socket->SendTo (packet, 0, from);
 
       if (InetSocketAddress::IsMatchingType (from))
@@ -187,4 +188,9 @@ UdpEchoServer::AddReceivePacketEvent (Callback<void, Ptr<const Packet>, Ipv4Head
   m_rxTrace.ConnectWithoutContext(rxEvent);
 }
 
+void 
+UdpEchoServer::AddTransmitPacketEvent (Callback<void, Ptr<const Packet>, Ipv4Header& > rxEvent)
+{
+  m_txTrace.ConnectWithoutContext(rxEvent);
+}
 } // Namespace ns3

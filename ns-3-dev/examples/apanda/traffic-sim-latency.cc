@@ -40,60 +40,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("DDC-NSDI-TRAFFIC-SIM-TCP");
-static const uint32_t PORT = 22;
-
-class TcpFileTransfer : public Object
-{
-  protected:
-    static const uint64_t TOTAL_TX_BYTES = 20000000; //209715200;
-    static const uint64_t WRITE_SIZE = 1040;
-    uint8_t m_data[WRITE_SIZE];
-    Ptr<Node> m_node;
-    Ptr<Socket> m_socket;
-    Ptr<Node> m_dest;
-    uint64_t m_currentBytes;
- public:
-    void RetransmitCallback (bool fastRetransmit)
-    {
-      std::cout << m_node->GetId() << "," << (fastRetransmit ? "FR" : "T") << std::endl;
-    }
-    TcpFileTransfer(Ptr<Node> node, Ptr<Node> dest) {
-      for (uint32_t i = 0; i  < (uint32_t)WRITE_SIZE; i++) {
-        m_data[i] = i % 256;
-      }
-      m_dest = dest;
-      m_node = node;
-    }
-
-    void StartSending () {
-      NS_LOG_LOGIC("Start sending");
-      m_socket = Socket::CreateSocket(m_node, TcpSocketFactory::GetTypeId ());
-      m_socket->TraceConnectWithoutContext("Retransmit", MakeCallback(&TcpFileTransfer::RetransmitCallback, this));
-      m_socket->Bind();
-      m_socket->Connect (InetSocketAddress (m_dest->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(), PORT));
-      m_socket->SetSendCallback(MakeCallback(&TcpFileTransfer::WriteUntilBufferFull, this));
-      WriteUntilBufferFull (m_socket, m_socket->GetTxAvailable());
-    }
-
-    void WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txSpace) {
-      NS_LOG_LOGIC("Actually sending");
-      while (m_currentBytes < TOTAL_TX_BYTES && localSocket->GetTxAvailable () > 0)
-      {
-        uint64_t left = TOTAL_TX_BYTES - m_currentBytes;
-        uint64_t offset = m_currentBytes % WRITE_SIZE;
-        uint32_t toWrite = (uint32_t)std::min (WRITE_SIZE - offset, 
-                            std::min (left, (uint64_t)localSocket->GetTxAvailable ()));
-        int amountSent = localSocket->Send (&m_data[offset], toWrite, 0);
-        if (amountSent < 0) {
-          return;
-        }
-        m_currentBytes += (uint64_t)amountSent;
-      }
-      localSocket->Close ();
-    }
-};
-
+NS_LOG_COMPONENT_DEFINE ("DDC-NSDI-TRAFFIC-SIM-LATENCY");
 class Topology : public Object
 {
   protected:
@@ -117,18 +64,7 @@ class Topology : public Object
     uint32_t m_currentTrial;
     uint32_t m_packets;
     double m_delay;
-    std::list<TcpFileTransfer*> m_fileTransfers;
   public:
-    void RetransmitCallback (std::string path, bool fastRetransmit)
-    {
-      std::cout << path << "," << (fastRetransmit ? "FR" : "T") << std::endl;
-    }
-
-    void ReceivePacketCallback (Ptr<const Packet> packet, const Address& addr)
-    {
-      Ipv4Address ipAddr = InetSocketAddress::ConvertFrom(addr).GetIpv4();
-      std::cout << m_addressToNodeMap[ipAddr] << ",RX," << Simulator::Now().ToDouble(Time::US) << "," << packet->GetSize() << std::endl;
-    }
 
     inline uint32_t CannonicalNode (const uint32_t node) 
     {
@@ -140,22 +76,45 @@ class Topology : public Object
       return m_addressToNodeMap[address];
     }
 
+    void ServerTx (Ptr<const Packet> packet, Ipv4Header& header)
+    {
+      uint32_t seq = 0;
+      packet->CopyData ((uint8_t*)&seq, sizeof(seq));
+      std::cout << Simulator::Now() << "," << CannonicalNode(AddressForNode(header.GetDestination()))
+                <<"," << CannonicalNode(AddressForNode(header.GetSource())) << ",TX,"<< seq << std::endl;
+    }
+
+    void ClienTx (Ptr<const Packet> packet, uint32_t node, Ipv4Address addr) {
+      uint32_t seq = 0;
+      packet->CopyData ((uint8_t*)&seq, sizeof(seq));
+      std::cout << Simulator::Now() << "," << CannonicalNode(node)
+                <<"," << CannonicalNode(AddressForNode(addr)) << ",TX,"<< seq << std::endl;
+    }
+
     void SetDelay(double delay)
     {
       m_delay = delay;
     }
     void AddPathsToTest(std::vector<std::pair<uint32_t, uint32_t> > paths)
     {
-      NS_LOG_LOGIC("Add paths to test");
       m_pathsToTest.insert(m_pathsToTest.end(), paths.begin(), paths.end());
       for (;m_currentPath < m_pathsToTest.size(); m_currentPath++) {
         uint32_t client = m_nodeForwardTranslationMap[m_pathsToTest[m_currentPath].first];
         uint32_t server = m_nodeForwardTranslationMap[m_pathsToTest[m_currentPath].second];
-        TcpFileTransfer* fileTransfer = new TcpFileTransfer(m_nodes.Get(client), m_nodes.Get(server));
-        m_fileTransfers.push_back(fileTransfer);
-        Simulator::Schedule(Seconds(2.0), &TcpFileTransfer::StartSending, fileTransfer);
+        UdpEchoClientHelper echoClient (m_nodes.Get(server)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
+                                          9);
+        echoClient.SetAttribute ("MaxPackets", UintegerValue (0));
+        echoClient.SetAttribute ("Interval", TimeValue (Seconds (randVar.GetValue(1.0, 3000.0))));
+        echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+        ApplicationContainer clientApps = echoClient.Install (m_nodes.Get (client));
+        UdpEchoClient* clientApp = (UdpEchoClient*)(PeekPointer(clientApps.Get(0)));
+        clientApp->AddReceivePacketEvent(MakeCallback(&NodeCallback::RxPacket, &m_callbacks[client]));
+        clientApp->AddTransmitPacketEvent(MakeCallback(&Topology::ClienTx, this));
+        std::cout << m_pathsToTest[m_currentPath].first << "," << m_pathsToTest[m_currentPath].second << ",S" << std::endl;
+        clientApp->SetRemote(m_nodes.Get(server)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(), 9);
+        Simulator::ScheduleNow(&UdpEchoClient::StartApplication, clientApp);
+        Simulator::Schedule(Seconds(2.0), &Topology::PingMachines, this, clientApp);
       }
-      NS_LOG_LOGIC("Add paths to test");
     }
 
     void RouteEnded ()
@@ -163,6 +122,20 @@ class Topology : public Object
       NS_ASSERT(false);
       NS_LOG_LOGIC("Packet ended");
       m_currentTrial++;
+      /* if (m_currentTrial < m_packets) {
+        std::cout << ",";
+      }
+      else {
+        m_currentPath++;
+        m_currentTrial = 0;
+        std::cout << std::endl;
+        if (m_currentPath < m_pathsToTest.size()) {
+          std::cout << m_pathsToTest[m_currentPath].first << "," << m_pathsToTest[m_currentPath].second << ",";
+          Simulator::ScheduleNow(&Topology::Reset, this);
+          Simulator::Schedule(Seconds(2.0), &Topology::PingMachines, this, m_pathsToTest[m_currentPath].first, m_pathsToTest[m_currentPath].second);
+        }
+      }
+      */
     }
     
     void SetPackets(uint32_t packets)
@@ -301,32 +274,27 @@ class Topology : public Object
       NS_LOG_INFO("Done populating routing table");
 
       UdpEchoServerHelper echoServer (9);
-      PacketSinkHelper sink ("ns3::TcpSocketFactory", 
-                             InetSocketAddress (Ipv4Address::GetAny (), PORT)); 
 
       ApplicationContainer serverApps = echoServer.Install (m_nodes);
-      ApplicationContainer sinks = sink.Install (m_nodes);
-      sinks.Start (Seconds (0.0));
       serverApps.Start (Seconds (1.0));
       serverApps.Stop (m_simulationEnd);
       m_clients.resize(m_numNodes);
       m_servers.resize(m_numNodes);
       for (uint32_t i = 0; i < m_numNodes; i++) {
-        sinks.Get(i)->TraceConnectWithoutContext(std::string("Rx"), MakeCallback(&Topology::ReceivePacketCallback, this));
         Ptr<GlobalRouter> router = m_nodes.Get(i)->GetObject<GlobalRouter>();
         Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
-        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MilliSeconds(m_delay * 0.012)));
-        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MilliSeconds(m_delay * 0.012)));
+        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MicroSeconds(m_delay)));
+        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MicroSeconds(m_delay)));
         Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
         l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
         l3->SetAttribute("DefaultTtl", UintegerValue(255));
         gr->AddReversalCallback(MakeCallback(&NodeCallback::NodeReversal, &m_callbacks[i]));
         m_servers[i] =  (UdpEchoServer*)PeekPointer(serverApps.Get(i));
         m_servers[i]->AddReceivePacketEvent(MakeCallback(&NodeCallback::ServerRxPacket, &m_callbacks[i]));
+        m_servers[i]->AddTransmitPacketEvent(MakeCallback(&Topology::ServerTx, this));
       }
       NS_LOG_INFO("Done setting up simulation");
     }
-
     void Reset ()
     {
       SimulationSingleton<GlobalRouteManagerImpl>::Get ()->SendHeartbeats();
@@ -337,7 +305,7 @@ class Topology : public Object
       NS_LOG_LOGIC("Untranslated sending between " << client);
       NS_LOG_LOGIC("Sending between " << client);
       Simulator::ScheduleNow(&UdpEchoClient::StartApplication, client);
-      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::SendBurst, client, m_packets, MilliSeconds(0.012));
+      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::SendBurst, client, m_packets, MicroSeconds(900));
     }
     
     void FailLink (uint32_t from, uint32_t to)
@@ -360,16 +328,16 @@ void NodeCallback::RxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
   NS_LOG_LOGIC(m_id << " Received packet " << (uint32_t)header.GetTtl());
   uint32_t seq = 0;
   packet->CopyData ((uint8_t*)&seq, sizeof(seq));
-  std::cout << m_topology->CannonicalNode(m_topology->AddressForNode(header.GetSource()))
-            <<"," << m_id << ","<< seq << std::endl;
+  std::cout << Simulator::Now() << "," << m_topology->CannonicalNode(m_topology->AddressForNode(header.GetSource()))
+            <<"," << m_id << ",RX,"<< seq << std::endl;
 }
 
 void NodeCallback::ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
   NS_LOG_LOGIC(m_id << " Server Received packet " << (uint32_t)header.GetTtl());
   uint32_t seq = 0;
   packet->CopyData ((uint8_t*)&seq, sizeof(seq));
-  std::cout << m_topology->CannonicalNode(m_topology->AddressForNode(header.GetSource()))
-            <<"," << m_id << ","<< seq << std::endl;
+  std::cout << Simulator::Now() << "," << m_topology->CannonicalNode(m_topology->AddressForNode(header.GetSource()))
+            <<"," << m_id << ",RX,"<< seq << std::endl;
   //std::cout << seq << ",";
 }
 
@@ -380,13 +348,13 @@ void NodeCallback::NodeReversal (uint32_t iface, Ipv4Address addr) {
 
 void NodeCallback::DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, Ipv4L3Protocol::DropReason drop, Ptr<Ipv4> ipv4, uint32_t iface) {
   NS_LOG_LOGIC(m_id << " dropped packet " << iface);
-  std::cout << m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetSource()))
+  std::cout << Simulator::Now() << "," <<  m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetSource()))
             << "," << m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetDestination()))
             << ",D(" << (uint32_t)hdr.GetTtl() << ")" << std::endl;
 }
 
-void NodeCallback::PhyDropTrace (Ptr<const Packet> packet) {
-  std::cout << m_id << ",P" << std::endl;
+void NodeCallback::PhyDropTrace (Ptr<const Packet> p) {
+  std::cout << Simulator::Now() << "," << m_id << ",P" << std::endl;
 }
 
 void
@@ -442,12 +410,10 @@ main (int argc, char *argv[])
   //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
   //Simulator::ScheduleNow(&Topology::FailLink, &simulationTopology, 5, 6);
   //Simulator::ScheduleNow(&Topology::FailLink, &simulationTopology, 6, 7);
-  WeibullVariable weibull(2.0, 0.5);
   for (std::vector<std::pair<uint32_t, uint32_t> >::iterator it = linksToFail.begin();
        it != linksToFail.end();
        it++) {
-    double failTime = 3.0 + weibull.GetValue();
-    Simulator::Schedule(Seconds(failTime), &Topology::FailLinkPair, &simulationTopology, *it);
+    Simulator::Schedule(Seconds(0.0), &Topology::FailLinkPair, &simulationTopology, *it);
   }
   simulationTopology.AddPathsToTest(pathsToTest);
   //Simulator::Schedule(Seconds(1.0), &Topology::PingMachines, &simulationTopology, 1, 6);

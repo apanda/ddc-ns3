@@ -61,6 +61,7 @@ class Topology : public Object
     uint32_t m_currentPath;
     uint32_t m_currentTrial;
     uint32_t m_packets;
+    double m_delay;
   public:
 
     void AddPathsToTest(std::vector<std::pair<uint32_t, uint32_t> > paths)
@@ -102,6 +103,7 @@ class Topology : public Object
       m_currentTrial = 0;
       m_simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
       m_packets = 0;
+      m_delay = 0.0;
    }
    
     virtual ~Topology()
@@ -168,6 +170,7 @@ class Topology : public Object
       m_nodeDevices.resize(m_numNodes);
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
+      pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Gbps"));
       for (uint32_t i = 0; i < m_numNodes; i++) {
         m_callbacks.push_back(NodeCallback(m_nodeTranslate[i], this));
         NS_ASSERT(!m_connectivityGraph[i]->empty());
@@ -219,6 +222,8 @@ class Topology : public Object
         Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
         l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
         l3->SetAttribute("DefaultTtl", UintegerValue(255));
+        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MilliSeconds(m_delay * 0.012)));
+        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MilliSeconds(m_delay * 0.012)));
         gr->AddReversalCallback(MakeCallback(&NodeCallback::NodeReversal, &m_callbacks[i]));
         m_servers[i] =  (UdpEchoServer*)PeekPointer(serverApps.Get(i));
         m_servers[i]->AddReceivePacketEvent(MakeCallback(&NodeCallback::ServerRxPacket, &m_callbacks[i]));
@@ -263,6 +268,11 @@ class Topology : public Object
       NS_LOG_LOGIC("Failing link between " << key.first << " and " << key.second);
       m_channelMap[key]->SetLinkDown();
     }
+
+    void SetDelay(double delay)
+    {
+      m_delay = delay;
+    }
 };
 
 
@@ -287,7 +297,11 @@ void NodeCallback::DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, I
   m_topology->RouteEnded();
 }
 
-void NodeCallback::PhyDropTrace (Ptr<const Packet>) {}
+void NodeCallback::PhyDropTrace (Ptr<const Packet>) {
+  std::cout << m_id << "P";
+  m_topology->RouteEnded();
+}
+
 void
 ParseLinks(std::string links, std::vector<std::pair<uint32_t, uint32_t> >& results)
 {
@@ -314,6 +328,7 @@ main (int argc, char *argv[])
   std::string links;
   std::string paths;
   uint32_t packets = 1;
+  double delay;
   std::vector<std::pair<uint32_t, uint32_t> > linksToFail;
   std::vector<std::pair<uint32_t, uint32_t> > pathsToTest;
   CommandLine cmd;
@@ -323,6 +338,7 @@ main (int argc, char *argv[])
   cmd.AddValue("links", "Links to fail", links);
   cmd.AddValue("paths", "Source destination pairs to test", paths);
   cmd.AddValue("packets", "Packets to send per trial", packets);
+  cmd.AddValue("delay", "Delay for repairs", delay);
   cmd.Parse(argc, argv);
   if (!links.empty()) {
     ParseLinks(links, linksToFail);
@@ -331,6 +347,7 @@ main (int argc, char *argv[])
     ParseLinks(paths, pathsToTest);
   }
   Topology simulationTopology;
+  simulationTopology.SetDelay(delay);
   simulationTopology.SetPackets(packets);
   simulationTopology.PopulateGraph(topology);
   simulationTopology.HookupSimulation();

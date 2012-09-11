@@ -50,6 +50,7 @@ public:
   UdpEchoServer ();
   virtual ~UdpEchoServer ();
   void AddReceivePacketEvent (Callback<void, Ptr<const Packet>, Ipv4Header& > rxEvent);
+  void AddTransmitPacketEvent (Callback<void, Ptr<const Packet>, Ipv4Header& > txEvent);
 
 protected:
   virtual void DoDispose (void);
@@ -67,6 +68,7 @@ private:
   Address m_local;
   /// Callbacks for tracing the packet Rx events
   TracedCallback<Ptr<const Packet>, Ipv4Header&> m_rxTrace;
+  TracedCallback<Ptr<const Packet>, Ipv4Header&> m_txTrace;
 };
 
 } // namespace ns3
