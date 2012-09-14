@@ -50,36 +50,34 @@ if __name__=="__main__":
         tried = 0
         not_connected = 0
         print str.format("Failing {0}", failures)
-        edges = G.edges()
-        random.shuffle(edges)
-        fail_edges = []
-        for edge in edges:
-            G2 = G.copy()
-            G2.remove_edges_from([edge])
-            if not nx.is_connected(G2):
-                continue
-            #out.write(str.format("failed = {0}\n", edge))
-            #out.flush()
-            #failed_edges =  ','.join(map(lambda e: '='.join(map(lambda k: (k[0], k[1]) if k[0] < k[1] else (k[1], k[0]), map(str, e))), edge))
-            failed_edge = map(lambda e: (e[0], e[1]) if e[0] < e[1] else (e[1], e[0]), [edge])
-            constrained_pairs = filter(lambda x: contains_ends(x, failed_edge, G), comb)
-            if len(constrained_pairs) < int(0.025 * len(comb)):
-               continue
-            fail_edges.append(failed_edge[0])
-            if len(fail_edges) >= failures:
+        fail_edges = list(combinations(G.edges(), failures))
+        random.shuffle(fail_edges)
+        for edge in fail_edges:
+            if tried - not_connected > num_tests:
                 break
-        out.write(str.format("failed = {0}\n", fail_edges))
-        out.flush()
-        #failed_edges =  ','.join(map(lambda e: '='.join(map(lambda k: (k[0], k[1]) if k[0] < k[1] else (k[1], k[0]), map(str, e))), edge))
-        failed_edges = ','.join(map(lambda e:'='.join(map(str, e)) ,fail_edges))
-        current_delay = delay[0]
-        while current_delay < delay[1]:
-            out.write(str.format("delay = {0}\n", current_delay))
+            tried = tried + 1
+            G2 = G.copy()
+            G2.remove_edges_from(edge)
+            if not nx.is_connected(G2):
+                not_connected = not_connected + 1
+                continue
+            out.write(str.format("failed = {0}\n", edge))
             out.flush()
-            executable = str.format("""examples/apanda/traffic-sim-random --links="{0}" --paths="{1}" --delay="{4}" --topology={2} --packets={3}""",
-                                    failed_edges, source_dest_pairs, topo, packets, current_delay)
-            print executable
-            current_delay += delay[2]
-            subprocess.call(["./waf", "--run", executable],stdout=out)
+            #failed_edges =  ','.join(map(lambda e: '='.join(map(lambda k: (k[0], k[1]) if k[0] < k[1] else (k[1], k[0]), map(str, e))), edge))
+            failed_edges = map(lambda e: (e[0], e[1]) if e[0] < e[1] else (e[1], e[0]), edge)
+            constrained_pairs = filter(lambda x: contains_ends(x, failed_edges, G), comb)
+            if len(constrained_pairs) < int(0.025 * len(comb)):
+               not_connected = not_connected + 1
+               continue
+            failed_edges = ','.join(map(lambda e:'='.join(map(str, e)) ,failed_edges))
+            current_delay = delay[0]
+            while current_delay < delay[1]:
+                out.write(str.format("delay = {0}\n", current_delay))
+                out.flush()
+                executable = str.format("""examples/apanda/traffic-sim-latency --links="{0}" --paths="{1}" --delay="{4}" --topology={2} --packets={3}""",
+                                        failed_edges, source_dest_pairs, topo, packets, current_delay)
+                print executable
+                current_delay += delay[2]
+                subprocess.call(["./waf", "--run", executable],stdout=out)
         print str.format("not_connected = {0} tried = {1}", not_connected, tried) 
         

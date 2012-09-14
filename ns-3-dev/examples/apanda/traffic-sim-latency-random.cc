@@ -40,7 +40,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("DDC-NSDI-TCP-BURST");
+NS_LOG_COMPONENT_DEFINE ("DDC-NSDI-TRAFFIC-SIM-LATENCY");
 class Topology : public Object
 {
   protected:
@@ -54,6 +54,7 @@ class Topology : public Object
     std::vector<uint32_t> m_nodeTranslate;
     std::map<std::pair<uint32_t, uint32_t>, PointToPointChannel*> m_channelMap;
     std::map<uint32_t, uint32_t> m_nodeForwardTranslationMap;
+    std::map<Ipv4Address, uint32_t> m_addressToNodeMap; 
     NodeContainer m_nodes;
     std::vector<NetDeviceContainer> m_nodeDevices;
     std::vector<NetDeviceContainer> m_linkDevices;
@@ -64,6 +65,32 @@ class Topology : public Object
     uint32_t m_packets;
     double m_delay;
   public:
+
+    inline uint32_t CannonicalNode (const uint32_t node) 
+    {
+      return m_nodeTranslate[node];
+    }
+
+    inline uint32_t AddressForNode (const Ipv4Address address) 
+    {
+      return m_addressToNodeMap[address];
+    }
+
+    void ServerTx (Ptr<const Packet> packet, Ipv4Header& header)
+    {
+      uint32_t seq = 0;
+      packet->CopyData ((uint8_t*)&seq, sizeof(seq));
+      std::cout << Simulator::Now() << "," << CannonicalNode(AddressForNode(header.GetDestination()))
+                <<"," << CannonicalNode(AddressForNode(header.GetSource())) << ",TX,"<< seq << std::endl;
+    }
+
+    void ClienTx (Ptr<const Packet> packet, uint32_t node, Ipv4Address addr) {
+      uint32_t seq = 0;
+      packet->CopyData ((uint8_t*)&seq, sizeof(seq));
+      std::cout << Simulator::Now() << "," << CannonicalNode(node)
+                <<"," << CannonicalNode(AddressForNode(addr)) << ",TX,"<< seq << std::endl;
+    }
+
     void SetDelay(double delay)
     {
       m_delay = delay;
@@ -71,15 +98,31 @@ class Topology : public Object
     void AddPathsToTest(std::vector<std::pair<uint32_t, uint32_t> > paths)
     {
       m_pathsToTest.insert(m_pathsToTest.end(), paths.begin(), paths.end());
-      std::cout << m_pathsToTest[m_currentPath].first << "," << m_pathsToTest[m_currentPath].second << ",";
-      Simulator::Schedule(Seconds(2.0), &Topology::PingMachines, this, m_pathsToTest[m_currentPath].first, m_pathsToTest[m_currentPath].second);
+      for (;m_currentPath < m_pathsToTest.size(); m_currentPath++) {
+        uint32_t client = m_nodeForwardTranslationMap[m_pathsToTest[m_currentPath].first];
+        uint32_t server = m_nodeForwardTranslationMap[m_pathsToTest[m_currentPath].second];
+        UdpEchoClientHelper echoClient (m_nodes.Get(server)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
+                                          9);
+        echoClient.SetAttribute ("MaxPackets", UintegerValue (0));
+        echoClient.SetAttribute ("Interval", TimeValue (Seconds (randVar.GetValue(1.0, 3000.0))));
+        echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+        ApplicationContainer clientApps = echoClient.Install (m_nodes.Get (client));
+        UdpEchoClient* clientApp = (UdpEchoClient*)(PeekPointer(clientApps.Get(0)));
+        clientApp->AddReceivePacketEvent(MakeCallback(&NodeCallback::RxPacket, &m_callbacks[client]));
+        clientApp->AddTransmitPacketEvent(MakeCallback(&Topology::ClienTx, this));
+        std::cout << m_pathsToTest[m_currentPath].first << "," << m_pathsToTest[m_currentPath].second << ",S" << std::endl;
+        clientApp->SetRemote(m_nodes.Get(server)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(), 9);
+        Simulator::ScheduleNow(&UdpEchoClient::StartApplication, clientApp);
+        Simulator::Schedule(Seconds(2.0), &Topology::PingMachines, this, clientApp);
+      }
     }
 
     void RouteEnded ()
     {
+      NS_ASSERT(false);
       NS_LOG_LOGIC("Packet ended");
       m_currentTrial++;
-      if (m_currentTrial < m_packets) {
+      /* if (m_currentTrial < m_packets) {
         std::cout << ",";
       }
       else {
@@ -92,6 +135,7 @@ class Topology : public Object
           Simulator::Schedule(Seconds(2.0), &Topology::PingMachines, this, m_pathsToTest[m_currentPath].first, m_pathsToTest[m_currentPath].second);
         }
       }
+      */
     }
     
     void SetPackets(uint32_t packets)
@@ -172,7 +216,7 @@ class Topology : public Object
       m_nodeDevices.resize(m_numNodes);
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
-      pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("60000b/s"));
+      pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Gbps"));
       for (uint32_t i = 0; i < m_numNodes; i++) {
         m_callbacks.push_back(NodeCallback(m_nodeTranslate[i], this));
         NS_ASSERT(!m_connectivityGraph[i]->empty());
@@ -182,11 +226,13 @@ class Topology : public Object
           if (*iterator < i) {
             continue;
           }
-          pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("60000b/s")));
+          pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("10Gbps")));
           NetDeviceContainer p2pDevices = 
             pointToPoint.Install (m_nodes.Get(i), m_nodes.Get(*iterator));
           m_nodeDevices[i].Add(p2pDevices.Get(0));
+          p2pDevices.Get(0)->TraceConnectWithoutContext("MacTxDrop", MakeCallback(&NodeCallback::PhyDropTrace, &m_callbacks[i]));
           m_nodeDevices[*iterator].Add(p2pDevices.Get(1));
+          p2pDevices.Get(1)->TraceConnectWithoutContext("MacTxDrop", MakeCallback(&NodeCallback::PhyDropTrace, &m_callbacks[*iterator]));
           m_linkDevices.push_back(p2pDevices);
           PointToPointChannel* channel = (PointToPointChannel*)GetPointer(p2pDevices.Get(0)->GetChannel());
           m_channels.push_back(channel);
@@ -210,7 +256,22 @@ class Topology : public Object
         Ipv4InterfaceContainer current = address.Assign(m_linkDevices[i]);
         address.NewNetwork();
       }
+      NS_LOG_INFO("Assigned addresses");
+
+      for (NodeList::Iterator it = NodeList::Begin(); it != NodeList::End(); it++) {
+        Ptr<Node> node = *it;
+        Ptr<Ipv4> ipv4 = node->GetObject<Ipv4>();
+        for (uint32_t i = 1; i < ipv4->GetNInterfaces (); i++) {
+          for (uint32_t j = 0; j < ipv4->GetNAddresses (i); j++) {
+            m_addressToNodeMap[ipv4->GetAddress(i, j).GetLocal ()] = node->GetId(); 
+          }
+        }
+      }
+      NS_LOG_INFO("Added addresses");
+
       Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+
+      NS_LOG_INFO("Done populating routing table");
 
       UdpEchoServerHelper echoServer (9);
 
@@ -222,41 +283,29 @@ class Topology : public Object
       for (uint32_t i = 0; i < m_numNodes; i++) {
         Ptr<GlobalRouter> router = m_nodes.Get(i)->GetObject<GlobalRouter>();
         Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
-        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MicroSeconds(m_delay * 1000.0)));
-        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MicroSeconds(m_delay * 1000.0)));
+        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MicroSeconds(m_delay)));
+        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MicroSeconds(m_delay)));
         Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
         l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
         l3->SetAttribute("DefaultTtl", UintegerValue(255));
         gr->AddReversalCallback(MakeCallback(&NodeCallback::NodeReversal, &m_callbacks[i]));
         m_servers[i] =  (UdpEchoServer*)PeekPointer(serverApps.Get(i));
         m_servers[i]->AddReceivePacketEvent(MakeCallback(&NodeCallback::ServerRxPacket, &m_callbacks[i]));
-        int j = 0;
-        UdpEchoClientHelper echoClient (m_nodes.Get(j)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),
-                                          9);
-        echoClient.SetAttribute ("MaxPackets", UintegerValue (0));
-        echoClient.SetAttribute ("Interval", TimeValue (Seconds (randVar.GetValue(1.0, 3000.0))));
-        echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
-        ApplicationContainer clientApps = echoClient.Install (m_nodes.Get (i));
-        m_clients[i] = (UdpEchoClient*)(PeekPointer(clientApps.Get(0)));
-        m_clients[i]->AddReceivePacketEvent(MakeCallback(&NodeCallback::RxPacket, &m_callbacks[i]));
-        Simulator::ScheduleNow(&UdpEchoClient::StartApplication, m_clients[i]);
+        m_servers[i]->AddTransmitPacketEvent(MakeCallback(&Topology::ServerTx, this));
       }
+      NS_LOG_INFO("Done setting up simulation");
     }
     void Reset ()
     {
       SimulationSingleton<GlobalRouteManagerImpl>::Get ()->SendHeartbeats();
     }
 
-    void PingMachines (uint32_t client, uint32_t server)
+    void PingMachines (UdpEchoClient* client)
     {
-      NS_LOG_LOGIC("Untranslated sending between " << client << " and " << server);
-      client = m_nodeForwardTranslationMap[client];
-      server = m_nodeForwardTranslationMap[server];
-      NS_LOG_LOGIC("Sending between " << client << " and " << server);
-      m_clients[client]->SetRemote(m_nodes.Get(server)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(), 9);
-      Simulator::ScheduleNow(&UdpEchoClient::StopApplication, m_clients[client]);
-      Simulator::ScheduleNow(&UdpEchoClient::StartApplication, m_clients[client]);
-      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::SendBurst, m_clients[client], m_packets, MicroSeconds(10));
+      NS_LOG_LOGIC("Untranslated sending between " << client);
+      NS_LOG_LOGIC("Sending between " << client);
+      Simulator::ScheduleNow(&UdpEchoClient::StartApplication, client);
+      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::SendBurst, client, m_packets, MicroSeconds(900));
     }
     
     void FailLink (uint32_t from, uint32_t to)
@@ -269,7 +318,33 @@ class Topology : public Object
     void FailLinkPair(std::pair<uint32_t, uint32_t> key)
     {
       NS_LOG_LOGIC("Failing link between " << key.first << " and " << key.second);
+      std::cout << key.first << "," << key.second << ",F" << std::endl;
       m_channelMap[key]->SetLinkDown();
+    }
+
+    void RepairLink (uint32_t from, uint32_t to)
+    {
+      NS_ASSERT(from < to);
+      NS_LOG_LOGIC("Repairing link between " << from << " and " << to);
+      RepairLinkPair(std::pair<uint32_t, uint32_t>(from, to));
+    }
+
+    void RepairLinkPair(std::pair<uint32_t, uint32_t> key)
+    {
+      Ptr<Node> nodeA = m_nodes.Get(m_nodeForwardTranslationMap[key.first]);
+      Ptr<Node> nodeB = m_nodes.Get(m_nodeForwardTranslationMap[key.second]);
+      NS_LOG_LOGIC("Repairinging link between " << key.first << " and " << key.second);
+      std::cout << key.first << "," << key.second << ",C" << std::endl;
+      m_channelMap[key]->SetLinkUp();
+      uint32_t ifaceA = nodeA->GetObject<Ipv4>()->GetInterfaceForDevice(m_channelMap[key]->GetDevice(0));
+      uint32_t ifaceB = nodeB->GetObject<Ipv4>()->GetInterfaceForDevice(m_channelMap[key]->GetDevice(1));
+      Ptr<GlobalRouter> routerA = nodeA->GetObject<GlobalRouter>();
+      Ptr<Ipv4GlobalRouting> grA = routerA->GetRoutingProtocol();
+      Ptr<GlobalRouter> routerB = nodeB->GetObject<GlobalRouter>();
+      Ptr<Ipv4GlobalRouting> grB = routerB->GetRoutingProtocol();
+      grA->NotifyInterfaceUp(ifaceA);
+      grB->NotifyInterfaceUp(ifaceB);
+
     }
 };
 
@@ -278,29 +353,34 @@ void NodeCallback::RxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
   NS_LOG_LOGIC(m_id << " Received packet " << (uint32_t)header.GetTtl());
   uint32_t seq = 0;
   packet->CopyData ((uint8_t*)&seq, sizeof(seq));
-  std::cout << seq;
-  m_topology->RouteEnded();
+  std::cout << Simulator::Now() << "," << m_topology->CannonicalNode(m_topology->AddressForNode(header.GetSource()))
+            <<"," << m_id << ",RX,"<< seq << std::endl;
 }
 
 void NodeCallback::ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
   NS_LOG_LOGIC(m_id << " Server Received packet " << (uint32_t)header.GetTtl());
   uint32_t seq = 0;
   packet->CopyData ((uint8_t*)&seq, sizeof(seq));
+  std::cout << Simulator::Now() << "," << m_topology->CannonicalNode(m_topology->AddressForNode(header.GetSource()))
+            <<"," << m_id << ",RX,"<< seq << std::endl;
   //std::cout << seq << ",";
 }
 
 void NodeCallback::NodeReversal (uint32_t iface, Ipv4Address addr) {
   NS_LOG_LOGIC(m_id << " reversed iface " << iface << " for " << addr);
-  std::cout << "R";
+  std::cout << m_id << ",R" << std::endl;
 }
 
 void NodeCallback::DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, Ipv4L3Protocol::DropReason drop, Ptr<Ipv4> ipv4, uint32_t iface) {
   NS_LOG_LOGIC(m_id << " dropped packet " << iface);
-  std::cout << "D";
-  m_topology->RouteEnded();
+  std::cout << Simulator::Now() << "," <<  m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetSource()))
+            << "," << m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetDestination()))
+            << ",D(" << (uint32_t)hdr.GetTtl() << ")" << std::endl;
 }
 
-void NodeCallback::PhyDropTrace (Ptr<const Packet>) {}
+void NodeCallback::PhyDropTrace (Ptr<const Packet> p) {
+  std::cout << Simulator::Now() << "," << m_id << ",P" << std::endl;
+}
 
 void
 ParseLinks(std::string links, std::vector<std::pair<uint32_t, uint32_t> >& results)
@@ -355,10 +435,13 @@ main (int argc, char *argv[])
   //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
   //Simulator::ScheduleNow(&Topology::FailLink, &simulationTopology, 5, 6);
   //Simulator::ScheduleNow(&Topology::FailLink, &simulationTopology, 6, 7);
+  Time time = Seconds(0.0);
   for (std::vector<std::pair<uint32_t, uint32_t> >::iterator it = linksToFail.begin();
        it != linksToFail.end();
        it++) {
-    Simulator::ScheduleNow(&Topology::FailLinkPair, &simulationTopology, *it);
+    time += MilliSeconds(10);
+    Simulator::Schedule(time, &Topology::FailLinkPair, &simulationTopology, *it);
+    Simulator::Schedule(time + MilliSeconds(20), &Topology::RepairLinkPair, &simulationTopology, *it);
   }
   simulationTopology.AddPathsToTest(pathsToTest);
   //Simulator::Schedule(Seconds(1.0), &Topology::PingMachines, &simulationTopology, 1, 6);
