@@ -346,7 +346,6 @@ UdpEchoClient::SendBurst (uint32_t burstLength, Time time)
     // call to the trace sinks before the packet is actually sent,
     // so that tags added to the packet can be sent as well
     Simulator::Schedule(packetTime, &UdpEchoClient::SendInternal, this, p);
-    std::cout << "TX_t," << packetTime << "," << time << std::endl;
     packetTime = packetTime + time;
     ++m_sent;
 
