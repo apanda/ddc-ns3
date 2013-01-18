@@ -5,6 +5,7 @@ import random
 import subprocess
 import StringIO
 from os import path
+from math import ceil
 def contains_ends(ends, failed_edges, graph):
     shortest_path = nx.shortest_path(graph, ends[0], ends[1])
     return any(map(lambda (e1, e2): (e1 in shortest_path) and (e2 in shortest_path), failed_edges))
@@ -13,7 +14,7 @@ if __name__=="__main__":
     topo = None
     perc = 0.0
     if len(sys.argv) < 9:
-        print "Usage: <script> <topology> <nodes_to_test> <edges_to_fail> <percent_combination_to_try> <packets> <num_tests> <delay> <result_file>"
+        print "Usage: <script> <topology>(string) <nodes_to_test>(int) <edges_to_fail>(tuple) <percent_combination_to_try>(meaningless) <packets>(int) <num_tests>(meaningless int) <delay>(three element list) <result_file>(string)"
         sys.exit(1)
     topo = path.expanduser(sys.argv[1])
     perc = int(sys.argv[2])
@@ -41,7 +42,7 @@ if __name__=="__main__":
     while current_delay < delay[1]:
         out.write(str.format("delay = {0}\n", current_delay))
         out.flush()
-        executable = str.format("""examples/apanda/traffic-sim-latency --paths="{0}" --delay="{3}" --topology={1} --packets={2}""",
+        executable = str.format("""examples/apanda/traffic-sim-latency --paths="{0}" --delay="{3}" --topology={1} --packets={2} --latency=10.0""",
                                  source_dest_pairs, topo, packets, current_delay)
         print executable
         current_delay += delay[2]
@@ -62,8 +63,8 @@ if __name__=="__main__":
             #out.flush()
             #failed_edges =  ','.join(map(lambda e: '='.join(map(lambda k: (k[0], k[1]) if k[0] < k[1] else (k[1], k[0]), map(str, e))), edge))
             failed_edge = map(lambda e: (e[0], e[1]) if e[0] < e[1] else (e[1], e[0]), [edge])
-            constrained_pairs = filter(lambda x: contains_ends(x, failed_edge, G), comb)
-            if len(constrained_pairs) < int(0.025 * len(comb)):
+            constrained_pairs = filter(lambda x: contains_ends(x, failed_edge, G), source_dest_choices)
+            if len(constrained_pairs) < 2:
                continue
             fail_edges.append(failed_edge[0])
             if len(fail_edges) >= failures:
@@ -76,7 +77,7 @@ if __name__=="__main__":
         while current_delay < delay[1]:
             out.write(str.format("delay = {0}\n", current_delay))
             out.flush()
-            executable = str.format("""examples/apanda/traffic-sim-random --links="{0}" --paths="{1}" --delay="{4}" --topology={2} --packets={3}""",
+            executable = str.format("""examples/apanda/traffic-sim-latency --links="{0}" --paths="{1}" --delay="{4}" --topology={2} --packets={3} --latency=10.0""",
                                     failed_edges, source_dest_pairs, topo, packets, current_delay)
             print executable
             current_delay += delay[2]

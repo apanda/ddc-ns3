@@ -64,7 +64,13 @@ class Topology : public Object
     uint32_t m_currentTrial;
     uint32_t m_packets;
     double m_delay;
+    double m_linkLatency;
   public:
+    
+    void SetPropagationDelay (double latency) 
+    {
+      m_linkLatency = latency;
+    }
 
     inline uint32_t CannonicalNode (const uint32_t node) 
     {
@@ -80,15 +86,15 @@ class Topology : public Object
     {
       uint32_t seq = 0;
       packet->CopyData ((uint8_t*)&seq, sizeof(seq));
-      std::cout << Simulator::Now() << "," << CannonicalNode(AddressForNode(header.GetDestination()))
-                <<"," << CannonicalNode(AddressForNode(header.GetSource())) << ",TX,"<< seq << std::endl;
+      std::cout << "TX_s," << Simulator::Now() << "," << CannonicalNode(AddressForNode(header.GetDestination()))
+                <<"," << CannonicalNode(AddressForNode(header.GetSource())) <<"," << seq << std::endl;
     }
 
     void ClienTx (Ptr<const Packet> packet, uint32_t node, Ipv4Address addr) {
       uint32_t seq = 0;
       packet->CopyData ((uint8_t*)&seq, sizeof(seq));
-      std::cout << Simulator::Now() << "," << CannonicalNode(node)
-                <<"," << CannonicalNode(AddressForNode(addr)) << ",TX,"<< seq << std::endl;
+      std::cout << "TX_c," << Simulator::Now() << "," << CannonicalNode(node)
+                <<"," << CannonicalNode(AddressForNode(addr)) << ","<< seq << std::endl;
     }
 
     void SetDelay(double delay)
@@ -150,6 +156,7 @@ class Topology : public Object
       m_currentTrial = 0;
       m_simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
       m_packets = 0;
+      m_linkLatency = 1.0;
    }
    
     virtual ~Topology()
@@ -217,6 +224,7 @@ class Topology : public Object
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
       pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Gbps"));
+      pointToPoint.SetChannelAttribute("Delay", TimeValue(MilliSeconds(m_linkLatency))); 
       for (uint32_t i = 0; i < m_numNodes; i++) {
         m_callbacks.push_back(NodeCallback(m_nodeTranslate[i], this));
         NS_ASSERT(!m_connectivityGraph[i]->empty());
@@ -227,6 +235,7 @@ class Topology : public Object
             continue;
           }
           pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("10Gbps")));
+          pointToPoint.SetChannelAttribute("Delay", TimeValue(MilliSeconds(m_linkLatency))); 
           NetDeviceContainer p2pDevices = 
             pointToPoint.Install (m_nodes.Get(i), m_nodes.Get(*iterator));
           m_nodeDevices[i].Add(p2pDevices.Get(0));
@@ -283,8 +292,8 @@ class Topology : public Object
       for (uint32_t i = 0; i < m_numNodes; i++) {
         Ptr<GlobalRouter> router = m_nodes.Get(i)->GetObject<GlobalRouter>();
         Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
-        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MicroSeconds(m_delay)));
-        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MicroSeconds(m_delay)));
+        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(Seconds(m_delay * 1e-6)));
+        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(Seconds(m_delay * 1e-6)));
         Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
         l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
         l3->SetAttribute("DefaultTtl", UintegerValue(255));
@@ -328,33 +337,33 @@ void NodeCallback::RxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
   NS_LOG_LOGIC(m_id << " Received packet " << (uint32_t)header.GetTtl());
   uint32_t seq = 0;
   packet->CopyData ((uint8_t*)&seq, sizeof(seq));
-  std::cout << Simulator::Now() << "," << m_topology->CannonicalNode(m_topology->AddressForNode(header.GetSource()))
-            <<"," << m_id << ",RX,"<< seq << std::endl;
+  std::cout << "RX_s,"<< Simulator::Now() << "," << m_topology->CannonicalNode(m_topology->AddressForNode(header.GetSource()))
+            <<"," << m_id << ","<< seq << std::endl;
 }
 
 void NodeCallback::ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
   NS_LOG_LOGIC(m_id << " Server Received packet " << (uint32_t)header.GetTtl());
   uint32_t seq = 0;
   packet->CopyData ((uint8_t*)&seq, sizeof(seq));
-  std::cout << Simulator::Now() << "," << m_topology->CannonicalNode(m_topology->AddressForNode(header.GetSource()))
-            <<"," << m_id << ",RX,"<< seq << std::endl;
+  std::cout << "RX_c," << Simulator::Now() << "," << m_topology->CannonicalNode(m_topology->AddressForNode(header.GetSource()))
+            <<"," << m_id << ","<< seq << std::endl;
   //std::cout << seq << ",";
 }
 
 void NodeCallback::NodeReversal (uint32_t iface, Ipv4Address addr) {
   NS_LOG_LOGIC(m_id << " reversed iface " << iface << " for " << addr);
-  std::cout << m_id << ",R" << std::endl;
+  std::cout << "R," << m_id<< std::endl;
 }
 
 void NodeCallback::DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, Ipv4L3Protocol::DropReason drop, Ptr<Ipv4> ipv4, uint32_t iface) {
   NS_LOG_LOGIC(m_id << " dropped packet " << iface);
-  std::cout << Simulator::Now() << "," <<  m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetSource()))
+  std::cout << "D,"<<Simulator::Now() << "," <<  m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetSource()))
             << "," << m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetDestination()))
             << ",D(" << (uint32_t)hdr.GetTtl() << ")" << std::endl;
 }
 
 void NodeCallback::PhyDropTrace (Ptr<const Packet> p) {
-  std::cout << Simulator::Now() << "," << m_id << ",P" << std::endl;
+  std::cout << "P," << Simulator::Now() << std::endl;
 }
 
 void
@@ -384,6 +393,7 @@ main (int argc, char *argv[])
   std::string paths;
   uint32_t packets = 1;
   double delay = 0.0;
+  double linkLatency = 1.0;
   std::vector<std::pair<uint32_t, uint32_t> > linksToFail;
   std::vector<std::pair<uint32_t, uint32_t> > pathsToTest;
   CommandLine cmd;
@@ -393,7 +403,8 @@ main (int argc, char *argv[])
   cmd.AddValue("links", "Links to fail", links);
   cmd.AddValue("paths", "Source destination pairs to test", paths);
   cmd.AddValue("packets", "Packets to send per trial", packets);
-  cmd.AddValue("delay", "Delay for repairs", delay);
+  cmd.AddValue("delay", "Delay for repairs (microseconds)", delay);
+  cmd.AddValue("latency", "Propagation delay (ms)", linkLatency);
   cmd.Parse(argc, argv);
   if (!links.empty()) {
     ParseLinks(links, linksToFail);
@@ -404,6 +415,7 @@ main (int argc, char *argv[])
   Topology simulationTopology;
   simulationTopology.SetDelay(delay);
   simulationTopology.SetPackets(packets);
+  simulationTopology.SetPropagationDelay(linkLatency);
   simulationTopology.PopulateGraph(topology);
   simulationTopology.HookupSimulation();
   //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);

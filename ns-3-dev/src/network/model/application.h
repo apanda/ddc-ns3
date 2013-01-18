@@ -100,6 +100,18 @@ public:
    * \param node the node to which this Application object is attached.
    */
   void SetNode (Ptr<Node> node);
+  
+  /**
+   * @apanda
+   * Manually start an application
+   */
+  void Start ();
+
+  /**
+   * @apanda
+   * Manually stop an application
+   */
+  void Stop ();
 
 private:
   /**

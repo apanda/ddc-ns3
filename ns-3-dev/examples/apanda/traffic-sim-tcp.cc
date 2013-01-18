@@ -54,6 +54,7 @@ class TcpFileTransfer : public Object
     Ptr<Node> m_dest;
     uint64_t m_currentBytes;
  public:
+    
     void RetransmitCallback (bool fastRetransmit)
     {
       std::cout << m_node->GetId() << "," << (fastRetransmit ? "FR" : "T") << std::endl;
@@ -118,7 +119,13 @@ class Topology : public Object
     uint32_t m_packets;
     double m_delay;
     std::list<TcpFileTransfer*> m_fileTransfers;
+    double m_linkLatency;
   public:
+    void SetPropagationDelay (double latency) 
+    {
+      m_linkLatency = latency;
+    }
+
     void RetransmitCallback (std::string path, bool fastRetransmit)
     {
       std::cout << path << "," << (fastRetransmit ? "FR" : "T") << std::endl;
@@ -177,6 +184,7 @@ class Topology : public Object
       m_currentTrial = 0;
       m_simulationEnd = Seconds(60.0 * 60.0 * 24 * 7);
       m_packets = 0;
+      m_linkLatency = 1.0;
    }
    
     virtual ~Topology()
@@ -244,6 +252,7 @@ class Topology : public Object
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
       pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Gbps"));
+      pointToPoint.SetChannelAttribute("Delay", TimeValue(MilliSeconds(m_linkLatency))); 
       for (uint32_t i = 0; i < m_numNodes; i++) {
         m_callbacks.push_back(NodeCallback(m_nodeTranslate[i], this));
         NS_ASSERT(!m_connectivityGraph[i]->empty());
@@ -254,6 +263,7 @@ class Topology : public Object
             continue;
           }
           pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("10Gbps")));
+          pointToPoint.SetChannelAttribute("Delay", TimeValue(MilliSeconds(m_linkLatency))); 
           NetDeviceContainer p2pDevices = 
             pointToPoint.Install (m_nodes.Get(i), m_nodes.Get(*iterator));
           m_nodeDevices[i].Add(p2pDevices.Get(0));
@@ -315,8 +325,8 @@ class Topology : public Object
         sinks.Get(i)->TraceConnectWithoutContext(std::string("Rx"), MakeCallback(&Topology::ReceivePacketCallback, this));
         Ptr<GlobalRouter> router = m_nodes.Get(i)->GetObject<GlobalRouter>();
         Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
-        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MilliSeconds(m_delay * 0.012)));
-        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MilliSeconds(m_delay * 0.012)));
+        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MilliSeconds(m_delay * 1e-6)));
+        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MilliSeconds(m_delay * 1e-6)));
         Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
         l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
         l3->SetAttribute("DefaultTtl", UintegerValue(255));
@@ -416,6 +426,7 @@ main (int argc, char *argv[])
   std::string paths;
   uint32_t packets = 1;
   double delay = 0.0;
+  double linkLatency = 1.0;
   std::vector<std::pair<uint32_t, uint32_t> > linksToFail;
   std::vector<std::pair<uint32_t, uint32_t> > pathsToTest;
   CommandLine cmd;
@@ -426,6 +437,7 @@ main (int argc, char *argv[])
   cmd.AddValue("paths", "Source destination pairs to test", paths);
   cmd.AddValue("packets", "Packets to send per trial", packets);
   cmd.AddValue("delay", "Delay for repairs", delay);
+  cmd.AddValue("latency", "Propagation delay (ms)", linkLatency);
   cmd.Parse(argc, argv);
   if (!links.empty()) {
     ParseLinks(links, linksToFail);
@@ -436,6 +448,7 @@ main (int argc, char *argv[])
   Topology simulationTopology;
   simulationTopology.SetDelay(delay);
   simulationTopology.SetPackets(packets);
+  simulationTopology.SetPropagationDelay(linkLatency);
   simulationTopology.PopulateGraph(topology);
   simulationTopology.HookupSimulation();
   //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);

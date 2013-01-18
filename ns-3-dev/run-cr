@@ -1,0 +1,6 @@
+#!/bin/zsh
+python stretch-test-camera-ready.py ../../topos/FatTree_8.topo 33 "(1,12)" 0 30 50 "(0.0,0.1,0.1)" ../../results-cameraready/stretch/fattree.1-12.50
+python stretch-test-camera-ready.py ../../topos/2914.bb.new 33 "(1,12)" 0 30 50 "(0.0,0.1,0.1)" ../../results-cameraready/stretch/2914.1-12.50
+python stretch-test-camera-ready.py ../../topos/7018.bb 33 "(1,12)" 0 30 50 "(0.0,0.1,0.1)" ../../results-cameraready/stretch/7018.1-12.50
+python stretch-test-camera-ready.py ../../topos/1239.bb  33 "(1,12)" 0 30 50 "(0.0,0.1,0.1)" ../../results-cameraready/stretch/1239.1-12.50
+python stretch-test-camera-ready.py ../../topos/3tier_4_4x2_4x16.topo  33 "(1,12)" 0 30 50 "(0.0,0.1,0.1)" ../../results-cameraready/stretch/3tier.1-12.50
