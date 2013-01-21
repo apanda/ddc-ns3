@@ -1,7 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2013 Regents of the University of California Berkeley
- *
+ * Copyright 2007 University of Washington
+ * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation;
@@ -15,139 +15,194 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Author: Aurojit Panda <apanda@cs.berkeley.edu>
+ * Author:  Tom Henderson (tomhend@u.washington.edu)
  */
-
 #include "ns3/address.h"
-#include "ns3/application.h"
-#include "ns3/event-id.h"
-#include "ns3/ptr.h"
-#include "ns3/traced-callback.h"
-#include "ns3/tcp-socket-factory.h"
-#include "ns3/tcp-socket.h"
-#include "ns3/uinteger.h"
+#include "ns3/address-utils.h"
 #include "ns3/log.h"
 #include "ns3/inet-socket-address.h"
-#include <list>
+#include "ns3/inet6-socket-address.h"
+#include "ns3/node.h"
+#include "ns3/socket.h"
+#include "ns3/udp-socket.h"
+#include "ns3/simulator.h"
+#include "ns3/socket-factory.h"
+#include "ns3/packet.h"
+#include "ns3/uinteger.h"
+#include "ns3/trace-source-accessor.h"
+#include "ns3/tcp-socket-factory.h"
+#include "ns3/inet-socket-address.h"
+#include "ns3/ipv4-address.h"
 #include "partition-aggregate-server.h"
 
-namespace ns3
-{
+using namespace std;
+
+namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("PartitionAggregateServer");
 NS_OBJECT_ENSURE_REGISTERED (PartitionAggregateServer);
 
-TypeId PartitionAggregateServer::GetTypeId (void) 
+TypeId 
+PartitionAggregateServer::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::PartitionAggregateServer")
     .SetParent<Application> ()
     .AddConstructor<PartitionAggregateServer> ()
-    .AddAttribute ("Port", "Port on which we listen for incoming packets.",
-                   UintegerValue (5000),
-                   MakeUintegerAccessor (&PartitionAggregateServer::m_port),
-                   MakeUintegerChecker<uint16_t> ())
+    .AddTraceSource ("Rx", "A packet has been received",
+                     MakeTraceSourceAccessor (&PartitionAggregateServer::m_rxTrace))
   ;
   return tid;
 }
 
 PartitionAggregateServer::PartitionAggregateServer ()
 {
-  NS_LOG_FUNCTION(this);
+  NS_LOG_FUNCTION (this);
   m_socket = 0;
+  m_totalRx = 0;
+  m_tid = TcpSocketFactory::GetTypeId();
 }
 
-PartitionAggregateServer::~PartitionAggregateServer ()
+PartitionAggregateServer::~PartitionAggregateServer()
 {
   NS_LOG_FUNCTION (this);
+}
+
+uint32_t PartitionAggregateServer::GetTotalRx () const
+{
+  return m_totalRx;
+}
+
+Ptr<Socket>
+PartitionAggregateServer::GetListeningSocket (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_socket;
+}
+
+std::list<Ptr<Socket> >
+PartitionAggregateServer::GetAcceptedSockets (void) const
+{
+  NS_LOG_FUNCTION (this);
+  return m_socketList;
 }
 
 void PartitionAggregateServer::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
   m_socket = 0;
+  m_socketList.clear ();
 
   // chain up
   Application::DoDispose ();
 }
 
-void PartitionAggregateServer::StartApplication (void)
+
+// Application Methods
+void PartitionAggregateServer::StartApplication ()    // Called at time specified by Start
 {
-  NS_LOG_FUNCTION_NOARGS ();
-
-  if (m_socket == 0)
+  NS_LOG_FUNCTION (this);
+  // Create the socket if not already
+  if (!m_socket)
     {
-      TypeId tid = TypeId::LookupByName ("ns3::TcpSocketFactory");
-      m_socket = Socket::CreateSocket (GetNode (), tid);
-      InetSocketAddress local = InetSocketAddress (Ipv4Address::GetAny (), m_port);
-      m_socket->Bind (local);
-      m_socket->SetAcceptCallback (
-            MakeNullCallback<bool, Ptr<Socket>, const Address &> (),
-            MakeCallback (&PartitionAggregateServer::HandleAccept, this));
+      m_local = InetSocketAddress(Ipv4Address::GetAny(), 5000); 
+      m_socket = Socket::CreateSocket (GetNode (), m_tid);
+      m_socket->Bind (m_local);
+      m_socket->Listen ();
+      // m_socket->ShutdownSend ();
+      if (addressUtils::IsMulticast (m_local))
+        {
+          Ptr<UdpSocket> udpSocket = DynamicCast<UdpSocket> (m_socket);
+          if (udpSocket)
+            {
+              // equivalent to setsockopt (MCAST_JOIN_GROUP)
+              udpSocket->MulticastJoinGroup (0, m_local);
+            }
+          else
+            {
+              NS_FATAL_ERROR ("Error: joining multicast on a non-UDP socket");
+            }
+        }
+    }
 
+  m_socket->SetRecvCallback (MakeCallback (&PartitionAggregateServer::HandleRead, this));
+  m_socket->SetAcceptCallback (
+    MakeNullCallback<bool, Ptr<Socket>, const Address &> (),
+    MakeCallback (&PartitionAggregateServer::HandleAccept, this));
+  m_socket->SetCloseCallbacks (
+    MakeCallback (&PartitionAggregateServer::HandlePeerClose, this),
+    MakeCallback (&PartitionAggregateServer::HandlePeerError, this));
+}
+
+void PartitionAggregateServer::StopApplication ()     // Called at time specified by Stop
+{
+  NS_LOG_FUNCTION (this);
+  while(!m_socketList.empty ()) //these are accepted sockets, close them
+    {
+      Ptr<Socket> acceptedSocket = m_socketList.front ();
+      m_socketList.pop_front ();
+      acceptedSocket->Close ();
+    }
+  if (m_socket) 
+    {
+      m_socket->Close ();
+      m_socket->SetRecvCallback (MakeNullCallback<void, Ptr<Socket> > ());
     }
 }
 
-void PartitionAggregateServer::HandleAccept (Ptr<Socket> s, const Address& from) 
-{
-  NS_LOG_FUNCTION (this << s << from);
-  s->SetRecvCallback (MakeCallback (&PartitionAggregateServer::HandleRead, this));
-}
-
-void PartitionAggregateServer::HandleRead (Ptr<Socket> s)
-{
-  
-  NS_LOG_FUNCTION (this << socket);
-  s->SetSendCallback(MakeCallback(&PartitionAggregateServer::SendCallback, this));
-  m_remaining[s] = 0;
-  SendCallback(s, 1024);
-}
-
-void PartitionAggregateServer::SendCallback (Ptr<Socket> s, uint32_t b)
+void PartitionAggregateServer::HandleRead (Ptr<Socket> socket)
 {
   NS_LOG_FUNCTION (this << socket);
   Ptr<Packet> packet;
   Address from;
-  while ((packet = s->RecvFrom (from)))
+  while ((packet = socket->RecvFrom (from)))
     {
       if (packet->GetSize () == 0)
         { //EOF
           break;
         }
-    }
-  uint32_t bytes = m_remaining[s];
-  while (bytes < RESPONSE_SIZE)
-    { // Time to send more
-      uint32_t toSend = SEND_SIZE;
-      // Make sure we don't send too many
-      toSend = std::min (SEND_SIZE, RESPONSE_SIZE - bytes);
-      Ptr<Packet> packet = Create<Packet> (toSend);
-      int actual = s->Send (packet);
-      if (actual > 0)
+      m_totalRx += packet->GetSize ();
+      if (InetSocketAddress::IsMatchingType (from))
         {
-          bytes += actual;
+          NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds ()
+                       << "s packet sink received "
+                       <<  packet->GetSize () << " bytes from "
+                       << InetSocketAddress::ConvertFrom(from).GetIpv4 ()
+                       << " port " << InetSocketAddress::ConvertFrom (from).GetPort ()
+                       << " total Rx " << m_totalRx << " bytes");
         }
-      // We exit this loop when actual < toSend as the send side
-      // buffer is full. The "DataSent" callback will pop when
-      // some buffer space has freed ip.
-      if ((unsigned)actual != toSend)
+      else if (Inet6SocketAddress::IsMatchingType (from))
         {
-          break;
+          NS_LOG_INFO ("At time " << Simulator::Now ().GetSeconds ()
+                       << "s packet sink received "
+                       <<  packet->GetSize () << " bytes from "
+                       << Inet6SocketAddress::ConvertFrom(from).GetIpv6 ()
+                       << " port " << Inet6SocketAddress::ConvertFrom (from).GetPort ()
+                       << " total Rx " << m_totalRx << " bytes");
         }
+      m_rxTrace (packet, from);
     }
-  // Check if time to close (all sent)
-  if (bytes == RESPONSE_SIZE)
-    {
-      s->Close ();
-      m_remaining.erase(s);
-    }
-  else
-    {
-      m_remaining[s] = bytes; 
-    }
+  packet = Create<Packet> (PartitionAggregateServer::RESPONSE_SIZE);
+  uint32_t sent = socket->Send(packet);
+  NS_ASSERT(sent == PartitionAggregateServer::RESPONSE_SIZE);
 }
 
-void PartitionAggregateServer::StopApplication (void)
+
+void PartitionAggregateServer::HandlePeerClose (Ptr<Socket> socket)
 {
-  m_socket->Close();
+  NS_LOG_FUNCTION (this << socket);
 }
+ 
+void PartitionAggregateServer::HandlePeerError (Ptr<Socket> socket)
+{
+  NS_LOG_FUNCTION (this << socket);
 }
+ 
+
+void PartitionAggregateServer::HandleAccept (Ptr<Socket> s, const Address& from)
+{
+  NS_LOG_FUNCTION (this << s << from);
+  s->SetRecvCallback (MakeCallback (&PartitionAggregateServer::HandleRead, this));
+  m_socketList.push_back (s);
+}
+
+} // Namespace ns3
