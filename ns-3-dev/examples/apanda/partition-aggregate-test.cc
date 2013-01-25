@@ -48,14 +48,13 @@ static const uint32_t PORT = 22;
 class Topology : public Object
 {
   protected:
-    std::vector<UdpEchoClient*> m_clients;
-    std::vector<UdpEchoServer*> m_servers;
-    std::vector<PartitionAggregateClient*> m_partClients;
+    std::map<uint32_t, PartitionAggregateClient*> m_partClients;
     std::vector<PointToPointChannel* > m_channels;
     UniformVariable randVar;
     uint32_t m_numNodes;
     std::vector<std::list<uint32_t>*> m_connectivityGraph;
     Time m_simulationEnd;
+    std::vector<uint32_t> m_hosts;
     std::vector<uint32_t> m_nodeTranslate;
     std::map<std::pair<uint32_t, uint32_t>, PointToPointChannel*> m_channelMap;
     std::map<uint32_t, uint32_t> m_nodeForwardTranslationMap;
@@ -64,13 +63,17 @@ class Topology : public Object
     std::vector<NetDeviceContainer> m_nodeDevices;
     std::vector<NetDeviceContainer> m_linkDevices;
     std::vector<NodeCallback> m_callbacks;
-    //  std::vector<std::pair<uint32_t, uint32_t> > m_pathsToTest;
+    std::vector<std::pair<uint32_t, std::list<uint32_t> > > m_pathsToTest;
     uint32_t m_currentPath;
     uint32_t m_currentTrial;
-    uint32_t m_packets;
     double m_delay;
     double m_linkLatency;
+    bool m_repair;
   public:
+    void SetRepair (bool repair)
+    {
+      m_repair = repair;
+    }
     void SetPropagationDelay (double latency) 
     {
       m_linkLatency = latency;
@@ -92,6 +95,11 @@ class Topology : public Object
       return m_nodeTranslate[node];
     }
 
+    inline uint32_t PhysicalNode (const uint32_t node)
+    {
+      return m_nodeForwardTranslationMap[node];
+    }
+
     inline uint32_t AddressForNode (const Ipv4Address address) 
     {
       return m_addressToNodeMap[address];
@@ -101,25 +109,6 @@ class Topology : public Object
     {
       m_delay = delay;
     }
-    void AddPathsToTest(std::vector<std::pair<uint32_t, std::list<uint32_t> > > paths)
-    {
-      NS_LOG_LOGIC("Add paths to test");
-      //m_pathsToTest.insert(m_pathsToTest.end(), paths.begin(), paths.end());
-      for (std::vector<std::pair<uint32_t, std::list<uint32_t> > >::iterator it = paths.begin(); it != paths.end(); it++) {
-        std::cerr << "Add paths to test " << (*it).first << std::endl;
-        Ptr<Request> request = Create<Request> ();
-        uint32_t client = m_nodeForwardTranslationMap[(*it).first];
-        for (std::list<uint32_t>::iterator it2 = (*it).second.begin(); it2 != (*it).second.end(); it2++) {
-          Ipv4Address server = m_nodes.Get(m_nodeForwardTranslationMap[*it2])->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal();
-          std::cerr << *it2 <<  " " << server << std::endl;
-          request->addresses.push_back(InetSocketAddress(server, 5000));
-          request->nodes[InetSocketAddress(server, 5000)] = *it2;
-        }
-        Simulator::Schedule(Seconds(40.0), &PartitionAggregateClient::IssueRequest, m_partClients[client], request);
-        //IssueRequest (InetSocketAddress(server, 5000));
-      }
-      NS_LOG_LOGIC("Add paths to test");
-    }
 
     void RouteEnded ()
     {
@@ -128,19 +117,14 @@ class Topology : public Object
       m_currentTrial++;
     }
     
-    void SetPackets(uint32_t packets)
-    {
-      m_packets = packets;
-    }
-
     Topology()
     {
       m_numNodes = 0;
       m_currentPath = 0;
       m_currentTrial = 0;
       m_simulationEnd = Seconds(60.0 * 60.0 * 24 * 100);
-      m_packets = 0;
       m_linkLatency = 10.0;
+      m_repair = true;
    }
    
     virtual ~Topology()
@@ -149,24 +133,25 @@ class Topology : public Object
             delete m_connectivityGraph[i];
         }
     }
-    void PopulateGraph(std::string& filename)
+    
+    void PopulateGraph (const std::string& filename)
     {
       std::map<uint32_t, std::list<uint32_t>*> tempConnectivityGraph;
       NS_LOG_INFO("Entering PopulateGraph with file " << filename);
       std::ifstream topology(filename.c_str());
       NS_ASSERT(topology.is_open());
-    
+      //boost::split(linkParts, links, boost::is_any_of(","));
       while (topology.good()) {
         std::string input;
         getline(topology, input);
-        size_t found = input.find(" ");
-        if (found == std::string::npos) {
+        std::vector<std::string> topoParts;
+        boost::split(topoParts, input, boost::is_any_of(" "));
+        if (topoParts.size() < 2) {
           continue;
         }
-        std::string node1s = input.substr(0, int(found));
-        std::string node2s = input.substr(int(found) + 1, input.length() - (int(found) + 1));
-        uint32_t node1 = std::atoi(node1s.c_str()) ;
-        uint32_t node2 = std::atoi(node2s.c_str());
+        uint32_t node1 = std::atoi(topoParts[0].c_str());
+        uint32_t node2 = std::atoi(topoParts[1].c_str());
+        bool isHost = topoParts.size() > 2 && (topoParts[2].compare("h") == 0);
         if (!tempConnectivityGraph[node1]) {
           tempConnectivityGraph[node1] = new std::list<uint32_t>;
         }
@@ -175,8 +160,11 @@ class Topology : public Object
         }
         tempConnectivityGraph[node1]->push_back(node2);
         tempConnectivityGraph[node2]->push_back(node1);
+        if (isHost) {
+          m_hosts.push_back(node2);
+        }
       }
-    
+
       m_numNodes = tempConnectivityGraph.size();
       uint32_t last = 0;
       m_connectivityGraph.resize(m_numNodes);
@@ -208,8 +196,9 @@ class Topology : public Object
       NS_LOG_INFO("Creating point to point connections");
       PointToPointHelper pointToPoint;
       pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("10Gbps"));
-      std::cout << "Latency = " << Time::FromDouble(m_linkLatency, Time::MS).GetMicroSeconds() << std::endl;
+      std::cout << "Latency = " << Time::FromDouble(m_linkLatency, Time::MS).GetMicroSeconds() << " us" << std::endl;
       pointToPoint.SetChannelAttribute("Delay", TimeValue(Time::FromDouble(m_linkLatency, Time::MS))); 
+      Config::SetDefault ("ns3::RttEstimator::MinRTO", TimeValue(MilliSeconds(11)));
       for (uint32_t i = 0; i < m_numNodes; i++) {
         m_callbacks.push_back(NodeCallback(m_nodeTranslate[i], this));
         NS_ASSERT(!m_connectivityGraph[i]->empty());
@@ -220,7 +209,7 @@ class Topology : public Object
             continue;
           }
           pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue(DataRate("10Gbps")));
-          pointToPoint.SetChannelAttribute("Delay", TimeValue(MilliSeconds(m_linkLatency))); 
+          pointToPoint.SetChannelAttribute("Delay", TimeValue(Time::FromDouble(m_linkLatency, Time::MS))); 
           NetDeviceContainer p2pDevices = 
             pointToPoint.Install (m_nodes.Get(i), m_nodes.Get(*iterator));
           m_nodeDevices[i].Add(p2pDevices.Get(0));
@@ -267,50 +256,38 @@ class Topology : public Object
 
       NS_LOG_INFO("Done populating routing table");
 
-      UdpEchoServerHelper echoServer (9);
-      ApplicationContainer serverApps = echoServer.Install (m_nodes);
       PartitionAggregateServerHelper paserverHelp (5000);
-      ApplicationContainer paservers = paserverHelp.Install(m_nodes);
-      paservers.Start (Seconds (0.0));
-      //PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", InetSocketAddress(Ipv4Address::GetAny (), 5000));
-      //ApplicationContainer sinkApp = sinkHelper.Install (m_nodes.Get(1));
-      //sinkApp.Start (Seconds (0.0));
       PartitionAggregateClientHelper paclientHelp;
-      ApplicationContainer paclients = paclientHelp.Install(m_nodes);
-      paclients.Start (Seconds (0.0));
-      serverApps.Start (Seconds (1.0));
-      serverApps.Stop (m_simulationEnd);
-      //Simulator::Schedule(Seconds(5.0), &PartitionAggregateClient::IssueRequest, paclients.Get(0), InetSocketAddress(m_nodes.Get(3)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(),5000)); 
-      m_clients.resize(m_numNodes);
-      m_servers.resize(m_numNodes);
-      m_partClients.resize(m_numNodes);
       for (uint32_t i = 0; i < m_numNodes; i++) {
         Ptr<GlobalRouter> router = m_nodes.Get(i)->GetObject<GlobalRouter>();
         Ptr<Ipv4GlobalRouting> gr = router->GetRoutingProtocol();
         gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(MilliSeconds(m_delay * 1e-6)));
         gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(MilliSeconds(m_delay * 1e-6)));
+        gr->SetAttribute("AllowReversal", BooleanValue(m_repair));
         Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
         l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
         l3->SetAttribute("DefaultTtl", UintegerValue(255));
         gr->AddReversalCallback(MakeCallback(&NodeCallback::NodeReversal, &m_callbacks[i]));
-        m_servers[i] =  (UdpEchoServer*)PeekPointer(serverApps.Get(i));
-        m_partClients[i] = (PartitionAggregateClient*)PeekPointer(paclients.Get(i));
-        m_servers[i]->AddReceivePacketEvent(MakeCallback(&NodeCallback::ServerRxPacket, &m_callbacks[i]));
       }
+
+      PacketSinkHelper sinkHelp ("ns3::TcpSocketFactory", InetSocketAddress(Ipv4Address::GetAny (), 5555));
+      for (std::vector<uint32_t>::iterator it = m_hosts.begin(); it != m_hosts.end(); it++) {
+        ApplicationContainer paserver = paserverHelp.Install(m_nodes.Get(PhysicalNode(*it)));
+        ApplicationContainer paclient = paclientHelp.Install(m_nodes.Get(PhysicalNode(*it)));
+        ApplicationContainer sink = sinkHelp.Install(m_nodes.Get(PhysicalNode(*it)));
+        paclient.Start(Seconds(0.0));
+        paclient.Stop(m_simulationEnd);
+        paserver.Start(Seconds(0.0));
+        paclient.Stop(m_simulationEnd);
+        m_partClients[*it] = (PartitionAggregateClient*)PeekPointer(paclient.Get(0));
+      }
+
       NS_LOG_INFO("Done setting up simulation");
     }
 
     void Reset ()
     {
       SimulationSingleton<GlobalRouteManagerImpl>::Get ()->SendHeartbeats();
-    }
-
-    void PingMachines (UdpEchoClient* client)
-    {
-      NS_LOG_LOGIC("Untranslated sending between " << client);
-      NS_LOG_LOGIC("Sending between " << client);
-      Simulator::ScheduleNow(&UdpEchoClient::StartApplication, client);
-      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::SendBurst, client, m_packets, MilliSeconds(0.012));
     }
     
     void FailLink (uint32_t from, uint32_t to)
@@ -325,6 +302,50 @@ class Topology : public Object
       NS_LOG_LOGIC("Failing link between " << key.first << " and " << key.second);
       std::cout << key.first << "," << key.second << ",F" << std::endl;
       m_channelMap[key]->SetLinkDown();
+    }
+
+    void ScheduleEvents (std::string schedule)
+    {
+      std::ifstream scheduleFile(schedule.c_str());
+      NS_ASSERT(scheduleFile.is_open());
+      //boost::split(linkParts, links, boost::is_any_of(","));
+      uint32_t req = 0;
+      while (scheduleFile.good()) {
+        std::string input;
+        getline(scheduleFile, input);
+        if (input.empty()) {
+          continue;
+        }
+        std::vector<std::string> parts;
+        boost::split(parts, input, boost::is_any_of(" "));
+        double time = (double)std::atof(parts[0].c_str());
+        bool query = (parts[1].compare("q") == 0);
+        bool linkfail = (parts[1].compare("f") == 0);
+        if (query) {
+          uint32_t client = std::atoi(parts[2].c_str());
+          Ptr<Request> request = Create<Request> ();
+          request->client = client;
+          request->requestNumber = req;
+          request->issueTime = Seconds(time);
+          req++;
+          for (uint32_t it2 = 3; it2 < parts.size(); it2++) {
+            uint32_t serverIndex = std::atoi(parts[it2].c_str());
+            Ipv4Address server = m_nodes.Get(m_nodeForwardTranslationMap[serverIndex])->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal();
+            request->addresses.push_back(InetSocketAddress(server, 5000));
+            request->nodes[InetSocketAddress(server, 5000)] = serverIndex;
+          }
+          Simulator::Schedule(Seconds(time), &PartitionAggregateClient::IssueRequest, m_partClients[client], request);
+        }
+        else if (linkfail) {
+          for (uint32_t it3 = 2; it3 < parts.size(); it3++) {
+            std::vector<std::string> nodeParts;
+            boost::split(nodeParts, parts[it3], boost::is_any_of("="));
+            NS_ASSERT(nodeParts.size() == 2);
+            Simulator::Schedule(Seconds(time), &Topology::FailLink, this, std::atoi(nodeParts[0].c_str()), std::atoi(nodeParts[1].c_str()));
+          }
+        }
+      }
+      std::cout << "Done scheduling" << std::endl;
     }
 };
 
@@ -348,14 +369,14 @@ void NodeCallback::ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header)
 
 void NodeCallback::NodeReversal (uint32_t iface, Ipv4Address addr) {
   NS_LOG_LOGIC(m_id << " reversed iface " << iface << " for " << addr);
-  std::cout << m_id << ",R" << std::endl;
+  std::cout << m_id << ",R (" << addr << ")" << std::endl;
 }
 
 void NodeCallback::DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, Ipv4L3Protocol::DropReason drop, Ptr<Ipv4> ipv4, uint32_t iface) {
   NS_LOG_LOGIC(m_id << " dropped packet " << iface);
   std::cout << m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetSource()))
             << "," << m_topology->CannonicalNode(m_topology->AddressForNode(hdr.GetDestination()))
-            << ",D(" << (uint32_t)hdr.GetTtl() << ")" << std::endl;
+            << ",D (" << (uint32_t)hdr.GetTtl() << ")" << std::endl;
 }
 
 void NodeCallback::PhyDropTrace (Ptr<const Packet> packet) {
@@ -401,51 +422,26 @@ main (int argc, char *argv[])
   AsciiTraceHelper asciiHelper;
 
   Ptr<OutputStreamWrapper> stream = asciiHelper.CreateFileStream ("tcp-trace.tr");
-  bool simulateError;
   std::string topology;
-  std::string links;
-  std::string paths;
-  uint32_t packets = 1;
   double delay = 0.0;
   double linkLatency = 0.5;
-  std::vector<std::pair<uint32_t, uint32_t> > linksToFail;
-  std::vector<std::pair<uint32_t, std::list<uint32_t> > > pathsToTest;
+  std::string schedule;
+  bool repair;
   CommandLine cmd;
-  cmd.AddValue("packets", "Number of packets to echo", packets);
-  cmd.AddValue("error", "Simulate error", simulateError);
   cmd.AddValue("topology", "Topology file", topology);
-  cmd.AddValue("links", "Links to fail", links);
-  cmd.AddValue("requests", "Source destination pairs to test", paths);
-  cmd.AddValue("packets", "Packets to send per trial", packets);
   cmd.AddValue("delay", "Delay for repairs", delay);
   cmd.AddValue("latency", "Propagation delay (ms)", linkLatency);
+  cmd.AddValue("schedule", "Simulation schedule", schedule);
+  cmd.AddValue("repair", "Allow reversals", repair);
   cmd.Parse(argc, argv);
-  if (!links.empty()) {
-    ParseLinks(links, linksToFail);
-  }
-  if (!paths.empty()) {
-    ParseRequests(paths, pathsToTest);
-  }
+  std::cerr << "Repair  = " << repair <<std::endl;
   Topology simulationTopology;
+  simulationTopology.SetRepair(repair);
   simulationTopology.SetDelay(delay);
-  simulationTopology.SetPackets(packets);
   simulationTopology.SetPropagationDelay(linkLatency);
   simulationTopology.PopulateGraph(topology);
   simulationTopology.HookupSimulation();
-  //LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);
-  //LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO);
-  //Simulator::ScheduleNow(&Topology::FailLink, &simulationTopology, 5, 6);
-  //Simulator::ScheduleNow(&Topology::FailLink, &simulationTopology, 6, 7);
-  WeibullVariable weibull(2.0, 0.5);
-  for (std::vector<std::pair<uint32_t, uint32_t> >::iterator it = linksToFail.begin();
-       it != linksToFail.end();
-       it++) {
-    double failTime = 3.0 + weibull.GetValue();
-    Simulator::Schedule(Seconds(failTime), &Topology::FailLinkPair, &simulationTopology, *it);
-  }
-  simulationTopology.AddPathsToTest(pathsToTest);
-  //Simulator::Schedule(Seconds(1.0), &Topology::PingMachines, &simulationTopology, 1, 6);
-  //simulationTopology.PingMachines(1, 6);
+  simulationTopology.ScheduleEvents(schedule);
   Simulator::Run ();
   Simulator::Destroy ();
 

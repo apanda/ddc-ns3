@@ -256,7 +256,7 @@ protected:
  * @apanda
  * Find highest priority output port to send messages out of
  */
- bool FindOutputPort (uint8_t, Ipv4Address addr, uint32_t &link);  
+ bool FindOutputPort (uint8_t, Ipv4Address addr, uint32_t &link, uint32_t iif);  
 
 /**
  * @apanda
@@ -293,7 +293,7 @@ protected:
  * Standard receive
  */
   void StandardReceive (Ipv4Address addr, Ipv4Header& header,
-                       Ptr<Ipv4Route>& route, Socket::SocketErrno& error);
+                       Ptr<Ipv4Route>& route, Socket::SocketErrno& error, uint32_t iif);
 
 /**
  * @apanda

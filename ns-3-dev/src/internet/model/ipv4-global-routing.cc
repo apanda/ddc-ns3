@@ -87,7 +87,7 @@ Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest,
                                    Ipv4Address nextHop, 
                                    uint32_t interface)
 {
-  NS_LOG_FUNCTION (dest << nextHop << interface);
+  //NS_LOG_FUNCTION (dest << nextHop << interface);
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, nextHop, interface);
   m_hostRoutes.push_back (route);
@@ -101,7 +101,7 @@ void
 Ipv4GlobalRouting::AddHostRouteTo (Ipv4Address dest, 
                                    uint32_t interface)
 {
-  NS_LOG_FUNCTION (dest << interface);
+  //NS_LOG_FUNCTION (dest << interface);
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateHostRouteTo (dest, interface);
   m_hostRoutes.push_back (route);
@@ -116,7 +116,7 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                       Ipv4Address nextHop, 
                                       uint32_t interface)
 {
-  NS_LOG_FUNCTION (network << networkMask << nextHop << interface);
+  //NS_LOG_FUNCTION (network << networkMask << nextHop << interface);
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateNetworkRouteTo (network,
                                                         networkMask,
@@ -135,7 +135,7 @@ Ipv4GlobalRouting::AddNetworkRouteTo (Ipv4Address network,
                                       Ipv4Mask networkMask, 
                                       uint32_t interface)
 {
-  NS_LOG_FUNCTION (network << networkMask << interface);
+  //NS_LOG_FUNCTION (network << networkMask << interface);
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateNetworkRouteTo (network,
                                                         networkMask,
@@ -154,7 +154,7 @@ Ipv4GlobalRouting::AddASExternalRouteTo (Ipv4Address network,
                                          Ipv4Address nextHop,
                                          uint32_t interface)
 {
-  NS_LOG_FUNCTION (network << networkMask << nextHop);
+  //NS_LOG_FUNCTION (network << networkMask << nextHop);
   Ipv4RoutingTableEntry *route = new Ipv4RoutingTableEntry ();
   *route = Ipv4RoutingTableEntry::CreateNetworkRouteTo (network,
                                                         networkMask,
@@ -166,7 +166,7 @@ Ipv4GlobalRouting::AddASExternalRouteTo (Ipv4Address network,
 uint32_t 
 Ipv4GlobalRouting::GetNRoutes (void) const
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  //NS_LOG_FUNCTION_NOARGS ();
   uint32_t n = 0;
   n += m_hostRoutes.size ();
   n += m_networkRoutes.size ();
@@ -177,7 +177,7 @@ Ipv4GlobalRouting::GetNRoutes (void) const
 Ipv4RoutingTableEntry *
 Ipv4GlobalRouting::GetRoute (uint32_t index) const
 {
-  NS_LOG_FUNCTION (index);
+  //NS_LOG_FUNCTION (index);
   if (index < m_hostRoutes.size ())
     {
       uint32_t tmp = 0;
@@ -226,7 +226,7 @@ Ipv4GlobalRouting::GetRoute (uint32_t index) const
 void 
 Ipv4GlobalRouting::RemoveRoute (uint32_t index)
 {
-  NS_LOG_FUNCTION (index);
+  //NS_LOG_FUNCTION (index);
   if (index < m_hostRoutes.size ())
     {
       uint32_t tmp = 0;
@@ -236,10 +236,10 @@ Ipv4GlobalRouting::RemoveRoute (uint32_t index)
         {
           if (tmp  == index)
             {
-              NS_LOG_LOGIC ("Removing route " << index << "; size = " << m_hostRoutes.size ());
+              //NS_LOG_LOGIC ("Removing route " << index << "; size = " << m_hostRoutes.size ());
               delete *i;
               m_hostRoutes.erase (i);
-              NS_LOG_LOGIC ("Done removing host route " << index << "; host route remaining size = " << m_hostRoutes.size ());
+              //NS_LOG_LOGIC ("Done removing host route " << index << "; host route remaining size = " << m_hostRoutes.size ());
               return;
             }
           tmp++;
@@ -253,10 +253,10 @@ Ipv4GlobalRouting::RemoveRoute (uint32_t index)
     {
       if (tmp == index)
         {
-          NS_LOG_LOGIC ("Removing route " << index << "; size = " << m_networkRoutes.size ());
+          //NS_LOG_LOGIC ("Removing route " << index << "; size = " << m_networkRoutes.size ());
           delete *j;
           m_networkRoutes.erase (j);
-          NS_LOG_LOGIC ("Done removing network route " << index << "; network route remaining size = " << m_networkRoutes.size ());
+          //NS_LOG_LOGIC ("Done removing network route " << index << "; network route remaining size = " << m_networkRoutes.size ());
           return;
         }
       tmp++;
@@ -269,10 +269,10 @@ Ipv4GlobalRouting::RemoveRoute (uint32_t index)
     {
       if (tmp == index)
         {
-          NS_LOG_LOGIC ("Removing route " << index << "; size = " << m_ASexternalRoutes.size ());
+          //NS_LOG_LOGIC ("Removing route " << index << "; size = " << m_ASexternalRoutes.size ());
           delete *k;
           m_ASexternalRoutes.erase (k);
-          NS_LOG_LOGIC ("Done removing network route " << index << "; network route remaining size = " << m_networkRoutes.size ());
+          //NS_LOG_LOGIC ("Done removing network route " << index << "; network route remaining size = " << m_networkRoutes.size ());
           return;
         }
       tmp++;
@@ -283,7 +283,7 @@ Ipv4GlobalRouting::RemoveRoute (uint32_t index)
 void
 Ipv4GlobalRouting::DoDispose (void)
 {
-  NS_LOG_FUNCTION_NOARGS ();
+  //NS_LOG_FUNCTION_NOARGS ();
   for (HostRoutesI i = m_hostRoutes.begin (); 
        i != m_hostRoutes.end (); 
        i = m_hostRoutes.erase (i)) 
@@ -363,7 +363,7 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice
 //
   if (header.GetDestination ().IsMulticast ())
     {
-      NS_LOG_LOGIC ("Multicast destination-- returning false");
+      //NS_LOG_LOGIC ("Multicast destination-- returning false");
       return 0; // Let other routing protocols try to handle this
     }
   // TODO:  Configurable option to enable RFC 1222 Strong End System Model
@@ -396,7 +396,7 @@ Ipv4GlobalRouting::RouteOutput (Ptr<Packet> p, Ipv4Header &header, Ptr<NetDevice
 //
   Ptr<Ipv4Route> rtentry;
   header.SetVnode(m_localVnode[header.GetDestination()]);
-  StandardReceive(header.GetDestination(), header, rtentry, sockerr);
+  StandardReceive(header.GetDestination(), header, rtentry, sockerr, 0);
   NS_LOG_LOGIC ("Unicast destination- looking up");
   return rtentry;
 }
@@ -414,7 +414,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
 
   if (header.GetDestination ().IsMulticast ())
     {
-      NS_LOG_LOGIC ("Multicast destination-- returning false");
+      //NS_LOG_LOGIC ("Multicast destination-- returning false");
       return false; // Let other routing protocols try to handle this
     }
 
@@ -476,7 +476,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
     // This assertion is now approved
     NS_ASSERT(m_vnodeState[vnode].m_remoteSeq[destination][iif] == header.GetSeq());
     NS_LOG_LOGIC ("Received along an input port");
-    StandardReceive(destination, header, route, error);
+    StandardReceive(destination, header, route, error, iif);
     if (route != 0) {
       ucb(route, p, header);
       return true;
@@ -502,8 +502,13 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
         // TODO Add delay here, it is pretty easy in this case
         // ReverseOutputToInput(vnode, destination, iif);
         NS_LOG_LOGIC("Reversing output to input eventually");
-        Simulator::Schedule(m_reverseOutputToInputDelay, &Ipv4GlobalRouting::ReverseOutputToInput, this, vnode, destination, iif);
-        StandardReceive(destination, header, route, error);
+        if (!m_reverseOutputToInputDelay.IsZero()) {
+          Simulator::Schedule(m_reverseOutputToInputDelay, &Ipv4GlobalRouting::ReverseOutputToInput, this, vnode, destination, iif);
+        }
+        else {
+          ReverseOutputToInput(vnode, destination, iif);
+        }
+        StandardReceive(destination, header, route, error, iif);
         if (route != 0) {
           ucb(route, p, header);
           return true;
@@ -519,7 +524,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
       m_vnodeState[vnode].m_directions[destination][iif] = In;
       m_vnodeState[vnode].m_remoteSeq[destination][iif] = header.GetSeq();
       NS_LOG_LOGIC ("Received on an uncategorized port");
-      StandardReceive(destination, header, route, error);
+      StandardReceive(destination, header, route, error, iif);
       if (route != 0) {
         ucb(route, p, header);
         return true;
@@ -535,7 +540,7 @@ Ipv4GlobalRouting::RouteInput  (Ptr<const Packet> p, Ipv4Header &header, Ptr<con
 void 
 Ipv4GlobalRouting::NotifyInterfaceUp (uint32_t i)
 {
-  NS_LOG_FUNCTION (this << i);
+  //NS_LOG_FUNCTION (this << i);
   if (m_respondToInterfaceEvents && Simulator::Now ().GetSeconds () > 0)  // avoid startup events
     {
       GlobalRouteManager::DeleteGlobalRoutes ();
@@ -573,7 +578,7 @@ Ipv4GlobalRouting::NotifyInterfaceDown (uint32_t i)
 void 
 Ipv4GlobalRouting::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address)
 {
-  NS_LOG_FUNCTION (this << interface << address);
+  //NS_LOG_FUNCTION (this << interface << address);
   if (m_respondToInterfaceEvents && Simulator::Now ().GetSeconds () > 0)  // avoid startup events
     {
       GlobalRouteManager::DeleteGlobalRoutes ();
@@ -585,7 +590,7 @@ Ipv4GlobalRouting::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress ad
 void 
 Ipv4GlobalRouting::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address)
 {
-  NS_LOG_FUNCTION (this << interface << address);
+  //NS_LOG_FUNCTION (this << interface << address);
   if (m_respondToInterfaceEvents && Simulator::Now ().GetSeconds () > 0)  // avoid startup events
     {
       GlobalRouteManager::DeleteGlobalRoutes ();
@@ -597,7 +602,7 @@ Ipv4GlobalRouting::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress
 void 
 Ipv4GlobalRouting::SetIpv4 (Ptr<Ipv4> ipv4)
 {
-  NS_LOG_FUNCTION (this << ipv4);
+  //NS_LOG_FUNCTION (this << ipv4);
   NS_ASSERT (m_ipv4 == 0 && ipv4 != 0);
   m_ipv4 = ipv4;
 }
@@ -606,10 +611,10 @@ Ipv4GlobalRouting::SetIpv4 (Ptr<Ipv4> ipv4)
 bool
 Ipv4GlobalRouting::PrimitiveAEO (Ipv4Address dest)
 {
-  NS_LOG_FUNCTION (this << dest);
+  //NS_LOG_FUNCTION (this << dest);
   m_aeoRequested[dest] = true;
   bool success = LocalLock(dest);
-  NS_LOG_LOGIC("Acquiring lock " << success);
+  //NS_LOG_LOGIC("Acquiring lock " << success);
   // NS_ASSERT_MSG(success, "Could not acquire lock");
   if (success) {
     m_aeoRequested[dest] = false;
@@ -643,23 +648,29 @@ Ipv4GlobalRouting::SetInterfacePriority (
     Ipv4Address dest,
     uint32_t interface,
     uint32_t priority) {
-  NS_LOG_LOGIC (this << "setting interface " << interface << " priority to " << priority);
+  //NS_LOG_LOGIC (this << "setting interface " << interface << " priority to " << priority);
   m_priorities[dest][interface] = priority;
   m_vnodeState[0].m_prioritized_links[dest].push(PriorityInterface(priority, interface));
 }
 
 // @apanda
 bool
-Ipv4GlobalRouting::FindOutputPort (uint8_t vnode, Ipv4Address addr, uint32_t &link)
+Ipv4GlobalRouting::FindOutputPort (uint8_t vnode, Ipv4Address addr, uint32_t &link, uint32_t iif)
 {
-  NS_LOG_FUNCTION (this << addr);
+  //NS_LOG_FUNCTION (this << addr);
   if (m_vnodeState[vnode].m_outputs[addr].empty()) {
       NS_LOG_LOGIC("Outputs empty");
       return false;
   }
   do {
-    const PriorityInterface interface = m_vnodeState[vnode].m_outputs[addr].top();
+    PriorityInterface interface = m_vnodeState[vnode].m_outputs[addr].top();
     link = interface.second;
+    if (link == iif && m_vnodeState[vnode].m_outputs[addr].size() > 1) {
+      m_vnodeState[vnode].m_outputs[addr].pop();
+      const PriorityInterface iface2 = m_vnodeState[vnode].m_outputs[addr].top();
+      m_vnodeState[vnode].m_outputs[addr].push(interface);
+      interface = iface2;
+    }
     if (m_vnodeState[vnode].m_directions[addr][link] == Out && m_ipv4->GetNetDevice(link)->IsLinkUp()) {
       NS_LOG_LOGIC("Returning output link " << link << "(priority = " << interface.first << ")");
       return true;
@@ -676,7 +687,7 @@ Ipv4GlobalRouting::FindOutputPort (uint8_t vnode, Ipv4Address addr, uint32_t &li
 bool
 Ipv4GlobalRouting::FindHighPriorityLink(uint8_t vnode, Ipv4Address addr, uint32_t &link)
 {
-  NS_LOG_FUNCTION (this << addr);
+  //NS_LOG_FUNCTION (this << addr);
   if (m_vnodeState[vnode].m_prioritized_links[addr].empty()) {
       NS_LOG_LOGIC("No links of any sort");
       return false;
@@ -700,9 +711,9 @@ Ipv4GlobalRouting::FindHighPriorityLink(uint8_t vnode, Ipv4Address addr, uint32_
 void
 Ipv4GlobalRouting::InitializeDestination (Ipv4Address dest)
 {
-  NS_LOG_FUNCTION (this << dest);
-  NS_LOG_LOGIC("Initializing stuff for dest = " << dest << " at node " << m_ipv4->GetNetDevice(0)->GetNode()->GetId());
-  NS_LOG_LOGIC("Number of interfaces = " << m_ipv4->GetNInterfaces());
+  //NS_LOG_FUNCTION (this << dest);
+  //NS_LOG_LOGIC("Initializing stuff for dest = " << dest << " at node " << m_ipv4->GetNetDevice(0)->GetNode()->GetId());
+  //NS_LOG_LOGIC("Number of interfaces = " << m_ipv4->GetNInterfaces());
   if (m_vnodeState[0].m_directions.find(dest) != m_vnodeState[0].m_directions.end()) {
   }
   else {
@@ -735,7 +746,7 @@ Ipv4GlobalRouting::ReverseInputToOutput (uint8_t vnode, Ipv4Address addr, uint32
   if (m_vnodeState[vnode].m_directions[addr][link] != In) {
     return;
   }
-  NS_LOG_FUNCTION (this << vnode << addr << link);
+  //NS_LOG_FUNCTION (this << vnode << addr << link);
   m_reversalCallback(link, addr);
   m_ttl[addr][link]++;
   m_vnodeState[vnode].m_directions[addr][link] = Out;
@@ -765,10 +776,10 @@ void
 Ipv4GlobalRouting::SendOnOutlink (uint8_t vnode, Ipv4Address addr, Ipv4Header& header, uint32_t link)
 {
   NS_LOG_FUNCTION (this << addr);
-  NS_LOG_LOGIC("Setting sequence number to " << (uint32_t)m_vnodeState[vnode].m_localSeq[addr][link]);
+  //NS_LOG_LOGIC("Setting sequence number to " << (uint32_t)m_vnodeState[vnode].m_localSeq[addr][link]);
   header.SetSeq(m_vnodeState[vnode].m_localSeq[addr][link]);
-  NS_LOG_LOGIC("Sequence number is " << header.GetSeq());
-  NS_LOG_LOGIC("Setting vnode number to " << (uint32_t)m_remoteVnode[addr][link]);
+  //NS_LOG_LOGIC("Sequence number is " << header.GetSeq());
+  //NS_LOG_LOGIC("Setting vnode number to " << (uint32_t)m_remoteVnode[addr][link]);
   header.SetVnode(m_remoteVnode[addr][link]);
 }
 
@@ -788,14 +799,14 @@ Ipv4GlobalRouting::CreateRoutingEntry (uint8_t vnode, uint32_t link, Ipv4Address
 // @apanda
 void
 Ipv4GlobalRouting::StandardReceive (Ipv4Address addr, Ipv4Header& header, 
-                                Ptr<Ipv4Route> &route, Socket::SocketErrno &error)
+                                Ptr<Ipv4Route> &route, Socket::SocketErrno &error, uint32_t iif)
 {
   NS_LOG_FUNCTION (this << addr);
   route = 0;
   uint32_t link;
   uint8_t vnode = header.GetVnode();
   do {
-    if (FindOutputPort(vnode, addr, link)) {
+    if (FindOutputPort(vnode, addr, link, iif)) {
       NS_LOG_LOGIC ("Choosing to use output port " << link);
       CreateRoutingEntry(vnode, link, addr, header, route);
       return;
@@ -812,11 +823,13 @@ Ipv4GlobalRouting::StandardReceive (Ipv4Address addr, Ipv4Header& header,
         }
         else {
           error = Socket::ERROR_NOROUTETOHOST;
+          NS_LOG_LOGIC("No path to " << addr);
           return;
         }
       }
     }
     else {
+      error = Socket::ERROR_NOROUTETOHOST;
       return;
     }
   } while (!m_vnodeState[vnode].m_inputs[addr].empty() || !m_vnodeState[vnode].m_outputs[addr].empty());
@@ -826,7 +839,7 @@ Ipv4GlobalRouting::StandardReceive (Ipv4Address addr, Ipv4Header& header,
 void
 Ipv4GlobalRouting::ScheduleReversals (uint8_t vnode, Ipv4Address addr)
 {
-  NS_LOG_FUNCTION (this << addr);
+  //NS_LOG_FUNCTION (this << addr);
   if (m_vnodeState[vnode].m_to_reverse[addr].empty()) {
     m_vnodeState[vnode].m_to_reverse[addr].insert(m_vnodeState[vnode].m_to_reverse[addr].begin(), 
                         m_vnodeState[vnode].m_inputs[addr].begin(), 
@@ -838,7 +851,12 @@ Ipv4GlobalRouting::ScheduleReversals (uint8_t vnode, Ipv4Address addr)
       it++) {
     // ReverseInputToOutput(vnode, addr, *it)
     NS_LOG_LOGIC("Scheduling reversal from input to output");
-    Simulator::Schedule(m_reverseInputToOutputDelay, &Ipv4GlobalRouting::ReverseInputToOutput, this, vnode, addr, *it);
+    if (!m_reverseInputToOutputDelay.IsZero()) {
+      Simulator::Schedule(m_reverseInputToOutputDelay, &Ipv4GlobalRouting::ReverseInputToOutput, this, vnode, addr, *it);
+    }
+    else {
+      ReverseInputToOutput(vnode, addr, *it);
+    }
   }
   m_vnodeState[vnode].m_to_reverse.clear();
   m_vnodeState[vnode].m_to_reverse[addr].insert(m_vnodeState[vnode].m_to_reverse[addr].begin(), m_vnodeState[vnode].m_inputs[addr].begin(), m_vnodeState[vnode].m_inputs[addr].end()); 
@@ -921,7 +939,7 @@ Ipv4GlobalRouting::UpdateHeartbeat (uint32_t seq, Ipv4Address addr)
 void
 Ipv4GlobalRouting::CheckAndAEO (Ipv4Address addr, uint32_t iface)
 {
-  NS_LOG_FUNCTION (this << addr << iface);
+  //NS_LOG_FUNCTION (this << addr << iface);
   if (m_heartbeatState[addr][0]) {
     NS_LOG_LOGIC("Already AEOd for this");
     // We have already AEOed, let's just get on with our life
@@ -938,7 +956,7 @@ Ipv4GlobalRouting::CheckAndAEO (Ipv4Address addr, uint32_t iface)
  NS_ASSERT_MSG(seenPrevious || ifaceBefore, "Cannot have someone later than us in the order hearbeating before us");
  if (seenPrevious) {
    m_heartbeatState[addr][0] = true;
-   NS_LOG_LOGIC("Actually reversing");
+   //NS_LOG_LOGIC("Actually reversing");
    PrimitiveAEO(addr);
  }
 
@@ -952,16 +970,16 @@ Ipv4GlobalRouting::ReceiveHeartbeat (uint32_t seq, Ipv4Address addr, Ptr<NetDevi
   Ptr<NetDevice> other = (channel->GetDevice(0) == link ? channel->GetDevice(1) : channel->GetDevice(0));
   NS_ASSERT(other != link);
   Ptr<Node> otherNode = other->GetNode();
-  NS_LOG_LOGIC("Receiving a heartbeat at " <<  m_ipv4->GetNetDevice(0)->GetNode()->GetId() << " from " << otherNode->GetId() << " for " << addr);
-  NS_LOG_FUNCTION (this << seq << addr << link);
+  //NS_LOG_LOGIC("Receiving a heartbeat at " <<  m_ipv4->GetNetDevice(0)->GetNode()->GetId() << " from " << otherNode->GetId() << " for " << addr);
+  //NS_LOG_FUNCTION (this << seq << addr << link);
   if (seq != m_heartbeatSequence[addr]) {
-    NS_LOG_LOGIC("New heartbeat, maybe?");
+    //NS_LOG_LOGIC("New heartbeat, maybe?");
     if (seq > m_heartbeatSequence[addr]) {
       UpdateHeartbeat(seq, addr);
     }
     else {
       // Spurious
-      NS_LOG_LOGIC("Discarding spurious heartbeat");
+      //NS_LOG_LOGIC("Discarding spurious heartbeat");
       return;
     }
   }
@@ -1025,7 +1043,7 @@ Ipv4GlobalRouting::LocalUnlock (Ipv4Address addr)
     NS_ASSERT(other != device);
     Ptr<Node> otherNode = other->GetNode();
     Ptr<Ipv4GlobalRouting> rtr = otherNode->GetObject<GlobalRouter>()->GetRoutingProtocol();
-    NS_LOG_LOGIC("Sending heartbeat for " << addr << " to " << otherNode->GetId() << " from " <<  m_ipv4->GetNetDevice(0)->GetNode()->GetId());
+    //NS_LOG_LOGIC("Sending heartbeat for " << addr << " to " << otherNode->GetId() << " from " <<  m_ipv4->GetNetDevice(0)->GetNode()->GetId());
     Simulator::ScheduleNow(&Ipv4GlobalRouting::ReceiveHeartbeat, rtr, m_heartbeatSequence[addr], addr, other); //rtr->ReceiveHeartbeat(addr, other);
   }
 }
@@ -1068,28 +1086,28 @@ Ipv4GlobalRouting::LocalSetRemoteVnode (Ipv4Address addr, uint32_t link, uint8_t
 void 
 Ipv4GlobalRouting::SetReversalOrder (Ipv4Address addr, const std::list<uint32_t>& interfaces) 
 {
-  NS_LOG_FUNCTION(this << addr);
-  NS_LOG_LOGIC("SetReversalOrder " << addr << " node = " << m_ipv4->GetNetDevice(0)->GetNode()->GetId());
+  //NS_LOG_FUNCTION(this << addr);
+  //NS_LOG_LOGIC("SetReversalOrder " << addr << " node = " << m_ipv4->GetNetDevice(0)->GetNode()->GetId());
   std::list<uint32_t>::const_iterator it;
   for (it = interfaces.begin(); 
        it != interfaces.end(); it++) {
-    NS_LOG_LOGIC("Vector " << *it);
+    //NS_LOG_LOGIC("Vector " << *it);
   }
 
   for (it = interfaces.begin(); 
        it != interfaces.end() && (*it) != 0; it++) {
-    NS_LOG_LOGIC("Considering " << *it);
+    //NS_LOG_LOGIC("Considering " << *it);
   }
   NS_ASSERT(it !=  interfaces.end());
   m_reverseBefore.insert(LinkOrder::value_type(addr, std::vector<uint32_t>(interfaces.begin(), it)));
   NS_ASSERT(*it == 0);
   it++;
-  NS_LOG_LOGIC("Now at iface = " << *it);
+  //NS_LOG_LOGIC("Now at iface = " << *it);
   if (it != interfaces.end()) {
-    NS_LOG_LOGIC("Interface = " << *it);
+    //NS_LOG_LOGIC("Interface = " << *it);
   }
   else {
-    NS_LOG_LOGIC("Inteface end of the line");
+    //NS_LOG_LOGIC("Inteface end of the line");
   }
   m_reverseAfter.insert(LinkOrder::value_type(addr, std::vector<uint32_t>(it, interfaces.end())));
 }
@@ -1098,11 +1116,11 @@ Ipv4GlobalRouting::SetReversalOrder (Ipv4Address addr, const std::list<uint32_t>
 void
 Ipv4GlobalRouting::SendInitialHeartbeat (Ipv4Address addr)
 {
-  NS_LOG_FUNCTION(this << addr);
-  NS_LOG_LOGIC("Initial heartbeat for address = " << addr << " from node = " << m_ipv4->GetNetDevice(0)->GetNode()->GetId());
+  //NS_LOG_FUNCTION(this << addr);
+  //NS_LOG_LOGIC("Initial heartbeat for address = " << addr << " from node = " << m_ipv4->GetNetDevice(0)->GetNode()->GetId());
   for (std::vector<uint32_t>::iterator it = m_reverseBefore[addr].begin();
        it != m_reverseBefore[addr].end(); it++) {
-    NS_LOG_LOGIC("REVERSE BEFORE NOT EMPTY: " << *it);
+    //NS_LOG_LOGIC("REVERSE BEFORE NOT EMPTY: " << *it);
   }
   NS_ASSERT(m_reverseBefore[addr].empty());
   m_heartbeatSequence[addr]++;

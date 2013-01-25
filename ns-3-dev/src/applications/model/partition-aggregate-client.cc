@@ -78,6 +78,7 @@ void PartitionAggregateClient::IssueRequest (Ptr<Request> request)
   // to node IDs
   for (std::list<Address>::iterator it = request->addresses.begin();
        it != request->addresses.end(); it++) {
+    std::cout << "Request issued " << request->requestNumber << " " << request->client << " " << request->nodes[*it] << " " << Simulator::Now() << std::endl;
     Ptr<Socket> socket;
     socket = Socket::CreateSocket (GetNode (), TcpSocketFactory::GetTypeId());
     socket->Bind ();
@@ -95,6 +96,14 @@ void PartitionAggregateClient::IssueRequest (Ptr<Request> request)
   }
 }
 
+void PartitionAggregateClient::ConnectionClosed (Ptr<Socket> s)
+{
+  NS_LOG_FUNCTION_NOARGS();
+  Ptr<Request> request = m_requests[s];
+  uint32_t node = request->nodes[request->socketToRequest[s]];
+  std::cout << "Socket closed " << GetNode()->GetId() << " " << node << " completed = " << request->responses[request->socketToRequest[s]] << std::endl;
+}
+
 void PartitionAggregateClient::ConnectionSucceeded (Ptr<Socket> s) 
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -109,7 +118,7 @@ void PartitionAggregateClient::ConnectionFailed (Ptr<Socket> s)
 {
   NS_LOG_FUNCTION_NOARGS ();
   NS_LOG_LOGIC ("Connection failed");
-  //std::cout << "Failed to connect" << std::endl;
+  std::cout << "Failed to connect" << std::endl;
 }
 
 void PartitionAggregateClient::HandleRead (Ptr<Socket> s)
@@ -123,7 +132,8 @@ void PartitionAggregateClient::HandleRead (Ptr<Socket> s)
       request->responses[request->socketToRequest[s]] = true;
       uint32_t node = request->nodes[request->socketToRequest[s]];
       request->requestTime[node] = Simulator::Now() - request->startTime[s];
-      std::cout << "Request fulfilled, "<< GetNode()->GetId() << " " << node <<" time = " << request->requestTime[node] << std::endl;
+      std::cout << "Request fulfilled, "<< request->requestNumber << " " << request->client << " " << node << " " << request->issueTime << " " << request->requestTime[node] << std::endl;
+      s->Close();
     }
   }
 }

@@ -37,6 +37,9 @@ class Socket;
 
 struct Request : public Object
 {
+  uint32_t client;
+  uint32_t requestNumber;
+  Time issueTime;
   std::list<Address> addresses;
   std::map <Address, bool> responses;
   std::map <Address, uint32_t> nodes;
@@ -86,7 +89,7 @@ private:
   void ConnectionSucceeded (Ptr<Socket>);
   void ConnectionFailed (Ptr<Socket>);
   void HandleRead (Ptr<Socket>);
-
+  void ConnectionClosed (Ptr<Socket>);
 };
 } // namespace ns3
 #endif // ifndef PARTITION_AGGREGATE_SERVER_H

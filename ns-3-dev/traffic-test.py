@@ -1,6 +1,6 @@
 import networkx as nx
 import sys
-from itertools import combinations
+from itertools import combinations, groupby
 import random
 import subprocess
 import StringIO
@@ -60,7 +60,17 @@ if __name__=="__main__":
             not_connected = 0
             print str.format("Failing {0}", failures)
             edges = G.edges()
-            random.shuffle(edges)
+            G2 = G.copy()
+            G2.remove_edges_from(fail_edges)
+            all_edges = sorted(map(lambda e: (len(filter(lambda x: contains_ends(x, [e], G2), comb)), e), G2.edges()), key = lambda x:x[0], reverse=True)
+            tried = 0
+            not_connected = 0
+            print str.format("Failing {0}", failures)
+            all_edges_random = []
+            for group, vals in groupby(all_edges, lambda x: x[0]):
+                vals = list(vals)
+                random.shuffle(list(vals))
+                all_edges_random.extend(vals)
             fail_edges = []
             for edge in edges:
                 G2 = G.copy()

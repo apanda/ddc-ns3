@@ -1627,6 +1627,7 @@ TcpSocketBase::SetupEndpoint ()
   route = ipv4->GetRoutingProtocol ()->RouteOutput (Ptr<Packet> (), header, oif, errno_);
   if (route == 0)
     {
+      std::cerr << "No route found" << std::endl;
       NS_LOG_LOGIC ("Route to " << m_endPoint->GetPeerAddress () << " does not exist");
       NS_LOG_ERROR (errno_);
       m_errno = errno_;
@@ -2093,6 +2094,7 @@ TcpSocketBase::Retransmit ()
   m_nextTxSequence = m_txBuffer.HeadSequence (); // Start from highest Ack
   m_rtt->IncreaseMultiplier (); // Double the timeout value for next retx timer
   m_dupAckCount = 0;
+  std::cout << "Retransmit" << std::endl;
   DoRetransmit (); // Retransmit the packet
 }
 
