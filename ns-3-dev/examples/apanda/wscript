@@ -32,6 +32,8 @@ def build(bld):
     obj = bld.create_ns3_program('partition-aggregate-test', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
     obj.source = 'partition-aggregate-test.cc'
 
+    obj = bld.create_ns3_program('wan-bulk-transfer', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
+    obj.source = 'wan-bulk-transfer.cc'
 #
 #    obj = bld.create_ns3_program('stretch-sp', ['core', 'point-to-point', 'internet', 'applications', 'olsr'])
 #    obj.source = 'stretch-sp.cc'

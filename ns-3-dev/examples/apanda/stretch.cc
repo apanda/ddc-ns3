@@ -230,8 +230,8 @@ class Topology : public Object
         Ptr<Ipv4L3Protocol> l3 = m_nodes.Get(i)->GetObject<Ipv4L3Protocol>();
         l3->TraceConnectWithoutContext("Drop", MakeCallback(&NodeCallback::DropTrace, &m_callbacks[i]));
         l3->SetAttribute("DefaultTtl", UintegerValue(255));
-        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(Seconds(m_delay * 0.001)));
-        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(Seconds(m_delay * 0.001)));
+        gr->SetAttribute("ReverseOutputToInputDelay", TimeValue(Time::FromDouble(m_delay, Time::MS)));
+        gr->SetAttribute("ReverseInputToOutputDelay", TimeValue(Time::FromDouble(m_delay, Time::MS)));
         gr->AddReversalCallback(MakeCallback(&NodeCallback::NodeReversal, &m_callbacks[i]));
         m_servers[i] =  (UdpEchoServer*)PeekPointer(serverApps.Get(i));
         m_servers[i]->AddReceivePacketEvent(MakeCallback(&NodeCallback::ServerRxPacket, &m_callbacks[i]));
@@ -261,7 +261,8 @@ class Topology : public Object
       m_clients[client]->SetRemote(m_nodes.Get(server)->GetObject<Ipv4>()->GetAddress(1, 0).GetLocal(), 9);
       Simulator::ScheduleNow(&UdpEchoClient::StopApplication, m_clients[client]);
       Simulator::ScheduleNow(&UdpEchoClient::StartApplication, m_clients[client]);
-      Simulator::Schedule(Seconds(1.0), &UdpEchoClient::Send, m_clients[client]);
+      Simulator::ScheduleNow(&UdpEchoClient::Send, m_clients[client]);
+      std::cout << "(" << Simulator::Now() << ") ";
     }
     
     void FailLink (uint32_t from, uint32_t to)
@@ -286,13 +287,13 @@ class Topology : public Object
 
 void NodeCallback::RxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
   NS_LOG_LOGIC(m_id << " Received packet " << (uint32_t)header.GetTtl());
-  std::cout << (uint32_t)header.GetTtl();
+  std::cout << (uint32_t)header.GetTtl() << " (" << Simulator::Now() << ") ";
   m_topology->RouteEnded();
 }
 
 void NodeCallback::ServerRxPacket (Ptr<const Packet> packet, Ipv4Header& header) {
   NS_LOG_LOGIC(m_id << " Server Received packet " << (uint32_t)header.GetTtl());
-  std::cout << (uint32_t)header.GetTtl() << ",";
+  std::cout << (uint32_t)header.GetTtl() << " (" << Simulator::Now() << "),";
 }
 
 void NodeCallback::NodeReversal (uint32_t iface, Ipv4Address addr) {
@@ -301,12 +302,12 @@ void NodeCallback::NodeReversal (uint32_t iface, Ipv4Address addr) {
 
 void NodeCallback::DropTrace (const Ipv4Header& hdr, Ptr<const Packet> packet, Ipv4L3Protocol::DropReason drop, Ptr<Ipv4> ipv4, uint32_t iface) {
   NS_LOG_LOGIC(m_id << " dropped packet " << iface);
-  std::cout << "D";
+  std::cout << "D (" << Simulator::Now() << ") ";
   m_topology->RouteEnded();
 }
 
 void NodeCallback::PhyDropTrace (Ptr<const Packet>) {
-  std::cout << m_id << "P";
+  std::cout << m_id << "P (" << Simulator::Now() << ") ";
   m_topology->RouteEnded();
 }
 

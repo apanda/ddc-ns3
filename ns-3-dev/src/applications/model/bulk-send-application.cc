@@ -149,6 +149,7 @@ void BulkSendApplication::StopApplication (void) // Called at time specified by 
     {
       m_socket->Close ();
       m_connected = false;
+      m_socket = 0;
     }
   else
     {
